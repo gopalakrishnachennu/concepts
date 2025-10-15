@@ -291,9 +291,15 @@
         <h1>🐘 PostgreSQL Data Flow</h1>
         <p class="subtitle">Deep Dive with Internal Process Visualization</p>
 
+        <!-- <div class="controls">
+            <button onclick="startReadFlow()">📖 START READ QUERY</button>
+            <button onclick="startWriteFlow()">✍️ START WRITE QUERY (Detailed)</button>
+            <button onclick="resetFlow()">🔄 RESET</button>
+        </div> -->
         <div class="controls">
             <button onclick="startReadFlow()">📖 START READ QUERY</button>
             <button onclick="startWriteFlow()">✍️ START WRITE QUERY (Detailed)</button>
+            <button id="pauseBtn" onclick="togglePause()" style="display:none;">⏸️ PAUSE</button>
             <button onclick="resetFlow()">🔄 RESET</button>
         </div>
 
