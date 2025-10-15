@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PostgreSQL Data Flow</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        h1 {
+            text-align: center;
+            color: #336791;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+        }
+
+        .controls {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        button {
+            background: #336791;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            margin: 0 10px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+
+        button:hover {
+            background: #2d5a7b;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(51, 103, 145, 0.3);
+        }
+
+        .flow-container {
+            position: relative;
+            height: 900px;
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 20px;
+        }
+
+        .component {
+            position: absolute;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            transition: all 0.3s;
+            text-align: center;
+            font-weight: bold;
+        }
+
+        .component.active {
+            transform: scale(1.05);
+            box-shadow: 0 8px 25px rgba(51, 103, 145, 0.6);
+            z-index: 10;
+            border: 3px solid #FFD700;
+        }
+
+        .client {
+            top: 50px;
+            left: 50px;
+            width: 180px;
+            background: #4CAF50;
+            color: white;
+        }
+
+        .postmaster {
+            top: 50px;
+            left: 280px;
+            width: 180px;
+            background: #FF9800;
+            color: white;
+        }
+
+        .backend {
+            top: 50px;
+            left: 510px;
+            width: 200px;
+            background: #2196F3;
+            color: white;
+            min-height: 120px;
+        }
+
+        .backend-steps {
+            margin-top: 10px;
+            font-size: 11px;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .backend-steps.show {
+            opacity: 1;
+        }
+
+        .shared-memory {
+            top: 250px;
+            left: 50px;
+            width: 660px;
+            height: 240px;
+            background: #9C27B0;
+            color: white;
+        }
+
+        .memory-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 15px;
+            font-size: 12px;
+        }
+
+        .memory-item {
+            background: rgba(255,255,255,0.2);
+            padding: 10px;
+            border-radius: 6px;
+            opacity: 0.5;
+            transition: all 0.3s;
+        }
+
+        .memory-item.active {
+            opacity: 1;
+            background: rgba(255,255,255,0.4);
+            transform: scale(1.05);
+        }
+
+        .background-procs {
+            top: 540px;
+            left: 50px;
+            width: 660px;
+            height: 280px;
+            background: #607D8B;
+            color: white;
+        }
+
+        .bg-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .bg-process {
+            background: rgba(255,255,255,0.2);
+            padding: 12px 8px;
+            border-radius: 8px;
+            font-size: 11px;
+            transition: all 0.3s;
+            opacity: 0.5;
+        }
+
+        .bg-process.active {
+            opacity: 1;
+            background: rgba(255,215,0,0.3);
+            transform: scale(1.08);
+            box-shadow: 0 0 20px rgba(255,215,0,0.6);
+        }
+
+        .disk {
+            top: 250px;
+            right: 50px;
+            width: 280px;
+            height: 570px;
+            background: #795548;
+            color: white;
+        }
+
+        .disk-sections {
+            margin-top: 15px;
+        }
+
+        .disk-item {
+            background: rgba(255,255,255,0.2);
+            padding: 12px;
+            margin-bottom: 10px;
+            border-radius: 6px;
+            font-size: 12px;
+            opacity: 0.5;
+            transition: all 0.3s;
+        }
+
+        .disk-item.active {
+            opacity: 1;
+            background: rgba(255,255,255,0.4);
+            transform: translateX(-5px);
+        }
+
+        .data-packet {
+            position: absolute;
+            width: 50px;
+            height: 50px;
+            background: #FFD700;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            box-shadow: 0 4px 15px rgba(255, 215, 0, 0.6);
+            z-index: 100;
+            opacity: 0;
+        }
+
+        .step-indicator {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 25px;
+            border-radius: 15px;
+            margin-top: 20px;
+        }
+
+        .step-indicator h3 {
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+
+        .step-indicator p {
+            font-size: 16px;
+            line-height: 1.8;
+        }
+
+        .detail-box {
+            background: rgba(255,255,255,0.1);
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 15px;
+            border-left: 4px solid #FFD700;
+        }
+
+        .component-detail {
+            font-size: 11px;
+            margin-top: 8px;
+            opacity: 0.9;
+            font-weight: normal;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        @keyframes glow {
+            0%, 100% { box-shadow: 0 0 10px rgba(255,215,0,0.5); }
+            50% { box-shadow: 0 0 30px rgba(255,215,0,1); }
+        }
+
+        .pulsing {
+            animation: pulse 1s infinite;
+        }
+
+        .glowing {
+            animation: glow 1.5s infinite;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🐘 PostgreSQL Data Flow</h1>
+        <p class="subtitle">Deep Dive with Internal Process Visualization</p>
+
+        <div class="controls">
+            <button onclick="startReadFlow()">📖 START READ QUERY</button>
+            <button onclick="startWriteFlow()">✍️ START WRITE QUERY (Detailed)</button>
+            <button onclick="resetFlow()">🔄 RESET</button>
+        </div>
+
+        <div class="flow-container" id="flowContainer">
+            <!-- Client -->
+            <div class="component client" id="client">
+                <div style="font-size: 20px;">👤</div>
+                <div>CLIENT</div>
+                <div class="component-detail">Application / psql</div>
+            </div>
+
+            <!-- Postmaster -->
+            <div class="component postmaster" id="postmaster">
+                <div style="font-size: 20px;">🏢</div>
+                <div>POSTMASTER</div>
+                <div class="component-detail">Connection Manager</div>
+            </div>
+
+            <!-- Backend -->
+            <div class="component backend" id="backend">
+                <div style="font-size: 20px;">⚙️</div>
+                <div>BACKEND PROCESS</div>
+                <div class="component-detail">Dedicated Worker</div>
+                <div class="backend-steps" id="backendSteps">
+                    <div>1️⃣ Parser</div>
+                    <div>2️⃣ Analyzer</div>
+                    <div>3️⃣ Planner</div>
+                    <div>4️⃣ Executor</div>
+                </div>
+            </div>
+
+            <!-- Shared Memory -->
+            <div class="component shared-memory" id="sharedMemory">
+                <div style="font-size: 22px;">🧠 SHARED MEMORY</div>
+                <div class="memory-grid">
+                    <div class="memory-item" id="sharedBuffers">
+                        📄 Shared Buffers<br>(Table/Index Pages)
+                    </div>
+                    <div class="memory-item" id="walBuffer">
+                        📝 WAL Buffer<br>(Change Log)
+                    </div>
+                    <div class="memory-item" id="clogBuffer">
+                        ✅ CLOG Buffer<br>(Transaction Status)
+                    </div>
+                    <div class="memory-item" id="tempBuffer">
+                        🗂️ Temp Buffers<br>(Sorting/Joins)
+                    </div>
+                </div>
+            </div>
+
+            <!-- Background Processes -->
+            <div class="component background-procs" id="backgroundProcs">
+                <div style="font-size: 22px;">🔄 BACKGROUND WORKERS</div>
+                <div class="bg-grid">
+                    <div class="bg-process" id="bgWriter">
+                        <div style="font-size: 16px;">📤</div>
+                        <strong>BG Writer</strong><br>
+                        Flushes dirty pages to disk
+                    </div>
+                    <div class="bg-process" id="walWriter">
+                        <div style="font-size: 16px;">📜</div>
+                        <strong>WAL Writer</strong><br>
+                        Writes WAL to disk
+                    </div>
+                    <div class="bg-process" id="checkpointer">
+                        <div style="font-size: 16px;">⏱️</div>
+                        <strong>Checkpointer</strong><br>
+                        Creates consistency points
+                    </div>
+                    <div class="bg-process" id="autoVacuum">
+                        <div style="font-size: 16px;">🧹</div>
+                        <strong>Auto Vacuum</strong><br>
+                        Cleans dead tuples
+                    </div>
+                    <div class="bg-process" id="archiver">
+                        <div style="font-size: 16px;">📦</div>
+                        <strong>Archiver</strong><br>
+                        Archives old WAL files
+                    </div>
+                    <div class="bg-process" id="statsCollector">
+                        <div style="font-size: 16px;">📊</div>
+                        <strong>Stats Collector</strong><br>
+                        Gathers statistics
+                    </div>
+                </div>
+            </div>
+
+            <!-- Disk -->
+            <div class="component disk" id="disk">
+                <div style="font-size: 22px;">💾 DISK STORAGE</div>
+                <div class="disk-sections">
+                    <div class="disk-item" id="dataFiles">
+                        📁 <strong>Data Files</strong><br>
+                        Actual table & index data
+                    </div>
+                    <div class="disk-item" id="walFiles">
+                        📜 <strong>WAL Files</strong><br>
+                        Write-Ahead Logs (pg_wal/)
+                    </div>
+                    <div class="disk-item" id="archiveFiles">
+                        🗄️ <strong>Archive</strong><br>
+                        Backed up WAL files
+                    </div>
+                    <div class="disk-item" id="configFiles">
+                        ⚙️ <strong>Config Files</strong><br>
+                        postgresql.conf, pg_hba.conf
+                    </div>
+                </div>
+            </div>
+
+            <div class="data-packet" id="dataPacket">📦</div>
+        </div>
+
+        <div class="step-indicator" id="stepIndicator">
+            <h3>⏳ Ready to Start</h3>
+            <p>Click "START WRITE QUERY" to see the detailed flow with background processes explained!</p>
+        </div>
+    </div>
+
+    <script>
+        let animationInProgress = false;
+
+        function resetFlow() {
+            animationInProgress = false;
+            document.querySelectorAll('.component, .memory-item, .bg-process, .disk-item').forEach(el => {
+                el.classList.remove('active', 'pulsing', 'glowing');
+            });
+            document.getElementById('backendSteps').classList.remove('show');
+            const packet = document.getElementById('dataPacket');
+            packet.style.opacity = '0';
+            updateStep('⏳ Ready to Start', 'Click a button above to see how PostgreSQL processes queries!');
+        }
+
+        function updateStep(title, description, detail = '') {
+            document.getElementById('stepIndicator').innerHTML = `
+                <h3>${title}</h3>
+                <p>${description}</p>
+                ${detail ? `<div class="detail-box">${detail}</div>` : ''}
+            `;
+        }
+
+        function activateComponent(id) {
+            document.querySelectorAll('.component').forEach(el => el.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+        }
+
+        function activateMemoryItem(id) {
+            document.querySelectorAll('.memory-item').forEach(el => el.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+        }
+
+        function activateBgProcess(id) {
+            document.getElementById(id).classList.add('active', 'glowing');
+        }
+
+        function deactivateBgProcess(id) {
+            document.getElementById(id).classList.remove('active', 'glowing');
+        }
+
+        function activateDiskItem(id) {
+            document.querySelectorAll('.disk-item').forEach(el => el.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+        }
+
+        function movePacket(fromId, toId, duration = 1000) {
+            return new Promise(resolve => {
+                const packet = document.getElementById('dataPacket');
+                const from = document.getElementById(fromId).getBoundingClientRect();
+                const to = document.getElementById(toId).getBoundingClientRect();
+                const container = document.getElementById('flowContainer').getBoundingClientRect();
+
+                const startX = from.left - container.left + from.width / 2 - 25;
+                const startY = from.top - container.top + from.height / 2 - 25;
+                const endX = to.left - container.left + to.width / 2 - 25;
+                const endY = to.top - container.top + to.height / 2 - 25;
+
+                packet.style.left = startX + 'px';
+                packet.style.top = startY + 'px';
+                packet.style.opacity = '1';
+
+                setTimeout(() => {
+                    packet.style.transition = `all ${duration}ms ease-in-out`;
+                    packet.style.left = endX + 'px';
+                    packet.style.top = endY + 'px';
+                    setTimeout(() => {
+                        packet.style.transition = 'none';
+                        resolve();
+                    }, duration);
+                }, 50);
+            });
+        }
+
+        async function startWriteFlow() {
+            if (animationInProgress) return;
+            animationInProgress = true;
+            resetFlow();
+
+            updateStep('1️⃣ Client Sends Write Query', 
+                'User executes: UPDATE users SET name = \'Alice\' WHERE id = 5',
+                '💡 The client application sends this SQL command over TCP/IP to PostgreSQL');
+            activateComponent('client');
+            await new Promise(r => setTimeout(r, 2500));
+
+            updateStep('2️⃣ Postmaster Authenticates', 
+                'The Postmaster process receives the connection request',
+                '🔐 Checks credentials → ✅ Creates a dedicated Backend Process for this client');
+            await movePacket('client', 'postmaster');
+            activateComponent('postmaster');
+            await new Promise(r => setTimeout(r, 2500));
+
+            updateStep('3️⃣ Backend Process Takes Over', 
+                'A dedicated backend process is assigned to handle this entire query',
+                '⚙️ This backend will do: Parse → Analyze → Plan → Execute');
+            await movePacket('postmaster', 'backend');
+            activateComponent('backend');
+            document.getElementById('backendSteps').classList.add('show');
+            await new Promise(r => setTimeout(r, 3000));
+
+            updateStep('4️⃣ Writing to Shared Memory', 
+                'Backend writes the UPDATE to two critical memory areas',
+                '<strong>📄 Shared Buffers:</strong> The updated row data is modified in memory<br><strong>📝 WAL Buffer:</strong> A log entry is written describing this change');
+            await movePacket('backend', 'sharedMemory');
+            activateComponent('sharedMemory');
+            activateMemoryItem('sharedBuffers');
+            await new Promise(r => setTimeout(r, 2000));
+            activateMemoryItem('walBuffer');
+            await new Promise(r => setTimeout(r, 2500));
+
+            updateStep('5️⃣ Background Process: WAL Writer Activates', 
+                'The WAL Writer process wakes up to ensure durability',
+                '<strong>📜 WAL Writer Job:</strong><br>• Takes the change log from WAL Buffer<br>• Writes it to physical WAL Files on disk<br>• This happens BEFORE data files are updated (Write-Ahead!)<br>• Ensures we can recover if server crashes');
+            activateComponent('backgroundProcs');
+            activateBgProcess('walWriter');
+            await new Promise(r => setTimeout(r, 3500));
+
+            updateStep('6️⃣ WAL Written to Disk', 
+                'WAL Writer flushes the transaction log to disk',
+                '<strong>Why WAL first?</strong> If PostgreSQL crashes now, it can replay this WAL file to recover the committed transaction. This is the "D" in ACID (Durability)!');
+            activateDiskItem('walFiles');
+            activateComponent('disk');
+            await new Promise(r => setTimeout(r, 3000));
+
+            updateStep('7️⃣ Background Process: Background Writer', 
+                'The Background Writer starts flushing "dirty pages" from memory',
+                '<strong>📤 Background Writer Job:</strong><br>• Finds pages in Shared Buffers that were modified<br>• Writes them to Data Files on disk<br>• Does this slowly in the background (not all at once)<br>• Keeps memory clean for new operations');
+            deactivateBgProcess('walWriter');
+            activateBgProcess('bgWriter');
+            await new Promise(r => setTimeout(r, 3500));
+
+            updateStep('8️⃣ Data Files Updated on Disk', 
+                'Background Writer persists the actual table data',
+                '<strong>Now both are safe:</strong><br>✅ WAL Files (transaction log)<br>✅ Data Files (actual table data)');
+            activateDiskItem('dataFiles');
+            await new Promise(r => setTimeout(r, 3000));
+
+            updateStep('9️⃣ Background Process: Checkpointer', 
+                'The Checkpointer creates a consistency snapshot',
+                '<strong>⏱️ Checkpointer Job:</strong><br>• Ensures all dirty pages are written to disk<br>• Marks a "checkpoint" - a known good state<br>• During crash recovery, PostgreSQL only needs to replay WAL from the last checkpoint<br>• Happens periodically (every few minutes)');
+            deactivateBgProcess('bgWriter');
+            activateBgProcess('checkpointer');
+            await new Promise(r => setTimeout(r, 3500));
+
+            updateStep('🔟 Background Process: Archiver (Optional)', 
+                'If archiving is enabled, old WAL files are backed up',
+                '<strong>📦 Archiver Job:</strong><br>• Copies completed WAL files to archive location<br>• Used for Point-in-Time Recovery (PITR)<br>• Allows you to restore database to any moment in time<br>• Critical for production backups');
+            deactivateBgProcess('checkpointer');
+            activateBgProcess('archiver');
+            activateDiskItem('archiveFiles');
+            await new Promise(r => setTimeout(r, 3500));
+
+            updateStep('1️⃣1️⃣ Commit Complete - Backend Notifies Client', 
+                'All durability steps complete, transaction is committed',
+                '<strong>Backend Process confirms:</strong><br>✅ Data in memory<br>✅ WAL on disk<br>✅ Checkpoint recorded<br>Now safe to tell client "COMMIT SUCCESS"');
+            deactivateBgProcess('archiver');
+            activateComponent('backend');
+            await movePacket('disk', 'backend');
+            await new Promise(r => setTimeout(r, 2000));
+
+            updateStep('1️⃣2️⃣ Client Receives Success', 
+                'The application gets confirmation that the UPDATE is permanent',
+                '✅ Even if PostgreSQL crashes now, this transaction will survive because it\'s in WAL files!');
+            await movePacket('backend', 'client');
+            activateComponent('client');
+            await new Promise(r => setTimeout(r, 2500));
+
+            updateStep('🎉 Write Complete with ACID Guarantees!', 
+                'All background processes worked together to ensure data safety',
+                '<strong>What happened:</strong><br>📝 WAL Writer → Durability<br>📤 Background Writer → Persistence<br>⏱️ Checkpointer → Consistency<br>📦 Archiver → Backup<br><br><strong>Auto Vacuum & Stats Collector run periodically in the background to maintain performance.</strong>');
+            document.getElementById('dataPacket').style.opacity = '0';
+            animationInProgress = false;
+        }
+
+        async function startReadFlow() {
+            if (animationInProgress) return;
+            animationInProgress = true;
+            resetFlow();
+
+            updateStep('1️⃣ Client Sends Query', 'User executes: SELECT * FROM users WHERE id = 5');
+            activateComponent('client');
+            await new Promise(r => setTimeout(r, 2000));
+
+            await movePacket('client', 'postmaster');
+            activateComponent('postmaster');
+            updateStep('2️⃣ Postmaster Routes', 'Creates backend process');
+            await new Promise(r => setTimeout(r, 2000));
+
+            await movePacket('postmaster', 'backend');
+            activateComponent('backend');
+            document.getElementById('backendSteps').classList.add('show');
+            updateStep('3️⃣ Backend Processes', 'Parse → Analyze → Plan → Execute');
+            await new Promise(r => setTimeout(r, 2500));
+
+            await movePacket('backend', 'sharedMemory');
+            activateComponent('sharedMemory');
+            activateMemoryItem('sharedBuffers');
+            updateStep('4️⃣ Check Shared Buffers', 'Looking for cached data...');
+            await new Promise(r => setTimeout(r, 2000));
+
+            activateDiskItem('dataFiles');
+            activateComponent('disk');
+            updateStep('5️⃣ Cache Miss - Read from Disk', 'Data not in memory, fetching from disk');
+            await new Promise(r => setTimeout(r, 2000));
+
+            await movePacket('sharedMemory', 'backend');
+            activateComponent('backend');
+            updateStep('6️⃣ Return Results', 'Backend formats result set');
+            await new Promise(r => setTimeout(r, 1500));
+
+            await movePacket('backend', 'client');
+            activateComponent('client');
+            updateStep('✅ Read Complete!', 'Client receives data');
+            document.getElementById('dataPacket').style.opacity = '0';
+            animationInProgress = false;
+        }
+    </script>
+</body>
+</html>
