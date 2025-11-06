@@ -1,0 +1,1448 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Portfolio Hub - Pro Edition</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #0a0a0f;
+            min-height: 100vh;
+            color: white;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        .background-animation {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+            opacity: 0.1;
+        }
+
+        .floating-shapes {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            overflow: hidden;
+            pointer-events: none;
+        }
+
+        .shape {
+            position: absolute;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border-radius: 50%;
+            opacity: 0.1;
+            animation: float 20s infinite ease-in-out;
+        }
+
+        .shape:nth-child(1) { width: 300px; height: 300px; top: 10%; left: 10%; animation-delay: 0s; }
+        .shape:nth-child(2) { width: 200px; height: 200px; top: 60%; left: 70%; animation-delay: 3s; }
+        .shape:nth-child(3) { width: 400px; height: 400px; top: 40%; left: 30%; animation-delay: 6s; }
+        .shape:nth-child(4) { width: 150px; height: 150px; top: 80%; left: 50%; animation-delay: 9s; }
+
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            25% { transform: translate(50px, -50px) scale(1.1); }
+            50% { transform: translate(-30px, 30px) scale(0.9); }
+            75% { transform: translate(40px, 40px) scale(1.05); }
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 20px;
+            position: relative;
+            z-index: 10;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 60px;
+            padding-top: 40px;
+            animation: fadeInDown 1s ease;
+        }
+
+        .header-content {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 30px;
+            padding: 50px 40px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        h1 {
+            font-size: 4.5rem;
+            font-weight: 800;
+            margin-bottom: 20px;
+            background: linear-gradient(135deg, #fff, #667eea, #f093fb);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: shimmer 3s infinite;
+        }
+
+        @keyframes shimmer {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+
+        .tagline {
+            font-size: 1.4rem;
+            opacity: 0.9;
+            margin-bottom: 25px;
+        }
+
+        .stats {
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+            margin-top: 30px;
+            flex-wrap: wrap;
+        }
+
+        .stat-item {
+            text-align: center;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+        }
+
+        .stat-item:hover {
+            transform: scale(1.1);
+        }
+
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #667eea;
+            display: block;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            opacity: 0.7;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* Real-time Status Bar */
+        .status-bar {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 15px 30px;
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 20px;
+            animation: fadeIn 1s ease 0.2s both;
+        }
+
+        .status-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .status-indicator {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #4ade80;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .weather-widget {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 15px;
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 15px;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 40px;
+            gap: 20px;
+            flex-wrap: wrap;
+            animation: fadeIn 1s ease 0.3s both;
+        }
+
+        .left-controls {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .view-toggle {
+            display: flex;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 15px;
+            padding: 5px;
+            gap: 5px;
+        }
+
+        .view-btn {
+            padding: 12px 25px;
+            border: none;
+            background: transparent;
+            color: white;
+            cursor: pointer;
+            border-radius: 10px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            font-weight: 600;
+        }
+
+        .view-btn.active {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .filter-btn {
+            padding: 12px 25px;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 15px;
+            color: white;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .filter-btn:hover {
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .search-box {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 15px;
+            padding: 12px 25px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            min-width: 350px;
+            transition: all 0.3s ease;
+        }
+
+        .search-box:focus-within {
+            background: rgba(255, 255, 255, 0.15);
+            border-color: #667eea;
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .search-box input {
+            background: transparent;
+            border: none;
+            outline: none;
+            color: white;
+            font-size: 1rem;
+            width: 100%;
+        }
+
+        .search-box input::placeholder {
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        .links-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+            gap: 30px;
+            animation: fadeIn 1s ease 0.5s both;
+        }
+
+        .links-masonry {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+            gap: 30px;
+            animation: fadeIn 1s ease 0.5s both;
+        }
+
+        .links-list {
+            display: none;
+            flex-direction: column;
+            gap: 20px;
+            animation: fadeIn 1s ease 0.5s both;
+        }
+
+        .link-card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 25px;
+            padding: 40px;
+            text-decoration: none;
+            color: white;
+            transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            position: relative;
+            overflow: hidden;
+            cursor: pointer;
+        }
+
+        .link-card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(102, 126, 234, 0.2) 0%, transparent 70%);
+            opacity: 0;
+            transition: opacity 0.5s ease;
+            pointer-events: none;
+        }
+
+        .link-card:hover::before {
+            opacity: 1;
+            animation: rotate 10s linear infinite;
+        }
+
+        @keyframes rotate {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .link-card:hover {
+            transform: translateY(-15px);
+            border-color: rgba(102, 126, 234, 0.5);
+            box-shadow: 0 30px 60px rgba(102, 126, 234, 0.3);
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 20px;
+        }
+
+        .link-icon {
+            font-size: 4rem;
+            display: block;
+            position: relative;
+            z-index: 1;
+            transition: transform 0.5s ease;
+        }
+
+        .link-card:hover .link-icon {
+            transform: scale(1.2) rotate(10deg);
+        }
+
+        .card-badge {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .link-title {
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin-bottom: 15px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .link-description {
+            font-size: 1rem;
+            color: rgba(255, 255, 255, 0.7);
+            line-height: 1.7;
+            position: relative;
+            z-index: 1;
+            margin-bottom: 20px;
+        }
+
+        .card-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 25px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .card-tags {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .tag {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+        }
+
+        .card-arrow {
+            font-size: 1.5rem;
+            transition: transform 0.3s ease;
+        }
+
+        .link-card:hover .card-arrow {
+            transform: translateX(10px);
+        }
+
+        .card-stats {
+            display: flex;
+            gap: 15px;
+            margin-top: 15px;
+            font-size: 0.85rem;
+            opacity: 0.7;
+        }
+
+        .list-item {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 30px 40px;
+            display: flex;
+            align-items: center;
+            gap: 30px;
+            text-decoration: none;
+            color: white;
+            transition: all 0.4s ease;
+        }
+
+        .list-item:hover {
+            transform: translateX(15px);
+            border-color: rgba(102, 126, 234, 0.5);
+            box-shadow: 0 20px 40px rgba(102, 126, 234, 0.3);
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .list-item .link-icon {
+            font-size: 3rem;
+            margin: 0;
+        }
+
+        .list-content {
+            flex: 1;
+        }
+
+        .list-item .link-title {
+            margin-bottom: 8px;
+            font-size: 1.5rem;
+        }
+
+        .list-item .link-description {
+            font-size: 0.95rem;
+            margin: 0;
+        }
+
+        .fab-container {
+            position: fixed;
+            bottom: 40px;
+            right: 40px;
+            z-index: 1000;
+        }
+
+        .add-link-btn {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            font-size: 2.5rem;
+            cursor: pointer;
+            box-shadow: 0 15px 40px rgba(102, 126, 234, 0.5);
+            transition: all 0.4s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .add-link-btn:hover {
+            transform: scale(1.15) rotate(90deg);
+            box-shadow: 0 20px 50px rgba(102, 126, 234, 0.6);
+        }
+
+        .fab-menu {
+            position: absolute;
+            bottom: 90px;
+            right: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            opacity: 0;
+            pointer-events: none;
+            transition: all 0.3s ease;
+        }
+
+        .fab-menu.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .fab-menu-item {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            padding: 12px 20px;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+        }
+
+        .fab-menu-item:hover {
+            background: rgba(255, 255, 255, 0.15);
+            transform: translateX(-10px);
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(10px);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: rgba(20, 20, 30, 0.95);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 50px;
+            border-radius: 30px;
+            max-width: 600px;
+            width: 90%;
+            box-shadow: 0 30px 80px rgba(0, 0, 0, 0.5);
+            animation: slideUp 0.4s ease;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        @keyframes slideUp {
+            from {
+                transform: translateY(50px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .modal h2 {
+            color: white;
+            margin-bottom: 30px;
+            font-size: 2.5rem;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 10px;
+            color: rgba(255, 255, 255, 0.9);
+            font-weight: 600;
+        }
+
+        .form-group input,
+        .form-group textarea,
+        .form-group select {
+            width: 100%;
+            padding: 15px 20px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 15px;
+            font-size: 1rem;
+            font-family: inherit;
+            color: white;
+            transition: all 0.3s ease;
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+            background: rgba(255, 255, 255, 0.08);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .form-group select {
+            cursor: pointer;
+        }
+
+        .form-actions {
+            display: flex;
+            gap: 15px;
+            justify-content: flex-end;
+            margin-top: 35px;
+        }
+
+        .btn {
+            padding: 15px 35px;
+            border: none;
+            border-radius: 15px;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.5);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .no-results {
+            text-align: center;
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 1.8rem;
+            padding: 100px 20px;
+        }
+
+        /* Analytics Dashboard */
+        .analytics-panel {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 25px;
+            padding: 30px;
+            margin-bottom: 30px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+        }
+
+        .analytics-card {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 20px;
+            border-radius: 15px;
+            text-align: center;
+        }
+
+        .analytics-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #667eea;
+        }
+
+        .analytics-label {
+            font-size: 0.9rem;
+            opacity: 0.7;
+            margin-top: 5px;
+        }
+
+        /* Quick Actions Bar */
+        .quick-actions {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+
+        .quick-action-btn {
+            padding: 10px 20px;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.9rem;
+        }
+
+        .quick-action-btn:hover {
+            background: rgba(255, 255, 255, 0.12);
+            transform: translateY(-2px);
+        }
+
+        /* Notifications */
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(102, 126, 234, 0.95);
+            backdrop-filter: blur(20px);
+            padding: 20px 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            z-index: 3000;
+            animation: slideInRight 0.5s ease;
+            max-width: 400px;
+        }
+
+        @keyframes slideInRight {
+            from {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        ::-webkit-scrollbar {
+            width: 12px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border-radius: 10px;
+        }
+
+        @media (max-width: 1024px) {
+            .links-grid, .links-masonry {
+                grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            }
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 3rem;
+            }
+
+            .links-grid, .links-masonry {
+                grid-template-columns: 1fr;
+            }
+
+            .controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .search-box {
+                min-width: 100%;
+            }
+
+            .stats {
+                gap: 20px;
+            }
+
+            .link-card {
+                padding: 30px;
+            }
+
+            .status-bar {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="background-animation"></div>
+    <div class="floating-shapes">
+        <div class="shape"></div>
+        <div class="shape"></div>
+        <div class="shape"></div>
+        <div class="shape"></div>
+    </div>
+
+    <div class="container">
+        <header>
+            <div class="header-content">
+                <h1>🚀 Gopala Krishna Chennu</h1>
+                <p class="tagline">Explore my projects, designs, and creative work</p>
+                <div class="stats">
+                    <div class="stat-item">
+                        <span class="stat-number" id="totalPages">6</span>
+                        <span class="stat-label">Total Pages</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-number" id="visitCount">0</span>
+                        <span class="stat-label">Visits Today</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-number" id="lastUpdated">Just now</span>
+                        <span class="stat-label">Last Updated</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-number">⚡</span>
+                        <span class="stat-label">Fast & Modern</span>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Real-time Status Bar -->
+        <div class="status-bar">
+            <div class="status-item">
+                <div class="status-indicator"></div>
+                <span id="currentTime">Loading...</span>
+            </div>
+            <div class="status-item weather-widget" id="weatherWidget">
+                <span>🌤️</span>
+                <span id="weatherInfo">Loading weather...</span>
+            </div>
+            <div class="status-item">
+                <span>📊 Analytics Active</span>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="quick-actions">
+            <button class="quick-action-btn" onclick="sortByRecent()">🕐 Recent First</button>
+            <button class="quick-action-btn" onclick="sortByPopular()">🔥 Most Popular</button>
+            <button class="quick-action-btn" onclick="toggleDarkMode()">🌙 Theme</button>
+            <button class="quick-action-btn" onclick="sharePortfolio()">📤 Share</button>
+            <button class="quick-action-btn" onclick="downloadReport()">📥 Export Report</button>
+        </div>
+
+        <!-- Analytics Panel -->
+        <div class="analytics-panel" id="analyticsPanel">
+            <div class="analytics-card">
+                <div class="analytics-value" id="totalClicks">0</div>
+                <div class="analytics-label">Total Clicks</div>
+            </div>
+            <div class="analytics-card">
+                <div class="analytics-value" id="avgTimeSpent">0s</div>
+                <div class="analytics-label">Avg. Time</div>
+            </div>
+            <div class="analytics-card">
+                <div class="analytics-value" id="topCategory">Design</div>
+                <div class="analytics-label">Top Category</div>
+            </div>
+            <div class="analytics-card">
+                <div class="analytics-value" id="engagement">95%</div>
+                <div class="analytics-label">Engagement</div>
+            </div>
+        </div>
+
+        <div class="controls">
+            <div class="left-controls">
+                <div class="view-toggle">
+                    <button class="view-btn active" data-view="grid">📱 Grid</button>
+                    <button class="view-btn" data-view="masonry">🎨 Masonry</button>
+                    <button class="view-btn" data-view="list">📋 List</button>
+                </div>
+                <select class="filter-btn" id="categoryFilter">
+                    <option value="all">🌟 All Categories</option>
+                    <option value="design">🎨 DBA</option>
+                    <option value="code">💻 Devops</option>
+                    <option value="content">📝 Data Enginner</option>
+                    <option value="other">📂 Other</option>
+                </select>
+            </div>
+            <div class="search-box">
+                <span>🔍</span>
+                <input type="text" id="searchInput" placeholder="Search pages...">
+            </div>
+        </div>
+
+        <div id="linksContainer" class="links-grid"></div>
+        <div id="noResults" class="no-results" style="display: none;">
+            <p>😔 No pages found</p>
+            <p style="font-size: 1.2rem; margin-top: 10px; opacity: 0.6;">Try a different search term</p>
+        </div>
+    </div>
+
+    <div class="fab-container">
+        <div class="fab-menu" id="fabMenu">
+            <div class="fab-menu-item" onclick="showModal()">
+                <span>➕</span>
+                <span>Add Page</span>
+            </div>
+            <div class="fab-menu-item" onclick="exportPages()">
+                <span>💾</span>
+                <span>Export Data</span>
+            </div>
+            <div class="fab-menu-item" onclick="resetPages()">
+                <span>🔄</span>
+                <span>Reset</span>
+            </div>
+            <div class="fab-menu-item" onclick="viewAnalytics()">
+                <span>📊</span>
+                <span>Analytics</span>
+            </div>
+        </div>
+        <button class="add-link-btn" id="fabBtn">+</button>
+    </div>
+
+    <div class="modal" id="addLinkModal">
+        <div class="modal-content">
+            <h2>✨ Add New Page</h2>
+            <form id="addLinkForm">
+                <div class="form-group">
+                    <label>📌 Emoji Icon</label>
+                    <input type="text" id="linkEmoji" placeholder="🎨" maxlength="2" required>
+                </div>
+                <div class="form-group">
+                    <label>📝 Page Title</label>
+                    <input type="text" id="linkTitle" placeholder="My Awesome Project" required>
+                </div>
+                <div class="form-group">
+                    <label>📄 Description</label>
+                    <textarea id="linkDescription" placeholder="Brief description of the page..." required></textarea>
+                </div>
+                <div class="form-group">
+                    <label>🔗 Page URL</label>
+                    <input type="text" id="linkUrl" placeholder="project.html or /folder/page.html" required>
+                </div>
+                <div class="form-group">
+                    <label>🏷️ Category</label>
+                    <select id="linkCategory" required>
+                        <option value="design">🎨 DBA</option>
+                        <option value="code">💻 Devops</option>
+                        <option value="content">📝 Data Engineer</option>
+                        <option value="other">📂 Other</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>🏷️ Tags (comma-separated)</label>
+                    <input type="text" id="linkTags" placeholder="react, web, portfolio">
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Add Page</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        let pages = [
+            {
+                emoji: '🎨',
+                title: 'Design Portfolio',
+                description: 'Explore my creative design projects, UI/UX work, and visual masterpieces',
+                url: 'design.html',
+                category: 'DBA',
+                tags: ['UI', 'UX', 'Graphics'],
+                badge: 'Featured',
+                clicks: 156,
+                lastViewed: new Date().toISOString()
+            },
+            {
+                emoji: '💻',
+                title: 'Code Projects',
+                description: 'Dive into my programming projects, open-source contributions, and applications',
+                url: 'projects.html',
+                category: 'code',
+                tags: ['JavaScript', 'React', 'Node'],
+                badge: 'Popular',
+                clicks: 243,
+                lastViewed: new Date().toISOString()
+            },
+            {
+                emoji: '📝',
+                title: 'Blog & Articles',
+                description: 'Read my thoughts, tutorials, and in-depth technical articles',
+                url: 'blog.html',
+                category: 'content',
+                tags: ['Writing', 'Tutorials'],
+                badge: 'New',
+                clicks: 89,
+                lastViewed: new Date().toISOString()
+            },
+            {
+                emoji: '📧',
+                title: 'Contact Me',
+                description: 'Get in touch for collaborations, opportunities, and networking',
+                url: 'contact.html',
+                category: 'other',
+                tags: ['Contact', 'Social'],
+                clicks: 67
+            },
+            {
+                emoji: '📄',
+                title: 'Resume / CV',
+                description: 'View my professional experience, skills, and achievements',
+                url: 'resume.html',
+                category: 'other',
+                tags: ['Career', 'Skills'],
+                clicks: 198
+            },
+            {
+                emoji: '🎯',
+                title: 'About Me',
+                description: 'Learn more about my journey, passions, and what drives me',
+                url: 'about.html',
+                category: 'other',
+                tags: ['Personal', 'Story'],
+                clicks: 134
+            }
+        ];
+
+        let currentView = 'grid';
+        let currentCategory = 'all';
+        let currentPages = [...pages];
+        let startTime = Date.now();
+
+        const container = document.getElementById('linksContainer');
+        const searchInput = document.getElementById('searchInput');
+        const categoryFilter = document.getElementById('categoryFilter');
+        const noResults = document.getElementById('noResults');
+        const modal = document.getElementById('addLinkModal');
+        const fabBtn = document.getElementById('fabBtn');
+        const fabMenu = document.getElementById('fabMenu');
+        const totalPagesEl = document.getElementById('totalPages');
+        const visitCountEl = document.getElementById('visitCount');
+        const lastUpdatedEl = document.getElementById('lastUpdated');
+
+        // Initialize
+        function init() {
+            updateVisitCounter();
+            updateClock();
+            updateWeather();
+            updateAnalytics();
+            updateLastUpdated();
+            setInterval(updateClock, 1000);
+            setInterval(updateLastUpdated, 60000);
+        }
+
+        // Visit Counter
+        function updateVisitCounter() {
+            let visits = parseInt(localStorage.getItem('visitCount') || '0');
+            visits++;
+            localStorage.setItem('visitCount', visits);
+            visitCountEl.textContent = visits;
+        }
+
+        // Real-time Clock
+        function updateClock() {
+            const now = new Date();
+            const timeStr = now.toLocaleTimeString('en-US', { 
+                hour: '2-digit', 
+                minute: '2-digit',
+                second: '2-digit'
+            });
+            const dateStr = now.toLocaleDateString('en-US', {
+                weekday: 'short',
+                month: 'short',
+                day: 'numeric'
+            });
+            document.getElementById('currentTime').textContent = `${dateStr} • ${timeStr}`;
+        }
+
+        // Weather Widget (simulated)
+        function updateWeather() {
+            const weather = [
+                { icon: '☀️', temp: '75°F', desc: 'Sunny' },
+                { icon: '⛅', temp: '68°F', desc: 'Partly Cloudy' },
+                { icon: '🌤️', temp: '72°F', desc: 'Mostly Sunny' },
+                { icon: '🌧️', temp: '64°F', desc: 'Rainy' }
+            ];
+            const current = weather[Math.floor(Math.random() * weather.length)];
+            document.getElementById('weatherWidget').innerHTML = `
+                <span>${current.icon}</span>
+                <span>${current.temp} ${current.desc}</span>
+            `;
+        }
+
+        // Analytics
+        function updateAnalytics() {
+            const totalClicks = pages.reduce((sum, page) => sum + (page.clicks || 0), 0);
+            document.getElementById('totalClicks').textContent = totalClicks;
+            
+            const avgTime = Math.floor((Date.now() - startTime) / 1000);
+            document.getElementById('avgTimeSpent').textContent = avgTime + 's';
+            
+            const categoryCount = {};
+            pages.forEach(page => {
+                categoryCount[page.category] = (categoryCount[page.category] || 0) + 1;
+            });
+            const topCat = Object.keys(categoryCount).reduce((a, b) => 
+                categoryCount[a] > categoryCount[b] ? a : b
+            );
+            document.getElementById('topCategory').textContent = 
+                topCat.charAt(0).toUpperCase() + topCat.slice(1);
+            
+            const engagement = Math.min(95 + Math.floor(Math.random() * 5), 100);
+            document.getElementById('engagement').textContent = engagement + '%';
+        }
+
+        // Last Updated
+        function updateLastUpdated() {
+            const now = new Date();
+            const timeAgo = getTimeAgo(now);
+            lastUpdatedEl.textContent = timeAgo;
+        }
+
+        function getTimeAgo(date) {
+            const minutes = Math.floor((Date.now() - startTime) / 60000);
+            if (minutes < 1) return 'Just now';
+            if (minutes < 60) return `${minutes}m ago`;
+            const hours = Math.floor(minutes / 60);
+            if (hours < 24) return `${hours}h ago`;
+            return `${Math.floor(hours / 24)}d ago`;
+        }
+
+        // FAB Menu
+        fabBtn.addEventListener('click', () => {
+            fabMenu.classList.toggle('active');
+        });
+
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.fab-container')) {
+                fabMenu.classList.remove('active');
+            }
+        });
+
+        // Render Pages
+        function renderPages(pagesToRender) {
+            container.innerHTML = '';
+            
+            if (pagesToRender.length === 0) {
+                noResults.style.display = 'block';
+                container.style.display = 'none';
+                return;
+            }
+            
+            noResults.style.display = 'none';
+            container.style.display = currentView === 'list' ? 'flex' : 'grid';
+
+            const viewClass = currentView === 'list' ? 'links-list' : 
+                             currentView === 'masonry' ? 'links-masonry' : 'links-grid';
+            container.className = viewClass;
+
+            if (currentView === 'list') {
+                pagesToRender.forEach((page, index) => {
+                    const item = document.createElement('a');
+                    item.href = page.url;
+                    item.className = 'list-item';
+                    item.style.animationDelay = `${index * 0.05}s`;
+                    item.onclick = () => trackClick(page);
+                    item.innerHTML = `
+                        <span class="link-icon">${page.emoji}</span>
+                        <div class="list-content">
+                            <h3 class="link-title">${page.title}</h3>
+                            <p class="link-description">${page.description}</p>
+                        </div>
+                        <span class="card-arrow">→</span>
+                    `;
+                    container.appendChild(item);
+                });
+            } else {
+                pagesToRender.forEach((page, index) => {
+                    const card = document.createElement('a');
+                    card.href = page.url;
+                    card.className = 'link-card';
+                    card.style.animationDelay = `${index * 0.1}s`;
+                    card.onclick = () => trackClick(page);
+                    
+                    const tagsHTML = page.tags ? page.tags.map(tag => 
+                        `<span class="tag">${tag}</span>`
+                    ).join('') : '';
+                    
+                    const badgeHTML = page.badge ? 
+                        `<span class="card-badge">${page.badge}</span>` : '';
+                    
+                    const statsHTML = page.clicks ? 
+                        `<div class="card-stats">
+                            <span>👁️ ${page.clicks} views</span>
+                            ${page.lastViewed ? `<span>🕐 ${getTimeAgo(new Date(page.lastViewed))}</span>` : ''}
+                        </div>` : '';
+                    
+                    card.innerHTML = `
+                        <div class="card-header">
+                            <span class="link-icon">${page.emoji}</span>
+                            ${badgeHTML}
+                        </div>
+                        <h3 class="link-title">${page.title}</h3>
+                        <p class="link-description">${page.description}</p>
+                        ${statsHTML}
+                        <div class="card-footer">
+                            <div class="card-tags">${tagsHTML}</div>
+                            <span class="card-arrow">→</span>
+                        </div>
+                    `;
+                    container.appendChild(card);
+                });
+            }
+
+            totalPagesEl.textContent = pagesToRender.length;
+        }
+
+        // Track Clicks
+        function trackClick(page) {
+            page.clicks = (page.clicks || 0) + 1;
+            page.lastViewed = new Date().toISOString();
+            updateAnalytics();
+        }
+
+        // View Toggle
+        document.querySelectorAll('.view-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                currentView = btn.dataset.view;
+                renderPages(currentPages);
+            });
+        });
+
+        // Filters
+        categoryFilter.addEventListener('change', (e) => {
+            currentCategory = e.target.value;
+            filterPages();
+        });
+
+        searchInput.addEventListener('input', filterPages);
+
+        function filterPages() {
+            const searchTerm = searchInput.value.toLowerCase();
+            
+            currentPages = pages.filter(page => {
+                const matchesSearch = 
+                    page.title.toLowerCase().includes(searchTerm) ||
+                    page.description.toLowerCase().includes(searchTerm) ||
+                    (page.tags && page.tags.some(tag => tag.toLowerCase().includes(searchTerm)));
+                
+                const matchesCategory = 
+                    currentCategory === 'all' || page.category === currentCategory;
+                
+                return matchesSearch && matchesCategory;
+            });
+            
+            renderPages(currentPages);
+        }
+
+        // Quick Actions
+        function sortByRecent() {
+            currentPages.sort((a, b) => {
+                const dateA = new Date(a.lastViewed || 0);
+                const dateB = new Date(b.lastViewed || 0);
+                return dateB - dateA;
+            });
+            renderPages(currentPages);
+            showNotification('✅ Sorted by most recent');
+        }
+
+        function sortByPopular() {
+            currentPages.sort((a, b) => (b.clicks || 0) - (a.clicks || 0));
+            renderPages(currentPages);
+            showNotification('🔥 Sorted by popularity');
+        }
+
+        function toggleDarkMode() {
+            document.body.style.filter = document.body.style.filter === 'invert(1)' ? '' : 'invert(1)';
+            showNotification('🌙 Theme toggled');
+        }
+
+        function sharePortfolio() {
+            if (navigator.share) {
+                navigator.share({
+                    title: 'My Portfolio Hub',
+                    text: 'Check out my portfolio!',
+                    url: window.location.href
+                });
+            } else {
+                navigator.clipboard.writeText(window.location.href);
+                showNotification('📋 Link copied to clipboard!');
+            }
+        }
+
+        function downloadReport() {
+            const report = {
+                totalPages: pages.length,
+                totalClicks: pages.reduce((sum, p) => sum + (p.clicks || 0), 0),
+                pages: pages.map(p => ({
+                    title: p.title,
+                    clicks: p.clicks || 0,
+                    category: p.category
+                })),
+                generatedAt: new Date().toISOString()
+            };
+            
+            const blob = new Blob([JSON.stringify(report, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `portfolio-report-${Date.now()}.json`;
+            a.click();
+            showNotification('📥 Report downloaded!');
+        }
+
+        // Modal Functions
+        function showModal() {
+            modal.classList.add('active');
+            fabMenu.classList.remove('active');
+        }
+
+        function closeModal() {
+            modal.classList.remove('active');
+            document.getElementById('addLinkForm').reset();
+        }
+
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) closeModal();
+        });
+
+        // Add Page Form
+        document.getElementById('addLinkForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            
+            const tagsInput = document.getElementById('linkTags').value;
+            const tags = tagsInput ? tagsInput.split(',').map(t => t.trim()) : [];
+            
+            const newPage = {
+                emoji: document.getElementById('linkEmoji').value,
+                title: document.getElementById('linkTitle').value,
+                description: document.getElementById('linkDescription').value,
+                url: document.getElementById('linkUrl').value,
+                category: document.getElementById('linkCategory').value,
+                tags: tags,
+                badge: 'New',
+                clicks: 0,
+                lastViewed: new Date().toISOString()
+            };
+
+            pages.push(newPage);
+            currentPages = [...pages];
+            filterPages();
+            closeModal();
+            updateAnalytics();
+            showNotification('✨ Page added successfully!');
+        });
+
+        // Export/Reset
+        function exportPages() {
+            const dataStr = JSON.stringify(pages, null, 2);
+            const blob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = 'portfolio-pages.json';
+            link.click();
+            fabMenu.classList.remove('active');
+            showNotification('💾 Data exported!');
+        }
+
+        function resetPages() {
+            if (confirm('Are you sure you want to reset all pages to default?')) {
+                location.reload();
+            }
+        }
+
+        function viewAnalytics() {
+            alert(`📊 Analytics Summary\n\nTotal Pages: ${pages.length}\nTotal Clicks: ${pages.reduce((s, p) => s + (p.clicks || 0), 0)}\nMost Popular: ${pages.reduce((a, b) => (a.clicks || 0) > (b.clicks || 0) ? a : b).title}`);
+            fabMenu.classList.remove('active');
+        }
+
+        // Notifications
+        function showNotification(message) {
+            const notification = document.createElement('div');
+            notification.className = 'notification';
+            notification.textContent = message;
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.remove();
+            }, 3000);
+        }
+
+        // Keyboard Shortcuts
+        document.addEventListener('keydown', (e) => {
+            if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+                e.preventDefault();
+                searchInput.focus();
+            }
+            if (e.key === 'Escape') {
+                closeModal();
+                fabMenu.classList.remove('active');
+            }
+            if ((e.ctrlKey || e.metaKey) && e.key === 'n') {
+                e.preventDefault();
+                showModal();
+            }
+        });
+
+        // Initialize
+        init();
+        renderPages(currentPages);
+        setInterval(updateAnalytics, 10000);
+    </script>
+</body>
+</html>

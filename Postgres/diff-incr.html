@@ -1,0 +1,1289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PostgreSQL WAL Deep Dive</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Consolas', 'Monaco', monospace;
+            background: #0f0f23;
+            color: #e0e0e0;
+            padding: 20px;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            color: #00d9ff;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+            text-shadow: 0 0 20px rgba(0, 217, 255, 0.5);
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #888;
+            margin-bottom: 40px;
+            font-size: 1.1em;
+        }
+
+        .section {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(0, 217, 255, 0.3);
+            border-radius: 10px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 0 30px rgba(0, 217, 255, 0.1);
+        }
+
+        h2 {
+            color: #00d9ff;
+            margin-bottom: 20px;
+            font-size: 1.8em;
+            border-bottom: 2px solid rgba(0, 217, 255, 0.3);
+            padding-bottom: 10px;
+        }
+
+        h3 {
+            color: #00ff88;
+            margin: 20px 0 10px 0;
+            font-size: 1.3em;
+        }
+
+        .architecture {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 30px 0;
+        }
+
+        .component {
+            background: rgba(0, 217, 255, 0.1);
+            border: 2px solid rgba(0, 217, 255, 0.4);
+            border-radius: 10px;
+            padding: 20px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .component::before {
+            content: '';
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            right: -2px;
+            bottom: -2px;
+            background: linear-gradient(45deg, transparent, rgba(0, 217, 255, 0.3), transparent);
+            opacity: 0;
+            transition: opacity 0.5s;
+        }
+
+        .component:hover::before {
+            opacity: 1;
+            animation: shimmer 2s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+
+        .transaction-flow {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            margin: 30px 0;
+        }
+
+        .flow-step {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            padding: 20px;
+            background: rgba(0, 255, 136, 0.1);
+            border-left: 4px solid #00ff88;
+            border-radius: 5px;
+            opacity: 0;
+            transform: translateX(-50px);
+            animation: slideIn 0.5s forwards;
+        }
+
+        .flow-step:nth-child(1) { animation-delay: 0.2s; }
+        .flow-step:nth-child(2) { animation-delay: 0.4s; }
+        .flow-step:nth-child(3) { animation-delay: 0.6s; }
+        .flow-step:nth-child(4) { animation-delay: 0.8s; }
+        .flow-step:nth-child(5) { animation-delay: 1s; }
+        .flow-step:nth-child(6) { animation-delay: 1.2s; }
+
+        @keyframes slideIn {
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .step-number {
+            background: #00ff88;
+            color: #0f0f23;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 1.2em;
+            flex-shrink: 0;
+        }
+
+        .wal-record {
+            background: rgba(255, 136, 0, 0.1);
+            border: 1px solid #ff8800;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 15px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+
+        .wal-record-title {
+            color: #ff8800;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .code-block {
+            background: #1a1a2e;
+            border: 1px solid #00d9ff;
+            border-radius: 5px;
+            padding: 20px;
+            margin: 15px 0;
+            overflow-x: auto;
+            font-family: 'Courier New', monospace;
+            position: relative;
+        }
+
+        .code-block::before {
+            content: 'SQL';
+            position: absolute;
+            top: 5px;
+            right: 10px;
+            color: #00d9ff;
+            font-size: 0.8em;
+            opacity: 0.5;
+        }
+
+        .keyword { color: #ff79c6; }
+        .string { color: #50fa7b; }
+        .number { color: #bd93f9; }
+        .comment { color: #6272a4; font-style: italic; }
+
+        .visual-demo {
+            background: #1a1a2e;
+            border-radius: 10px;
+            padding: 30px;
+            margin: 30px 0;
+            position: relative;
+        }
+
+        .data-page {
+            width: 100%;
+            height: 200px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 10px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 20px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .page-label {
+            color: white;
+            font-weight: bold;
+            font-size: 1.2em;
+            margin-bottom: 10px;
+        }
+
+        .data-rows {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            width: 80%;
+        }
+
+        .data-row {
+            background: rgba(255,255,255,0.2);
+            padding: 10px;
+            border-radius: 5px;
+            display: flex;
+            justify-content: space-between;
+            transition: all 0.5s ease;
+        }
+
+        .data-row.modified {
+            background: rgba(255, 136, 0, 0.5);
+            animation: pulse 0.5s;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .wal-buffer {
+            background: rgba(0, 217, 255, 0.1);
+            border: 2px dashed #00d9ff;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            min-height: 100px;
+        }
+
+        .wal-record-box {
+            background: rgba(255, 136, 0, 0.3);
+            border: 1px solid #ff8800;
+            border-radius: 5px;
+            padding: 10px;
+            margin: 5px 0;
+            font-size: 0.85em;
+            opacity: 0;
+            transform: translateY(-20px);
+            animation: recordAppear 0.5s forwards;
+        }
+
+        @keyframes recordAppear {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .arrow-down {
+            text-align: center;
+            font-size: 3em;
+            color: #00ff88;
+            animation: bounce 1s infinite;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(10px); }
+        }
+
+        .wal-file {
+            background: rgba(0, 255, 136, 0.2);
+            border: 2px solid #00ff88;
+            border-radius: 10px;
+            padding: 15px;
+            margin: 10px 0;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .file-icon {
+            font-size: 2em;
+        }
+
+        .file-info {
+            flex: 1;
+        }
+
+        .file-name {
+            color: #00ff88;
+            font-weight: bold;
+        }
+
+        .file-size {
+            color: #888;
+            font-size: 0.9em;
+        }
+
+        .comparison-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 30px 0;
+        }
+
+        .comparison-box {
+            background: rgba(255,255,255,0.05);
+            border-radius: 10px;
+            padding: 20px;
+        }
+
+        .comparison-box h4 {
+            color: #00d9ff;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .comparison-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 10px 0;
+            padding: 10px;
+            background: rgba(255,255,255,0.03);
+            border-radius: 5px;
+        }
+
+        .icon {
+            font-size: 1.5em;
+        }
+
+        .controls {
+            text-align: center;
+            margin: 30px 0;
+        }
+
+        button {
+            background: linear-gradient(135deg, #00d9ff, #00ff88);
+            border: none;
+            color: #0f0f23;
+            padding: 15px 40px;
+            font-size: 1.1em;
+            font-weight: bold;
+            border-radius: 50px;
+            cursor: pointer;
+            margin: 0 10px;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 20px rgba(0, 217, 255, 0.4);
+        }
+
+        button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 30px rgba(0, 217, 255, 0.6);
+        }
+
+        .highlight {
+            background: rgba(255, 136, 0, 0.3);
+            padding: 2px 5px;
+            border-radius: 3px;
+            color: #ff8800;
+            font-weight: bold;
+        }
+
+        .lsn-tracker {
+            background: rgba(0, 217, 255, 0.1);
+            border: 2px solid #00d9ff;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: center;
+        }
+
+        .lsn-value {
+            font-size: 2em;
+            color: #00d9ff;
+            font-family: 'Courier New', monospace;
+            margin: 10px 0;
+            text-shadow: 0 0 10px rgba(0, 217, 255, 0.5);
+        }
+
+        @media (max-width: 1024px) {
+            .architecture, .comparison-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .timeline {
+            position: relative;
+            padding: 20px 0;
+            margin: 30px 0;
+        }
+
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 50%;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: linear-gradient(to bottom, #00d9ff, #00ff88);
+        }
+
+        .timeline-item {
+            display: flex;
+            align-items: center;
+            margin: 30px 0;
+            position: relative;
+        }
+
+        .timeline-item:nth-child(odd) {
+            flex-direction: row;
+        }
+
+        .timeline-item:nth-child(even) {
+            flex-direction: row-reverse;
+        }
+
+        .timeline-content {
+            flex: 1;
+            padding: 20px;
+            background: rgba(0, 217, 255, 0.1);
+            border-radius: 10px;
+            border: 1px solid rgba(0, 217, 255, 0.3);
+            margin: 0 20px;
+        }
+
+        .timeline-dot {
+            width: 20px;
+            height: 20px;
+            background: #00d9ff;
+            border-radius: 50%;
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            box-shadow: 0 0 20px rgba(0, 217, 255, 0.8);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🐘 PostgreSQL WAL Architecture</h1>
+        <div class="subtitle">Write-Ahead Logging: How PostgreSQL Captures Only Changes</div>
+
+        <!-- SECTION 1: Core Concept -->
+        <div class="section">
+            <h2>💡 Core Concept: Write-Ahead Logging (WAL)</h2>
+            <p>PostgreSQL uses number">3.</span> On COMMIT, backend forces WAL flush to disk
+   - Calls <span class="keyword">XLogFlush(LSN)</span>
+   - Uses fsync() to ensure durability
+   - Only after fsync returns, COMMIT is acknowledged
+
+<span class="number">4.</span> Checkpoint process writes dirty pages to disk
+   - Records checkpoint LSN in WAL
+   - Allows old WAL files to be recycled/archived
+                </pre>
+            </div>
+
+            <h3>WAL Record Types</h3>
+            <div class="architecture">
+                <div class="component">
+                    <h4>Heap Operations</h4>
+                    <ul>
+                        <li>INSERT - New row added</li>
+                        <li>UPDATE - Row modified</li>
+                        <li>DELETE - Row removed</li>
+                        <li>HOT UPDATE - Heap-Only Tuple update</li>
+                    </ul>
+                </div>
+                <div class="component">
+                    <h4>Index Operations</h4>
+                    <ul>
+                        <li>BTREE_INSERT - B-tree index entry</li>
+                        <li>BTREE_SPLIT - Page split</li>
+                        <li>BTREE_DELETE - Index cleanup</li>
+                    </ul>
+                </div>
+                <div class="component">
+                    <h4>Transaction Control</h4>
+                    <ul>
+                        <li>XACT_COMMIT - Transaction commits</li>
+                        <li>XACT_ABORT - Transaction rollback</li>
+                        <li>CHECKPOINT - Checkpoint record</li>
+                    </ul>
+                </div>
+                <div class="component">
+                    <h4>System Operations</h4>
+                    <ul>
+                        <li>XLOG_SWITCH - WAL file switch</li>
+                        <li>BACKUP_START - Base backup begins</li>
+                        <li>BACKUP_END - Base backup completes</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- SECTION 9: Real Production Example -->
+        <div class="section">
+            <h2>🏭 Real Production Scenario</h2>
+            
+            <h3>E-commerce Database - Black Friday</h3>
+            <div class="code-block">
+<span class="comment">-- Initial state: 500GB database, 10,000 orders/minute</span>
+
+<span class="keyword">Sunday 00:00</span> - Full base backup
+├── Duration: 2 hours
+├── Size: 500 GB
+└── LSN at start: <span class="number">0/A0000000</span>
+
+<span class="keyword">Monday</span> - Normal traffic (50,000 transactions)
+├── WAL generated: 15 GB
+├── 960 WAL segments (15GB / 16MB)
+├── Each segment: INSERT, UPDATE, DELETE records
+└── LSN at end: <span class="number">0/A3C28000</span>
+
+<span class="keyword">Tuesday</span> - Medium traffic (75,000 transactions)
+├── WAL generated: 22 GB
+├── Contains only CHANGES from Monday's end state
+└── LSN at end: <span class="number">0/A9840000</span>
+
+<span class="keyword">Friday (Black Friday!)</span> - Heavy traffic (500,000 transactions)
+├── WAL generated: 180 GB (lots of orders!)
+├── System keeps running - no backup downtime
+├── WAL continuously archived to backup server
+└── Can restore to ANY second during Black Friday!
+            </div>
+
+            <h3>What Each WAL Record Contains During Black Friday</h3>
+            <div class="wal-record">
+                <div class="wal-record-title">Sample WAL Records from 14:23:15 (Black Friday)</div>
+                <pre>
+<span class="keyword">LSN:</span> <span class="number">0/B4582A80</span>
+<span class="keyword">Type:</span> <span class="string">HEAP_INSERT</span>
+<span class="keyword">Table:</span> orders (OID: 24589)
+<span class="keyword">Data:</span> {order_id: 9847562, user_id: 44523, total: 299.99, status: 'pending'}
+<span class="keyword">Size:</span> 156 bytes
+
+<span class="keyword">LSN:</span> <span class="number">0/B4582B20</span>
+<span class="keyword">Type:</span> <span class="string">HEAP_UPDATE</span>
+<span class="keyword">Table:</span> inventory (OID: 24601)
+<span class="keyword">Old:</span> {product_id: 7788, stock: 150}
+<span class="keyword">New:</span> {product_id: 7788, stock: 149}
+<span class="keyword">Size:</span> 142 bytes
+
+<span class="keyword">LSN:</span> <span class="number">0/B4582BC0</span>
+<span class="keyword">Type:</span> <span class="string">BTREE_INSERT</span>
+<span class="keyword">Index:</span> orders_user_id_idx
+<span class="keyword">Data:</span> Index entry for user_id: 44523
+<span class="keyword">Size:</span> 64 bytes
+
+<span class="keyword">LSN:</span> <span class="number">0/B4582C40</span>
+<span class="keyword">Type:</span> <span class="string">XACT_COMMIT</span>
+<span class="keyword">XID:</span> 8475962
+<span class="keyword">Timestamp:</span> 2024-11-29 14:23:15.482
+<span class="keyword">Size:</span> 48 bytes
+
+<span class="comment">// Total for this transaction: ~410 bytes in WAL
+// vs. backing up entire orders + inventory tables: ~2 MB
+// Efficiency: 99.98% savings!</span>
+                </pre>
+            </div>
+        </div>
+
+        <!-- SECTION 10: Point-in-Time Recovery -->
+        <div class="section">
+            <h2>⏰ Point-in-Time Recovery (PITR)</h2>
+            
+            <p>The killer feature of WAL: restore to ANY point in time!</p>
+
+            <div class="code-block">
+<span class="comment">-- Disaster strikes Tuesday at 14:35:00 - someone runs:</span>
+<span class="keyword">DELETE FROM</span> orders <span class="keyword">WHERE</span> status = <span class="string">'pending'</span>;
+<span class="comment">-- Oops! That deleted 50,000 orders without WHERE clause!</span>
+
+<span class="comment">-- RECOVERY PROCESS:</span>
+
+<span class="number">1.</span> Stop PostgreSQL
+<span class="number">2.</span> Restore Sunday's base backup (500 GB)
+<span class="number">3.</span> Create recovery.conf:
+   
+   <span class="keyword">restore_command</span> = <span class="string">'cp /backup/wal/%f %p'</span>
+   <span class="keyword">recovery_target_time</span> = <span class="string">'2024-11-26 14:34:59'</span>  <span class="comment">// 1 second before disaster!</span>
+   <span class="keyword">recovery_target_action</span> = <span class="string">'promote'</span>
+
+<span class="number">4.</span> Start PostgreSQL
+   - Reads base backup
+   - Applies Monday's WAL (all 15 GB)
+   - Applies Tuesday's WAL up to 14:34:59
+   - Stops at exact moment before DELETE
+   
+<span class="number">5.</span> Database promoted - back online with all 50,000 orders intact!
+
+<span class="comment">// Time to recover: ~30 minutes
+// Alternative without WAL: Lose everything since Sunday (catastrophic!)</span>
+            </div>
+
+            <h3>How PostgreSQL Replays WAL</h3>
+            <div class="transaction-flow">
+                <div class="flow-step">
+                    <div class="step-number">1</div>
+                    <div>
+                        <strong>Read Base Backup</strong>
+                        <p>Load data files from Sunday into memory</p>
+                    </div>
+                </div>
+
+                <div class="flow-step">
+                    <div class="step-number">2</div>
+                    <div>
+                        <strong>Find Starting LSN</strong>
+                        <p>Base backup contains checkpoint LSN: 0/A0000000</p>
+                    </div>
+                </div>
+
+                <div class="flow-step">
+                    <div class="step-number">3</div>
+                    <div>
+                        <strong>Read First WAL File</strong>
+                        <p>Open 00000001000000000000000A (Monday's first WAL)</p>
+                    </div>
+                </div>
+
+                <div class="flow-step">
+                    <div class="step-number">4</div>
+                    <div>
+                        <strong>Replay Each Record</strong>
+                        <p>For each WAL record:<br>
+                        - Read LSN and operation type<br>
+                        - Load affected data page<br>
+                        - Apply change (INSERT/UPDATE/DELETE)<br>
+                        - Advance to next LSN</p>
+                    </div>
+                </div>
+
+                <div class="flow-step">
+                    <div class="step-number">5</div>
+                    <div>
+                        <strong>Continue Through WAL Files</strong>
+                        <p>Automatically load next WAL segment when current completes</p>
+                    </div>
+                </div>
+
+                <div class="flow-step">
+                    <div class="step-number">6</div>
+                    <div>
+                        <strong>Stop at Target Time</strong>
+                        <p>When LSN timestamp reaches 14:34:59, stop replay and promote</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SECTION 11: Advanced Concepts -->
+        <div class="section">
+            <h2>🚀 Advanced WAL Concepts</h2>
+            
+            <h3>Full Page Writes (FPW)</h3>
+            <div class="wal-record">
+                <div class="wal-record-title">Why WAL Sometimes Contains Full Pages</div>
+                <pre>
+After a CHECKPOINT, the first modification to each page writes the FULL page to WAL.
+
+<span class="keyword">Why?</span> Protect against torn pages (partial writes during crash)
+
+<span class="keyword">Example:</span>
+- Checkpoint at LSN <span class="number">0/A0000000</span>
+- First UPDATE to page 42 after checkpoint
+- WAL record contains: FULL 8KB page + change details
+- Subsequent UPDATEs to same page: only deltas (small)
+
+This ensures crash recovery can reconstruct pages correctly.
+
+<span class="keyword">Config:</span> <span class="string">full_page_writes = on</span> (default, recommended)
+                </pre>
+            </div>
+
+            <h3>WAL Compression</h3>
+            <div class="code-block">
+<span class="comment">-- PostgreSQL 14+ supports WAL compression</span>
+<span class="keyword">wal_compression</span> = <span class="string">on</span>
+
+<span class="comment">// Compresses full page writes using pglz or lz4
+// Can reduce WAL size by 30-50% for write-heavy workloads
+// Trade-off: Small CPU overhead for compression</span>
+
+<span class="keyword">Before compression:</span>
+- Full page write: 8192 bytes
+- Compressed: ~3000 bytes (63% savings!)
+
+<span class="keyword">Impact:</span>
+- Less disk I/O for WAL writes
+- Smaller WAL archive storage
+- Faster network transfer for replication
+            </div>
+
+            <h3>Replication Using WAL</h3>
+            <div class="architecture">
+                <div class="component">
+                    <h4>Streaming Replication</h4>
+                    <p><strong>Primary Server:</strong></p>
+                    <ul>
+                        <li>Generates WAL records</li>
+                        <li>Sends to walsender process</li>
+                    </ul>
+                    <p style="margin-top: 10px;"><strong>Standby Server:</strong></p>
+                    <ul>
+                        <li>Receives WAL via walreceiver</li>
+                        <li>Continuously replays WAL</li>
+                        <li>Stays in sync (seconds behind)</li>
+                    </ul>
+                </div>
+                <div class="component">
+                    <h4>Synchronous vs Asynchronous</h4>
+                    <p><strong>Synchronous:</strong></p>
+                    <ul>
+                        <li>COMMIT waits for standby ACK</li>
+                        <li>Zero data loss</li>
+                        <li>Higher latency</li>
+                    </ul>
+                    <p style="margin-top: 10px;"><strong>Asynchronous:</strong></p>
+                    <ul>
+                        <li>COMMIT returns immediately</li>
+                        <li>Possible data loss on crash</li>
+                        <li>Better performance</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- SECTION 12: Monitoring WAL -->
+        <div class="section">
+            <h2>📊 Monitoring WAL in Production</h2>
+            
+            <div class="code-block">
+<span class="comment">-- Check current WAL LSN position</span>
+<span class="keyword">SELECT</span> pg_current_wal_lsn();
+<span class="comment">-- Returns: 0/B4582C40</span>
+
+<span class="comment">-- Check WAL generation rate</span>
+<span class="keyword">SELECT</span> 
+    pg_size_pretty(pg_wal_lsn_diff(pg_current_wal_lsn(), <span class="string">'0/A0000000'</span>)) 
+    <span class="keyword">AS</span> wal_generated;
+<span class="comment">-- Returns: 340 GB (since Sunday)</span>
+
+<span class="comment">-- Monitor WAL archiving lag</span>
+<span class="keyword">SELECT</span> 
+    last_archived_wal,
+    last_archived_time,
+    last_failed_wal,
+    last_failed_time
+<span class="keyword">FROM</span> pg_stat_archiver;
+
+<span class="comment">-- Check replication lag on standby</span>
+<span class="keyword">SELECT</span> 
+    pg_wal_lsn_diff(pg_last_wal_receive_lsn(), pg_last_wal_replay_lsn()) 
+    <span class="keyword">AS</span> replay_lag_bytes;
+
+<span class="comment">-- See active WAL files</span>
+<span class="keyword">SELECT</span> <span class="keyword">COUNT</span>(*) <span class="keyword">FROM</span> pg_ls_waldir();
+<span class="comment">-- Returns: 64 (1 GB of WAL files in pg_wal/)</span>
+            </div>
+
+            <h3>Key Metrics to Watch</h3>
+            <div class="comparison-grid">
+                <div class="comparison-box">
+                    <h4>⚠️ Warning Signs</h4>
+                    <div class="comparison-item">
+                        <span class="icon">📈</span>
+                        <span>WAL generation rate suddenly increases</span>
+                    </div>
+                    <div class="comparison-item">
+                        <span class="icon">💾</span>
+                        <span>pg_wal/ directory filling up (disk space)</span>
+                    </div>
+                    <div class="comparison-item">
+                        <span class="icon">⏱️</span>
+                        <span>Archive lag > 5 minutes</span>
+                    </div>
+                    <div class="comparison-item">
+                        <span class="icon">🔴</span>
+                        <span>last_failed_wal not null</span>
+                    </div>
+                </div>
+
+                <div class="comparison-box">
+                    <h4>✅ Healthy Indicators</h4>
+                    <div class="comparison-item">
+                        <span class="icon">📊</span>
+                        <span>Steady WAL generation rate</span>
+                    </div>
+                    <div class="comparison-item">
+                        <span class="icon">💚</span>
+                        <span>Archive succeeds within seconds</span>
+                    </div>
+                    <div class="comparison-item">
+                        <span class="icon">🔄</span>
+                        <span>Replication lag < 1 second</span>
+                    </div>
+                    <div class="comparison-item">
+                        <span class="icon">📦</span>
+                        <span>Old WAL files cleaned up regularly</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SECTION 13: Summary -->
+        <div class="section">
+            <h2>🎯 Summary: Why WAL is Brilliant</h2>
+            
+            <div class="architecture">
+                <div class="component" style="grid-column: 1 / -1;">
+                    <h3>The Big Picture</h3>
+                    <ol style="margin-left: 20px; margin-top: 15px; line-height: 2;">
+                        <li><strong>Write-Ahead:</strong> Changes are logged BEFORE data is modified (durability)</li>
+                        <li><strong>Incremental:</strong> Only changes are logged, not entire pages (efficiency)</li>
+                        <li><strong>Sequential:</strong> WAL writes are sequential, very fast (performance)</li>
+                        <li><strong>Continuous:</strong> No backup windows, no downtime (availability)</li>
+                        <li><strong>Precise:</strong> Restore to any second in time (recovery flexibility)</li>
+                        <li><strong>Replication:</strong> Same WAL mechanism powers standby servers (high availability)</li>
+                    </ol>
+                </div>
+            </div>
+
+            <h3>Real-World Analogy</h3>
+            <div class="wal-record">
+                <pre style="color: #e0e0e0; line-height: 1.8;">
+Imagine a warehouse (database) with millions of items (rows).
+
+<span class="keyword">WITHOUT WAL:</span>
+To backup, you photograph every shelf every day.
+Time: Hours. Storage: Terabytes. Can't run during business hours.
+
+<span class="keyword">WITH WAL:</span>
+You keep a detailed journal of every item that moves:
+  "10:23 AM - Moved item #4523 from A5 to B7"
+  "10:24 AM - Added item #8821 to shelf C3"
+  "10:25 AM - Removed item #1002 from D1"
+
+To recreate warehouse state:
+  1. Start with last full inventory (Sunday)
+  2. Replay journal entries (Monday's WAL, Tuesday's WAL...)
+  3. Arrive at exact state at any moment!
+
+Journal entries are TINY compared to full inventory photos.
+And the journal is written WHILE warehouse operates - no downtime!
+                </pre>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        let transactionRunning = false;
+        let lsnValue = 0x16B4408;
+
+        function runTransaction() {
+            if (transactionRunning) return;
+            transactionRunning = true;
+
+            const row = document.getElementById('row-1');
+            const balanceEl = document.getElementById('balance-1');
+            const walRecordsEl = document.getElementById('wal-records');
+            const walFilesEl = document.getElementById('wal-files');
+            const arrow = document.getElementById('arrow');
+
+            // Step 1: Create WAL record
+            setTimeout(() => {
+                const walRecord = document.createElement('div');
+                walRecord.className = 'wal-record-box';
+                lsnValue += 0x100;
+                walRecord.innerHTML = `
+                    <strong>WAL Record Created</strong><br>
+                    LSN: 0/${lsnValue.toString(16).toUpperCase()}<br>
+                    UPDATE users SET balance=600 WHERE user_id=12345<br>
+                    Old: 500 → New: 600 | Size: ~120 bytes
+                `;
+                walRecordsEl.appendChild(walRecord);
+            }, 500);
+
+            // Step 2: Modify data page
+            setTimeout(() => {
+                row.classList.add('modified');
+                balanceEl.textContent = 'balance: 600';
+            }, 1500);
+
+            // Step 3: Show arrow
+            setTimeout(() => {
+                arrow.style.display = 'block';
+            }, 2000);
+
+            // Step 4: Flush to disk
+            setTimeout(() => {
+                const walFile = document.createElement('div');
+                walFile.className = 'wal-file';
+                walFile.innerHTML = `
+                    <span class="file-icon">📄</span>
+                    <div class="file-info">
+                        <div class="file-name">00000001000000000000${(lsnValue & 0xFF).toString(16).padStart(4, '0').toUpperCase()}</div>
+                        <div class="file-size">16 MB WAL segment (contains ~130,000 records)</div>
+                    </div>
+                `;
+                walFilesEl.appendChild(walFile);
+                
+                // Update LSN display
+                document.getElementById('current-lsn').textContent = `0/${lsnValue.toString(16).toUpperCase()}`;
+                
+                transactionRunning = false;
+            }, 3000);
+        }
+
+        function resetDemo() {
+            const row = document.getElementById('row-1');
+            const balanceEl = document.getElementById('balance-1');
+            const walRecordsEl = document.getElementById('wal-records');
+            const walFilesEl = document.getElementById('wal-files');
+            const arrow = document.getElementById('arrow');
+
+            row.classList.remove('modified');
+            balanceEl.textContent = 'balance: 500';
+            walRecordsEl.innerHTML = '';
+            walFilesEl.innerHTML = '<strong style="color: #00ff88;">💾 WAL Files (on Disk)</strong>';
+            arrow.style.display = 'none';
+            transactionRunning = false;
+        }
+
+        // Animate LSN counter
+        setInterval(() => {
+            if (!transactionRunning) {
+                lsnValue += Math.floor(Math.random() * 0x1000);
+                document.getElementById('current-lsn').textContent = `0/${lsnValue.toString(16).toUpperCase()}`;
+            }
+        }, 3000);
+    </script>
+</body>
+</html>highlight">WAL (Write-Ahead Log)</span> to ensure data integrity and enable incremental backups. Before any data page is modified on disk, the change is first written to the WAL.</p>
+            
+            <div class="architecture">
+                <div class="component">
+                    <h3>🎯 The Golden Rule</h3>
+                    <p><strong>WRITE TO WAL FIRST, THEN MODIFY DATA</strong></p>
+                    <p style="margin-top: 15px; color: #888;">This ensures that if the system crashes, PostgreSQL can replay the WAL to recover all committed transactions.</p>
+                </div>
+                <div class="component">
+                    <h3>📊 Why WAL is Incremental</h3>
+                    <p>WAL only contains <span class="highlight">CHANGES (deltas)</span>, not entire data pages.</p>
+                    <p style="margin-top: 10px;">Example: If you update 1 row in a 1GB table, WAL only stores that specific change (~100 bytes), not the entire 1GB table!</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- SECTION 2: Transaction Flow -->
+        <div class="section">
+            <h2>🔄 Real Transaction Flow: How Changes Are Captured</h2>
+            
+            <div class="code-block">
+<span class="keyword">UPDATE</span> users <span class="keyword">SET</span> balance = balance + <span class="number">100</span> <span class="keyword">WHERE</span> user_id = <span class="number">12345</span>;
+<span class="comment">-- This simple query triggers the entire WAL mechanism below</span>
+            </div>
+
+            <div class="transaction-flow">
+                <div class="flow-step">
+                    <div class="step-number">1</div>
+                    <div>
+                        <strong>Client sends SQL command</strong>
+                        <p>Query reaches PostgreSQL backend process</p>
+                    </div>
+                </div>
+
+                <div class="flow-step">
+                    <div class="step-number">2</div>
+                    <div>
+                        <strong>Parser & Planner work</strong>
+                        <p>PostgreSQL determines which rows to modify and creates an execution plan</p>
+                    </div>
+                </div>
+
+                <div class="flow-step">
+                    <div class="step-number">3</div>
+                    <div>
+                        <strong>🔥 WAL Record Created FIRST</strong>
+                        <p>Before touching the data page, a WAL record is generated containing:</p>
+                        <ul style="margin-top: 5px;">
+                            <li>Transaction ID (XID): 987654</li>
+                            <li>Table OID: 16384</li>
+                            <li>Block number: 42</li>
+                            <li>Offset in block: 5</li>
+                            <li>Old value: balance = 500</li>
+                            <li>New value: balance = 600</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="flow-step">
+                    <div class="step-number">4</div>
+                    <div>
+                        <strong>WAL written to WAL Buffer</strong>
+                        <p>The WAL record is written to shared memory (WAL buffers) - very fast!</p>
+                    </div>
+                </div>
+
+                <div class="flow-step">
+                    <div class="step-number">5</div>
+                    <div>
+                        <strong>Data Page Modified in Shared Buffers</strong>
+                        <p>Now PostgreSQL modifies the actual data page in memory (not disk yet)</p>
+                    </div>
+                </div>
+
+                <div class="flow-step">
+                    <div class="step-number">6</div>
+                    <div>
+                        <strong>COMMIT - WAL flushed to disk</strong>
+                        <p>When you COMMIT, WAL is written to disk (fsync). Only then is the transaction durable!</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SECTION 3: WAL Record Structure -->
+        <div class="section">
+            <h2>📝 WAL Record Anatomy: What's Actually Stored</h2>
+            
+            <div class="wal-record">
+                <div class="wal-record-title">Example WAL Record Structure</div>
+                <pre>
+<span class="keyword">LSN:</span> <span class="number">0/16B4408</span> <span class="comment">// Log Sequence Number - unique position in WAL</span>
+<span class="keyword">XID:</span> <span class="number">987654</span> <span class="comment">// Transaction ID</span>
+<span class="keyword">Resource Manager:</span> <span class="string">Heap</span> <span class="comment">// Type of operation</span>
+<span class="keyword">Record Type:</span> <span class="string">UPDATE</span>
+<span class="keyword">Block:</span> <span class="number">42</span> <span class="comment">// Which 8KB block in the table</span>
+<span class="keyword">Offset:</span> <span class="number">5</span> <span class="comment">// Position within block</span>
+<span class="keyword">Old Tuple:</span> {user_id: <span class="number">12345</span>, balance: <span class="number">500</span>}
+<span class="keyword">New Tuple:</span> {user_id: <span class="number">12345</span>, balance: <span class="number">600</span>}
+<span class="keyword">Size:</span> <span class="number">~120 bytes</span> <span class="comment">// Just this change!</span>
+                </pre>
+            </div>
+
+            <div class="lsn-tracker">
+                <strong>LSN (Log Sequence Number)</strong>
+                <div class="lsn-value" id="current-lsn">0/16B4408</div>
+                <p>This is the unique position in the WAL stream. It constantly advances as changes occur.</p>
+            </div>
+
+            <p style="margin-top: 20px;">
+                <strong>🎯 Key Insight:</strong> The WAL record is tiny (~120 bytes) compared to the entire data page (8 KB). 
+                This is why WAL-based backups are incremental - they only contain changes, not full data!
+            </p>
+        </div>
+
+        <!-- SECTION 4: Visual Demo -->
+        <div class="section">
+            <h2>🎬 Live Visualization: UPDATE in Action</h2>
+            <div class="controls">
+                <button onclick="runTransaction()">▶️ Execute UPDATE Transaction</button>
+                <button onclick="resetDemo()">🔄 Reset Demo</button>
+            </div>
+
+            <div class="visual-demo">
+                <div class="data-page">
+                    <div class="page-label">📄 Data Page (in Shared Buffers)</div>
+                    <div class="data-rows" id="data-rows">
+                        <div class="data-row" id="row-1">
+                            <span>user_id: 12345</span>
+                            <span id="balance-1">balance: 500</span>
+                        </div>
+                        <div class="data-row">
+                            <span>user_id: 12346</span>
+                            <span>balance: 750</span>
+                        </div>
+                        <div class="data-row">
+                            <span>user_id: 12347</span>
+                            <span>balance: 1000</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="wal-buffer">
+                    <strong style="color: #00d9ff;">📋 WAL Buffer (in Memory)</strong>
+                    <div id="wal-records"></div>
+                </div>
+
+                <div class="arrow-down" id="arrow">⬇️</div>
+
+                <div id="wal-files">
+                    <strong style="color: #00ff88;">💾 WAL Files (on Disk)</strong>
+                </div>
+            </div>
+        </div>
+
+        <!-- SECTION 5: WAL File Management -->
+        <div class="section">
+            <h2>📦 WAL File Management</h2>
+            
+            <div class="timeline">
+                <div class="timeline-item">
+                    <div class="timeline-dot"></div>
+                    <div class="timeline-content">
+                        <h3>WAL Segment Creation</h3>
+                        <p>PostgreSQL creates 16MB WAL segment files (default)</p>
+                        <code>00000001000000000000000A</code>
+                    </div>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-dot"></div>
+                    <div class="timeline-content">
+                        <h3>WAL Fills Up</h3>
+                        <p>As transactions occur, the current WAL segment fills with records</p>
+                    </div>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-dot"></div>
+                    <div class="timeline-content">
+                        <h3>WAL Switch</h3>
+                        <p>When full, PostgreSQL switches to a new WAL segment</p>
+                        <code>00000001000000000000000B</code>
+                    </div>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-dot"></div>
+                    <div class="timeline-content">
+                        <h3>WAL Archiving</h3>
+                        <p>Old WAL files are archived (if archive_mode = on)</p>
+                        <p style="margin-top: 10px;">These archived WAL files are your INCREMENTAL backups!</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="code-block">
+<span class="comment">-- PostgreSQL configuration for WAL archiving</span>
+<span class="keyword">wal_level</span> = <span class="string">replica</span>  <span class="comment">-- Generate enough WAL for backups</span>
+<span class="keyword">archive_mode</span> = <span class="string">on</span>  <span class="comment">-- Enable archiving</span>
+<span class="keyword">archive_command</span> = <span class="string">'cp %p /mnt/backup/wal_archive/%f'</span>
+<span class="comment">-- %p = path to WAL file, %f = filename</span>
+            </div>
+        </div>
+
+        <!-- SECTION 6: Backup Strategy -->
+        <div class="section">
+            <h2>💾 Real Backup Strategy with WAL</h2>
+            
+            <div class="comparison-grid">
+                <div class="comparison-box">
+                    <h4>🏁 Base Backup (pg_basebackup)</h4>
+                    <div class="comparison-item">
+                        <span class="icon">📸</span>
+                        <span>Takes snapshot of entire data directory</span>
+                    </div>
+                    <div class="comparison-item">
+                        <span class="icon">📍</span>
+                        <span>Records starting LSN: 0/16B4000</span>
+                    </div>
+                    <div class="comparison-item">
+                        <span class="icon">💿</span>
+                        <span>Size: 100 GB (full database)</span>
+                    </div>
+                    <div class="comparison-item">
+                        <span class="icon">🕐</span>
+                        <span>Frequency: Weekly</span>
+                    </div>
+                </div>
+
+                <div class="comparison-box">
+                    <h4>📝 WAL Archiving (Incremental)</h4>
+                    <div class="comparison-item">
+                        <span class="icon">✏️</span>
+                        <span>Only stores changes since last WAL</span>
+                    </div>
+                    <div class="comparison-item">
+                        <span class="icon">📈</span>
+                        <span>Each WAL segment: 16 MB</span>
+                    </div>
+                    <div class="comparison-item">
+                        <span class="icon">💿</span>
+                        <span>Daily WAL total: ~5-20 GB (varies by activity)</span>
+                    </div>
+                    <div class="comparison-item">
+                        <span class="icon">🕐</span>
+                        <span>Frequency: Continuous (every 16MB or timeout)</span>
+                    </div>
+                </div>
+            </div>
+
+            <h3>Recovery Process</h3>
+            <div class="code-block">
+<span class="comment">-- To restore to any point in time:</span>
+
+<span class="number">1.</span> Restore base backup from Sunday
+<span class="number">2.</span> Apply WAL files in sequence:
+   - Monday's WAL: 00000001000000000000000A-0000000F
+   - Tuesday's WAL: 000000010000000000000010-000000015
+   - Wednesday's WAL: 000000010000000000000016-00000001B
+   
+<span class="number">3.</span> PostgreSQL replays each WAL record:
+   - Reads LSN
+   - Applies change to data page
+   - Advances to next LSN
+   
+<span class="number">4.</span> Database reaches desired point in time!
+            </div>
+        </div>
+
+        <!-- SECTION 7: Why WAL is Efficient -->
+        <div class="section">
+            <h2>⚡ Why WAL Makes Incremental Backups Efficient</h2>
+            
+            <div class="comparison-grid">
+                <div class="comparison-box" style="background: rgba(255, 100, 100, 0.1);">
+                    <h4>❌ Without WAL (Full Backups Only)</h4>
+                    <div class="comparison-item">
+                        <span>Monday backup: 100 GB</span>
+                    </div>
+                    <div class="comparison-item">
+                        <span>Tuesday backup: 100 GB</span>
+                    </div>
+                    <div class="comparison-item">
+                        <span>Wednesday backup: 100 GB</span>
+                    </div>
+                    <div class="comparison-item">
+                        <span><strong>Total: 300 GB</strong></span>
+                    </div>
+                    <div class="comparison-item">
+                        <span>⏱️ Backup time: 30 minutes each</span>
+                    </div>
+                </div>
+
+                <div class="comparison-box" style="background: rgba(100, 255, 100, 0.1);">
+                    <h4>✅ With WAL (Base + Incremental)</h4>
+                    <div class="comparison-item">
+                        <span>Sunday base: 100 GB</span>
+                    </div>
+                    <div class="comparison-item">
+                        <span>Monday WAL: 8 GB</span>
+                    </div>
+                    <div class="comparison-item">
+                        <span>Tuesday WAL: 12 GB</span>
+                    </div>
+                    <div class="comparison-item">
+                        <span>Wednesday WAL: 10 GB</span>
+                    </div>
+                    <div class="comparison-item">
+                        <span><strong>Total: 130 GB (56% savings!)</strong></span>
+                    </div>
+                    <div class="comparison-item">
+                        <span>⏱️ WAL archive: Continuous, no downtime</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SECTION 8: Deep Technical Details -->
+        <div class="section">
+            <h2>🔬 Deep Technical Details</h2>
+            
+            <h3>How PostgreSQL Writes WAL Records</h3>
+            
+            <div class="wal-record">
+                <div class="wal-record-title">Internal Process</div>
+                <pre>
+<span class="number">1.</span> Backend process calls <span class="keyword">XLogInsert()</span>
+   - Allocates space in WAL buffers
+   - Copies record data to buffer
+   - Returns LSN of inserted record
+
+<span class="number">2.</span> WAL buffers are 8MB circular buffer in shared memory
+   - Multiple backends write concurrently (using locks)
+   - WAL Writer process periodically flushes to disk
+
+<span class="

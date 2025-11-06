@@ -1,0 +1,1951 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PostgreSQL Replication Mastery</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: #fff;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            text-align: center;
+            padding: 40px 20px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 15px;
+            margin-bottom: 30px;
+            animation: fadeInDown 1s ease;
+        }
+
+        h1 {
+            font-size: 3em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        }
+
+        .subtitle {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+
+        .nav-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin: 30px 0;
+            flex-wrap: wrap;
+        }
+
+        .nav-btn {
+            padding: 15px 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 25px;
+            color: white;
+            font-size: 1em;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .nav-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+        }
+
+        .nav-btn.active {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            transform: scale(1.05);
+        }
+
+        .concept-section {
+            display: none;
+            animation: fadeIn 0.5s ease;
+        }
+
+        .concept-section.active {
+            display: block;
+        }
+
+        .section-card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+
+        h2 {
+            font-size: 2.5em;
+            margin-bottom: 20px;
+            color: #ffd700;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        }
+
+        h3 {
+            font-size: 1.8em;
+            margin: 25px 0 15px;
+            color: #87ceeb;
+        }
+
+        .animation-container {
+            background: rgba(0, 0, 0, 0.4);
+            border-radius: 15px;
+            padding: 40px;
+            margin: 20px 0;
+            min-height: 400px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .node {
+            position: absolute;
+            width: 120px;
+            height: 120px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 15px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+
+        .node:hover {
+            transform: scale(1.1);
+        }
+
+        .node-label {
+            font-weight: bold;
+            font-size: 0.9em;
+            margin-bottom: 5px;
+        }
+
+        .node-status {
+            font-size: 0.8em;
+            opacity: 0.8;
+        }
+
+        .wal-packet {
+            position: absolute;
+            width: 30px;
+            height: 30px;
+            background: #ffd700;
+            border-radius: 50%;
+            box-shadow: 0 0 20px #ffd700;
+            animation: pulse 1s infinite;
+        }
+
+        .connection-line {
+            position: absolute;
+            height: 3px;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            transform-origin: left center;
+            animation: flowLine 2s infinite;
+        }
+
+        .flow-arrow {
+            position: absolute;
+            width: 0;
+            height: 0;
+            border-left: 10px solid transparent;
+            border-right: 10px solid transparent;
+            border-top: 15px solid #ffd700;
+            animation: moveArrow 2s infinite;
+        }
+
+        .code-block {
+            background: #1e1e1e;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 15px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            overflow-x: auto;
+            border-left: 4px solid #667eea;
+        }
+
+        .highlight {
+            background: rgba(255, 215, 0, 0.2);
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+
+        .metric-card {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            padding: 20px;
+            margin: 10px 0;
+            border-left: 4px solid #ffd700;
+        }
+
+        .process-flow {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            margin: 30px 0;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .process-step {
+            flex: 1;
+            min-width: 200px;
+            text-align: center;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            position: relative;
+            animation: slideInUp 0.5s ease forwards;
+            opacity: 0;
+        }
+
+        .process-step:nth-child(1) { animation-delay: 0.1s; }
+        .process-step:nth-child(2) { animation-delay: 0.3s; }
+        .process-step:nth-child(3) { animation-delay: 0.5s; }
+        .process-step:nth-child(4) { animation-delay: 0.7s; }
+
+        .arrow-connector {
+            font-size: 2em;
+            color: #ffd700;
+            animation: bounce 1s infinite;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        th, td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        th {
+            background: rgba(102, 126, 234, 0.3);
+            font-weight: bold;
+        }
+
+        .interactive-demo {
+            text-align: center;
+            padding: 20px;
+        }
+
+        .demo-button {
+            padding: 12px 25px;
+            margin: 10px;
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            border: none;
+            border-radius: 20px;
+            color: white;
+            font-size: 1em;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .demo-button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(245, 87, 108, 0.4);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes slideInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.2); opacity: 0.7; }
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        @keyframes flowLine {
+            0% { opacity: 0.3; }
+            50% { opacity: 1; }
+            100% { opacity: 0.3; }
+        }
+
+        @keyframes moveArrow {
+            0% { transform: translateX(0); opacity: 1; }
+            100% { transform: translateX(200px); opacity: 0; }
+        }
+
+        .timeline {
+            position: relative;
+            padding: 20px 0;
+            margin: 30px 0;
+        }
+
+        .timeline-item {
+            display: flex;
+            margin: 20px 0;
+            animation: slideInLeft 0.5s ease forwards;
+            opacity: 0;
+        }
+
+        .timeline-item:nth-child(1) { animation-delay: 0.1s; }
+        .timeline-item:nth-child(2) { animation-delay: 0.3s; }
+        .timeline-item:nth-child(3) { animation-delay: 0.5s; }
+
+        .timeline-marker {
+            width: 40px;
+            height: 40px;
+            background: #ffd700;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 20px;
+            font-weight: bold;
+            color: #1e3c72;
+            flex-shrink: 0;
+        }
+
+        .timeline-content {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            border-radius: 10px;
+            flex: 1;
+        }
+
+        @keyframes slideInLeft {
+            from {
+                opacity: 0;
+                transform: translateX(-50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 5px 15px;
+            background: rgba(255, 215, 0, 0.2);
+            border-radius: 15px;
+            font-size: 0.9em;
+            margin: 5px;
+            border: 1px solid #ffd700;
+        }
+
+        .warning-box {
+            background: rgba(255, 87, 87, 0.2);
+            border-left: 4px solid #ff5757;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+
+        .success-box {
+            background: rgba(87, 255, 87, 0.2);
+            border-left: 4px solid #57ff57;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+
+        @media (max-width: 768px) {
+            h1 { font-size: 2em; }
+            h2 { font-size: 1.8em; }
+            .process-flow { flex-direction: column; }
+            .nav-buttons { flex-direction: column; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🚀 PostgreSQL Replication Mastery</h1>
+            <p class="subtitle">Deep-Dive Visual & Animated Guide</p>
+        </header>
+
+        <div class="nav-buttons">
+            <button class="nav-btn active" onclick="showConcept(1)">① Streaming Replication</button>
+            <button class="nav-btn" onclick="showConcept(2)">② Logical Replication</button>
+            <button class="nav-btn" onclick="showConcept(3)">③ Hot Standby</button>
+            <button class="nav-btn" onclick="showConcept(4)">④ Repmgr & Failover</button>
+            <button class="nav-btn" onclick="showConcept(5)">⑤ WAL Archiving & PITR</button>
+        </div>
+
+        <!-- CONCEPT 1: STREAMING REPLICATION -->
+        <div id="concept1" class="concept-section active">
+            <div class="section-card">
+                <h2>💥 Concept #1 — Streaming Replication (Sync/Async)</h2>
+                
+                <h3>🧠 What Really Happens During a Write</h3>
+                <p>Let's trace one INSERT command from client to replica in real-time:</p>
+
+                <div class="animation-container" id="streamingAnimation">
+                    <div class="node" style="left: 50px; top: 50px;">
+                        <div class="node-label">Client</div>
+                        <div class="node-status">📝 Writing</div>
+                    </div>
+                    <div class="node" style="left: 300px; top: 50px;">
+                        <div class="node-label">Primary</div>
+                        <div class="node-status">💾 WAL Buffer</div>
+                    </div>
+                    <div class="node" style="left: 550px; top: 50px;">
+                        <div class="node-label">Replica</div>
+                        <div class="node-status">🔄 Receiving</div>
+                    </div>
+                </div>
+
+                <div class="process-flow">
+                    <div class="process-step">
+                        <h4>1️⃣ Client Writes</h4>
+                        <p>INSERT INTO orders VALUES (...)</p>
+                    </div>
+                    <div class="arrow-connector">→</div>
+                    <div class="process-step">
+                        <h4>2️⃣ WAL Buffer</h4>
+                        <p>Written to Write-Ahead Log first</p>
+                    </div>
+                    <div class="arrow-connector">→</div>
+                    <div class="process-step">
+                        <h4>3️⃣ WAL Sender</h4>
+                        <p>Streams to replica via TCP</p>
+                    </div>
+                    <div class="arrow-connector">→</div>
+                    <div class="process-step">
+                        <h4>4️⃣ Replica Replays</h4>
+                        <p>Rebuilds same state</p>
+                    </div>
+                </div>
+
+                <h3>🔁 Sync vs Async Explained</h3>
+                
+                <div class="interactive-demo">
+                    <button class="demo-button" onclick="animateAsync()">▶ Show ASYNC Mode</button>
+                    <button class="demo-button" onclick="animateSync()">▶ Show SYNC Mode</button>
+                </div>
+                    
+
+
+                <div class="animation-container" id="syncAsyncDemo" style="height: 300px;">
+                    <div id="asyncFlow" style="display: none;">
+                        <div class="node" style="left: 100px; top: 100px;">
+                            <div class="node-label">Primary</div>
+                            <div class="node-status">✅ COMMIT Fast</div>
+                        </div>
+                        <div class="node" style="left: 400px; top: 100px;">
+                            <div class="node-label">Replica</div>
+                            <div class="node-status">⏰ Receives Later</div>
+                        </div>
+                    </div>
+                    <div id="syncFlow" style="display: none;">
+                        <div class="node" style="left: 100px; top: 100px;">
+                            <div class="node-label">Primary</div>
+                            <div class="node-status">⏳ Waits for ACK</div>
+                        </div>
+                        <div class="node" style="left: 400px; top: 100px;">
+                            <div class="node-label">Replica</div>
+                            <div class="node-status">✅ Confirms Receipt</div>
+                        </div>
+                    </div>
+                </div>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Mode</th>
+                            <th>Speed</th>
+                            <th>Data Safety</th>
+                            <th>Use Case</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><span class="badge">ASYNC</span></td>
+                            <td>⚡ Faster</td>
+                            <td>⚠️ May lose seconds</td>
+                            <td>High-traffic apps</td>
+                        </tr>
+                        <tr>
+                            <td><span class="badge">SYNC</span></td>
+                            <td>🐢 Slower</td>
+                            <td>✅ Zero data loss</td>
+                            <td>Financial systems</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3>⚙️ Configuration Setup</h3>
+
+                <div class="code-block">
+# Primary Configuration (postgresql.conf)
+wal_level = replica
+archive_mode = on
+max_wal_senders = 5
+wal_keep_size = 128MB
+
+# Standby Configuration
+hot_standby = on
+max_standby_streaming_delay = 30s
+hot_standby_feedback = on
+
+# Create Standby
+pg_basebackup -h 192.168.1.10 -D /var/lib/postgresql/16/main -U postgres -R
+
+# Verify on Standby
+SELECT pg_is_in_recovery();  -- returns true
+                </div>
+
+                <div class="interactive-demo">
+                    <button class="demo-button" onclick="animateFailover()">▶ Simulate Failover</button>
+                    <button class="demo-button" onclick="animateMultiReplica()">▶ Show Multi-Replica Setup</button>
+                </div>
+
+                <div class="animation-container" id="failoverDemo" style="height: 350px;">
+                    <div id="beforeFailover" style="display: none;">
+                        <div style="text-align: center; margin-bottom: 20px;">
+                            <strong style="font-size: 1.2em;">BEFORE FAILOVER</strong>
+                        </div>
+                        <div class="node" style="left: 200px; top: 80px;">
+                            <div class="node-label">Primary</div>
+                            <div class="node-status">✅ Active</div>
+                        </div>
+                        <div class="node" style="left: 450px; top: 80px;">
+                            <div class="node-label">Standby</div>
+                            <div class="node-status">🔄 Replicating</div>
+                        </div>
+                    </div>
+                    <div id="afterFailover" style="display: none;">
+                        <div style="text-align: center; margin-bottom: 20px;">
+                            <strong style="font-size: 1.2em;">AFTER FAILOVER</strong>
+                        </div>
+                        <div class="node" style="left: 200px; top: 80px; opacity: 0.3;">
+                            <div class="node-label">Primary</div>
+                            <div class="node-status">❌ Crashed</div>
+                        </div>
+                        <div class="node" style="left: 450px; top: 80px; background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+                            <div class="node-label">Standby</div>
+                            <div class="node-status">✅ Promoted!</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="metric-card">
+                    <h4>📊 Performance Metrics</h4>
+                    <p><strong>pg_last_wal_receive_lsn():</strong> WAL position received</p>
+                    <p><strong>pg_last_wal_replay_lsn():</strong> WAL position replayed</p>
+                    <p><strong>replay_lag:</strong> Replication delay (target: <5s)</p>
+                    <p><strong>pg_stat_activity:</strong> Monitor active read queries</p>
+                </div>
+
+                <div class="warning-box">
+                    <strong>⚠️ Query Conflicts:</strong>
+                    <p>Long SELECT queries on standby can conflict with WAL replay. PostgreSQL may cancel queries or delay replay based on <code>max_standby_streaming_delay</code> setting.</p>
+                </div>
+
+                <h3>🏗️ Multi-Replica Architecture</h3>
+
+                <div class="animation-container" id="multiReplicaDemo" style="height: 400px;">
+                    <div class="node" style="left: 300px; top: 30px; background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+                        <div class="node-label">Primary (RW)</div>
+                        <div class="node-status">💾 Master</div>
+                    </div>
+                    <div class="node" style="left: 100px; top: 200px;">
+                        <div class="node-label">Standby-1</div>
+                        <div class="node-status">📊 Analytics</div>
+                    </div>
+                    <div class="node" style="left: 500px; top: 200px;">
+                        <div class="node-label">Standby-2</div>
+                        <div class="node-status">🌍 DR Region</div>
+                    </div>
+                </div>
+
+                <div class="success-box">
+                    <strong>✅ Mastery Milestone:</strong> Configure multi-node Hot Standby with automatic failover, achieving <5s replication lag and 99.99% uptime with read scaling benefits.
+                </div>
+            </div>
+        </div>
+
+        <!-- CONCEPT 4: REPMGR -->
+        <div id="concept4" class="concept-section">
+            <div class="section-card">
+                <h2>🤖 Concept #4 — Repmgr Setup & Failover</h2>
+                
+                <h3>🧠 What Is Repmgr?</h3>
+                <p><span class="highlight">Replication Manager (repmgr)</span> automates PostgreSQL cluster management: health checks, failover, switchover, and topology control.</p>
+
+                <div class="process-flow">
+                    <div class="process-step">
+                        <h4>Health Monitoring</h4>
+                        <p>Continuous heartbeat checks</p>
+                    </div>
+                    <div class="arrow-connector">→</div>
+                    <div class="process-step">
+                        <h4>Failure Detection</h4>
+                        <p>Primary unreachable</p>
+                    </div>
+                    <div class="arrow-connector">→</div>
+                    <div class="process-step">
+                        <h4>Auto Promotion</h4>
+                        <p>Standby becomes primary</p>
+                    </div>
+                    <div class="arrow-connector">→</div>
+                    <div class="process-step">
+                        <h4>Cluster Recovery</h4>
+                        <p>Other nodes follow new primary</p>
+                    </div>
+                </div>
+
+                <h3>⚙️ Cluster Architecture</h3>
+
+                <div class="animation-container" id="repmgrAnimation" style="height: 450px;">
+                    <div style="text-align: center; margin-bottom: 20px;">
+                        <strong style="font-size: 1.2em;">REPMGR DAEMON MONITORING</strong>
+                    </div>
+                    <div class="node" style="left: 50px; top: 150px;">
+                        <div class="node-label">Node 1</div>
+                        <div class="node-status">Primary</div>
+                        <div style="font-size: 0.7em; margin-top: 5px;">repmgrd ✓</div>
+                    </div>
+                    <div class="node" style="left: 280px; top: 150px;">
+                        <div class="node-label">Node 2</div>
+                        <div class="node-status">Standby</div>
+                        <div style="font-size: 0.7em; margin-top: 5px;">repmgrd ✓</div>
+                    </div>
+                    <div class="node" style="left: 510px; top: 150px;">
+                        <div class="node-label">Node 3</div>
+                        <div class="node-status">Standby</div>
+                        <div style="font-size: 0.7em; margin-top: 5px;">repmgrd ✓</div>
+                    </div>
+                    <div style="position: absolute; left: 250px; top: 80px; font-size: 2em;">
+                        ⬌
+                    </div>
+                    <div style="position: absolute; left: 250px; top: 50px; text-align: center; width: 200px;">
+                        <small>Continuous Heartbeats</small>
+                    </div>
+                </div>
+
+                <h3>🔧 Step-by-Step Setup</h3>
+
+                <div class="timeline">
+                    <div class="timeline-item">
+                        <div class="timeline-marker">1</div>
+                        <div class="timeline-content">
+                            <strong>Install Repmgr</strong>
+                            <code>sudo apt install repmgr</code>
+                        </div>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-marker">2</div>
+                        <div class="timeline-content">
+                            <strong>Configure Each Node</strong>
+                            <code>/etc/repmgr/16/repmgr.conf</code>
+                        </div>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-marker">3</div>
+                        <div class="timeline-content">
+                            <strong>Register Primary</strong>
+                            <code>repmgr primary register</code>
+                        </div>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-marker">4</div>
+                        <div class="timeline-content">
+                            <strong>Clone Standbys</strong>
+                            <code>repmgr standby clone</code>
+                        </div>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-marker">5</div>
+                        <div class="timeline-content">
+                            <strong>Start Daemon</strong>
+                            <code>systemctl start repmgrd</code>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="code-block">
+# repmgr.conf Configuration
+node_id=1
+node_name=node1
+conninfo='host=192.168.1.10 user=repmgr dbname=repmgr'
+data_directory='/var/lib/postgresql/16/main'
+failover=automatic
+promote_command='pg_ctl promote -D /var/lib/postgresql/16/main'
+
+# Register Primary
+sudo -u postgres repmgr primary register
+
+# Clone Standby
+sudo -u postgres repmgr standby clone --host=node1 --user=repmgr
+
+# View Cluster
+repmgr cluster show
+                </div>
+
+                <h3>⚡ Automatic Failover Process</h3>
+
+                <div class="interactive-demo">
+                    <button class="demo-button" onclick="animateRepmgrFailover()">▶ Animate Automatic Failover</button>
+                </div>
+
+                <div class="animation-container" id="repmgrFailoverDemo" style="height: 500px;">
+                    <div id="repmgrStep1" style="display: none; padding: 20px;">
+                        <h4 style="color: #ffd700;">Step 1: Primary Crashes</h4>
+                        <div class="node" style="left: 150px; top: 80px; opacity: 0.3;">
+                            <div class="node-label">Node 1</div>
+                            <div class="node-status">❌ Down</div>
+                        </div>
+                        <div class="node" style="left: 400px; top: 80px;">
+                            <div class="node-label">Node 2</div>
+                            <div class="node-status">⚠️ Detecting...</div>
+                        </div>
+                        <p style="margin-top: 200px; text-align: center;">[NOTICE] primary node "node1" is unreachable</p>
+                    </div>
+                    <div id="repmgrStep2" style="display: none; padding: 20px;">
+                        <h4 style="color: #ffd700;">Step 2: Election & Promotion</h4>
+                        <div class="node" style="left: 400px; top: 80px; background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+                            <div class="node-label">Node 2</div>
+                            <div class="node-status">🎉 Promoting</div>
+                        </div>
+                        <p style="margin-top: 200px; text-align: center;">[NOTICE] promoting standby node "node2" to primary</p>
+                    </div>
+                    <div id="repmgrStep3" style="display: none; padding: 20px;">
+                        <h4 style="color: #ffd700;">Step 3: New Primary Active</h4>
+                        <div class="node" style="left: 400px; top: 80px; background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+                            <div class="node-label">Node 2</div>
+                            <div class="node-status">✅ PRIMARY</div>
+                        </div>
+                        <div class="node" style="left: 150px; top: 200px;">
+                            <div class="node-label">Node 3</div>
+                            <div class="node-status">Following Node 2</div>
+                        </div>
+                        <p style="margin-top: 350px; text-align: center;">Failover completed in ~15-20 seconds</p>
+                    </div>
+                </div>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Operation</th>
+                            <th>Command</th>
+                            <th>Purpose</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>View Cluster</td>
+                            <td><code>repmgr cluster show</code></td>
+                            <td>List all nodes & roles</td>
+                        </tr>
+                        <tr>
+                            <td>Check Health</td>
+                            <td><code>repmgr service status</code></td>
+                            <td>Daemon health check</td>
+                        </tr>
+                        <tr>
+                            <td>Manual Switchover</td>
+                            <td><code>repmgr standby switchover</code></td>
+                            <td>Planned maintenance</td>
+                        </tr>
+                        <tr>
+                            <td>Rejoin Node</td>
+                            <td><code>repmgr node rejoin</code></td>
+                            <td>Reattach old primary</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3>🔄 Switchover vs Failover</h3>
+
+                <div class="process-flow">
+                    <div class="process-step">
+                        <h4><span class="badge">SWITCHOVER</span></h4>
+                        <p>✅ Planned maintenance</p>
+                        <p>✅ DBA controlled</p>
+                        <p>✅ Zero data loss</p>
+                        <p><code>repmgr standby switchover</code></p>
+                    </div>
+                    <div class="process-step">
+                        <h4><span class="badge">FAILOVER</span></h4>
+                        <p>⚡ Unplanned outage</p>
+                        <p>🤖 Automatic</p>
+                        <p>⚠️ Possible data loss (async)</p>
+                        <p><code>repmgrd auto-promotes</code></p>
+                    </div>
+                </div>
+
+                <div class="metric-card">
+                    <h4>📊 Corporate Metrics</h4>
+                    <p><strong>Failover time:</strong> Target < 30 seconds</p>
+                    <p><strong>Health check interval:</strong> Every 5 seconds</p>
+                    <p><strong>Auto rejoin success:</strong> 100%</p>
+                    <p><strong>Node lag before failover:</strong> < 1 MB</p>
+                </div>
+
+                <div class="warning-box">
+                    <strong>⚠️ Split-Brain Prevention:</strong>
+                    <p>Repmgr uses quorum and timeline checks to prevent multiple nodes thinking they're primary. Configure <code>primary_follow_timeout</code> and use fencing mechanisms.</p>
+                </div>
+
+                <div class="success-box">
+                    <strong>✅ Mastery Milestone:</strong> Self-healing PostgreSQL HA cluster with automatic failover (<30s), auto-rejoin capability, and 99.99% uptime guarantee.
+                </div>
+            </div>
+        </div>
+
+        <!-- CONCEPT 5: WAL ARCHIVING & PITR -->
+        <div id="concept5" class="concept-section">
+            <div class="section-card">
+                <h2>💾 Concept #5 — WAL Archiving & Point-in-Time Recovery (PITR)</h2>
+                
+                <h3>🧠 Core Concept</h3>
+                <p><span class="highlight">WAL (Write-Ahead Log)</span> records every database change. By archiving WAL files + base backups, you can restore to ANY exact moment—even seconds before disaster.</p>
+
+                <div class="animation-container" id="pitrAnimation" style="height: 450px;">
+                    <div style="text-align: center; margin-bottom: 20px;">
+                        <strong style="font-size: 1.2em;">WAL ARCHIVING FLOW</strong>
+                    </div>
+                    <div class="node" style="left: 100px; top: 100px;">
+                        <div class="node-label">Active DB</div>
+                        <div class="node-status">📝 Writing WAL</div>
+                    </div>
+                    <div class="node" style="left: 350px; top: 100px;">
+                        <div class="node-label">Archive Storage</div>
+                        <div class="node-status">💾 S3 / NAS</div>
+                    </div>
+                    <div class="node" style="left: 225px; top: 280px;">
+                        <div class="node-label">Recovery Node</div>
+                        <div class="node-status">🔄 PITR Restore</div>
+                    </div>
+                </div>
+
+                <h3>📊 Timeline Visualization</h3>
+
+                <div class="interactive-demo">
+                    <button class="demo-button" onclick="animatePITRTimeline()">▶ Animate Recovery Timeline</button>
+                </div>
+
+                <div class="animation-container" id="pitrTimelineDemo" style="height: 350px;">
+                    <div id="timelineViz" style="padding: 40px;">
+                        <div style="position: relative; height: 150px;">
+                            <div style="position: absolute; left: 0; top: 50%; width: 100%; height: 4px; background: linear-gradient(90deg, #667eea, #764ba2);"></div>
+                            
+                            <div id="baseBackupMarker" style="position: absolute; left: 10%; top: 20px;">
+                                <div style="width: 15px; height: 15px; background: #ffd700; border-radius: 50%; margin: 0 auto;"></div>
+                                <div style="text-align: center; margin-top: 10px; font-size: 0.8em;">10:00 AM<br>Base Backup</div>
+                            </div>
+                            
+                            <div id="walSegments" style="position: absolute; left: 30%; top: 20px;">
+                                <div style="width: 15px; height: 15px; background: #87ceeb; border-radius: 50%; margin: 0 auto;"></div>
+                                <div style="text-align: center; margin-top: 10px; font-size: 0.8em;">11:00 AM<br>WAL 0001</div>
+                            </div>
+                            
+                            <div id="accidentMarker" style="position: absolute; left: 70%; top: 20px;">
+                                <div style="width: 15px; height: 15px; background: #ff5757; border-radius: 50%; margin: 0 auto;"></div>
+                                <div style="text-align: center; margin-top: 10px; font-size: 0.8em;">11:37 AM<br>❌ Accident</div>
+                            </div>
+                            
+                            <div id="recoveryTarget" style="position: absolute; left: 65%; top: 20px; display: none;">
+                                <div style="width: 20px; height: 20px; background: #57ff57; border-radius: 50%; margin: 0 auto; animation: pulse 1s infinite;"></div>
+                                <div style="text-align: center; margin-top: 10px; font-size: 0.8em;">11:35 AM<br>✅ Recovery Point</div>
+                            </div>
+                        </div>
+                        
+                        <div style="margin-top: 80px; padding: 20px; background: rgba(255, 255, 255, 0.1); border-radius: 10px;">
+                            <p><strong>Recovery Strategy:</strong> Restore base backup (10:00) + replay WAL until 11:35 (2 minutes before accident)</p>
+                        </div>
+                    </div>
+                </div>
+
+                <h3>⚙️ How It Works</h3>
+
+                <div class="process-flow">
+                    <div class="process-step">
+                        <h4>1️⃣ Normal Operation</h4>
+                        <p>WAL segments archive continuously</p>
+                    </div>
+                    <div class="arrow-connector">→</div>
+                    <div class="process-step">
+                        <h4>2️⃣ Disaster Strikes</h4>
+                        <p>DROP TABLE or corruption</p>
+                    </div>
+                    <div class="arrow-connector">→</div>
+                    <div class="process-step">
+                        <h4>3️⃣ Restore Base Backup</h4>
+                        <p>Last nightly snapshot</p>
+                    </div>
+                    <div class="arrow-connector">→</div>
+                    <div class="process-step">
+                        <h4>4️⃣ Replay WALs</h4>
+                        <p>Until target timestamp</p>
+                    </div>
+                </div>
+
+                <div class="code-block">
+# Enable Archiving (postgresql.conf)
+archive_mode = on
+archive_command = 'test ! -f /mnt/backup/%f && cp %p /mnt/backup/%f'
+archive_timeout = 60
+wal_level = replica
+
+# Take Base Backup
+pg_basebackup -D /mnt/backup/base_2025_10_24 -Ft -z -P
+
+# Restore Configuration (postgresql.auto.conf)
+restore_command = 'cp /mnt/backup/%f %p'
+recovery_target_time = '2025-10-24 11:35:00'
+
+# Start Recovery
+touch recovery.signal
+systemctl start postgresql
+                </div>
+
+                <h3>🧪 Recovery Scenarios</h3>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Scenario</th>
+                            <th>Recovery Method</th>
+                            <th>Expected Result</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><span class="badge">Power Failure</span></td>
+                            <td>Latest WAL replay</td>
+                            <td>Recover to last transaction</td>
+                        </tr>
+                        <tr>
+                            <td><span class="badge">DROP TABLE</span></td>
+                            <td>PITR to 5 min before</td>
+                            <td>Table restored intact</td>
+                        </tr>
+                        <tr>
+                            <td><span class="badge">Disk Corruption</span></td>
+                            <td>Restore on new host + WAL</td>
+                            <td>Full database rebuilt</td>
+                        </tr>
+                        <tr>
+                            <td><span class="badge">Ransomware</span></td>
+                            <td>PITR before infection</td>
+                            <td>Clean state recovered</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3>🏢 Enterprise DR Architecture</h3>
+
+                <div class="animation-container" id="drArchitecture" style="height: 450px;">
+                    <div style="text-align: center; margin-bottom: 20px;">
+                        <strong style="font-size: 1.2em;">DISASTER RECOVERY ARCHITECTURE</strong>
+                    </div>
+                    
+                    <div class="node" style="left: 300px; top: 50px; background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+                        <div class="node-label">Primary (RW)</div>
+                        <div class="node-status">💾 Active</div>
+                    </div>
+                    
+                    <div class="node" style="left: 100px; top: 200px;">
+                        <div class="node-label">Hot Standby</div>
+                        <div class="node-status">🔄 Streaming</div>
+                    </div>
+                    
+                    <div class="node" style="left: 500px; top: 200px;">
+                        <div class="node-label">Backup Server</div>
+                        <div class="node-status">💾 WAL Archive</div>
+                    </div>
+                    
+                    <div class="node" style="left: 300px; top: 320px;">
+                        <div class="node-label">PITR Test VM</div>
+                        <div class="node-status">🧪 Monthly Drills</div>
+                    </div>
+                </div>
+
+                <h3>📊 Corporate Metrics</h3>
+
+                <div class="metric-card">
+                    <h4>RTO/RPO Targets</h4>
+                    <p><strong>RPO (Recovery Point Objective):</strong> < 1 min (sync) / < 5 min (async)</p>
+                    <p><strong>RTO (Recovery Time Objective):</strong> < 30 minutes for full system</p>
+                    <p><strong>Base backup size:</strong> 100 GB → 40 GB compressed</p>
+                    <p><strong>WAL generation rate:</strong> ~1 GB/hour average</p>
+                    <p><strong>Archive upload lag:</strong> < 60 seconds</p>
+                </div>
+
+                <h3>🧰 pgBackRest Integration</h3>
+
+                <div class="code-block">
+# pgbackrest.conf
+[db]
+pg1-path=/var/lib/postgresql/16/main
+
+[global]
+repo1-path=/mnt/backup
+repo1-retention-full=7
+start-fast=y
+compress-level=3
+
+# Commands
+pgbackrest stanza-create
+pgbackrest backup --type=full
+pgbackrest backup --type=diff
+pgbackrest restore --type=time "--target=2025-10-24 11:35:00"
+                </div>
+
+                <div class="warning-box">
+                    <strong>⚠️ Common Pitfalls:</strong>
+                    <p>• <strong>WAL disk fills:</strong> archive_command failing → add monitoring alerts</p>
+                    <p>• <strong>Wrong recovery time:</strong> Clock skew or timezone issues → use UTC</p>
+                    <p>• <strong>No restore tests:</strong> False sense of security → automate monthly PITR drills</p>
+                    <p>• <strong>Archive corruption:</strong> Manual copy errors → use checksums or pgBackRest</p>
+                </div>
+
+                <h3>💬 Interview Questions</h3>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Question</th>
+                            <th>Expected Answer</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Explain WAL and PITR</td>
+                            <td>WAL = continuous transaction logs; PITR = restore to specific timestamp using base backup + WAL replay</td>
+                        </tr>
+                        <tr>
+                            <td>What is archive_command?</td>
+                            <td>Shell command that copies finished WAL segments to archive storage</td>
+                        </tr>
+                        <tr>
+                            <td>How to recover after DROP TABLE?</td>
+                            <td>Restore base backup + WAL replay to timestamp just before the DROP</td>
+                        </tr>
+                        <tr>
+                            <td>Difference: pg_dump vs PITR?</td>
+                            <td>pg_dump = logical export; PITR = binary cluster-level restore</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <div class="success-box">
+                    <strong>✅ Mastery Milestone:</strong> Enterprise disaster-recovery system with continuous WAL archiving, PITR capability achieving <5 min RPO, <30 min RTO, and automated monthly restore verification.
+                </div>
+            </div>
+        </div>
+
+        <!-- SUMMARY SECTION -->
+        <div class="section-card" style="margin-top: 40px;">
+            <h2>🎯 Congratulations! You've Mastered PostgreSQL Replication</h2>
+            
+            <div class="process-flow">
+                <div class="process-step">
+                    <h4>✅ Streaming Replication</h4>
+                    <p>Physical sync/async redundancy</p>
+                    <p>Binary WAL transmission</p>
+                </div>
+                <div class="process-step">
+                    <h4>✅ Logical Replication</h4>
+                    <p>Table-level data distribution</p>
+                    <p>Cross-version upgrades</p>
+                </div>
+                <div class="process-step
+
+                <h3>⚡ Failover in Action</h3>
+                
+                <div class="timeline">
+                    <div class="timeline-item">
+                        <div class="timeline-marker">1</div>
+                        <div class="timeline-content">
+                            <strong>Primary Crashes</strong>
+                            <p>System detects failure immediately</p>
+                        </div>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-marker">2</div>
+                        <div class="timeline-content">
+                            <strong>Promote Standby</strong>
+                            <p><code>pg_ctl promote -D /var/lib/postgresql/16/main</code></p>
+                        </div>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-marker">3</div>
+                        <div class="timeline-content">
+                            <strong>New Primary Active</strong>
+                            <p>Clients reconnect, operations resume</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="code-block">
+# Primary Configuration
+wal_level = replica
+max_wal_senders = 5
+synchronous_standby_names = 'replica1'
+
+# Monitor Replication
+SELECT application_name, state, sync_state 
+FROM pg_stat_replication;
+                </div>
+
+                <div class="metric-card">
+                    <h4>📊 Key Metrics to Monitor</h4>
+                    <p><strong>write_lag:</strong> Time to send WAL to replica</p>
+                    <p><strong>replay_lag:</strong> Time to apply WAL on replica</p>
+                    <p><strong>sync_state:</strong> sync / async / potential</p>
+                </div>
+
+                <div class="success-box">
+                    <strong>✅ Mastery Milestone:</strong> You can now configure sync/async replication, monitor lag metrics, and perform safe failovers with <1s downtime.
+                </div>
+            </div>
+        </div>
+
+        <!-- CONCEPT 2: LOGICAL REPLICATION -->
+        <div id="concept2" class="concept-section">
+            <div class="section-card">
+                <h2>🧬 Concept #2 — Logical Replication</h2>
+                
+                <h3>🧠 What Makes It Different</h3>
+                <p>Instead of copying binary WAL files, logical replication decodes changes into <span class="highlight">table-level operations (INSERT/UPDATE/DELETE)</span> and sends only those.</p>
+
+                <div class="animation-container" id="logicalAnimation">
+                    <div class="node" style="left: 100px; top: 80px;">
+                        <div class="node-label">Publisher</div>
+                        <div class="node-status">📤 Decoding WAL</div>
+                    </div>
+                    <div class="node" style="left: 400px; top: 80px;">
+                        <div class="node-label">Subscriber</div>
+                        <div class="node-status">📥 Applying SQL</div>
+                    </div>
+                </div>
+
+                <div class="process-flow">
+                    <div class="process-step">
+                        <h4>1️⃣ Publication</h4>
+                        <p>Define which tables to replicate</p>
+                    </div>
+                    <div class="arrow-connector">→</div>
+                    <div class="process-step">
+                        <h4>2️⃣ WAL Decoding</h4>
+                        <p>Binary WAL → SQL statements</p>
+                    </div>
+                    <div class="arrow-connector">→</div>
+                    <div class="process-step">
+                        <h4>3️⃣ Stream</h4>
+                        <p>Send row changes only</p>
+                    </div>
+                    <div class="arrow-connector">→</div>
+                    <div class="process-step">
+                        <h4>4️⃣ Subscription</h4>
+                        <p>Apply changes to target DB</p>
+                    </div>
+                </div>
+
+                <h3>🔬 Step-by-Step Flow</h3>
+
+                <div class="interactive-demo">
+                    <button class="demo-button" onclick="animateLogicalSetup()">▶ Animate Setup Process</button>
+                </div>
+
+                <div class="animation-container" id="logicalSetupDemo" style="height: 400px;">
+                    <div id="setupStep1" class="timeline-item" style="position: absolute; left: 50px; top: 50px; display: none;">
+                        <div class="timeline-marker">📤</div>
+                        <div class="timeline-content">
+                            <strong>Publisher Creates Publication</strong>
+                            <code>CREATE PUBLICATION pub_orders FOR TABLE orders;</code>
+                        </div>
+                    </div>
+                    <div id="setupStep2" class="timeline-item" style="position: absolute; left: 50px; top: 130px; display: none;">
+                        <div class="timeline-marker">📥</div>
+                        <div class="timeline-content">
+                            <strong>Subscriber Connects</strong>
+                            <code>CREATE SUBSCRIPTION sub_orders CONNECTION '...';</code>
+                        </div>
+                    </div>
+                    <div id="setupStep3" class="timeline-item" style="position: absolute; left: 50px; top: 210px; display: none;">
+                        <div class="timeline-marker">📋</div>
+                        <div class="timeline-content">
+                            <strong>Initial Data Copy</strong>
+                            <p>COPY existing table data</p>
+                        </div>
+                    </div>
+                    <div id="setupStep4" class="timeline-item" style="position: absolute; left: 50px; top: 290px; display: none;">
+                        <div class="timeline-marker">🔄</div>
+                        <div class="timeline-content">
+                            <strong>Continuous Sync</strong>
+                            <p>Stream live INSERT/UPDATE/DELETE</p>
+                        </div>
+                    </div>
+                </div>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Feature</th>
+                            <th>Streaming</th>
+                            <th>Logical</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Level</td>
+                            <td>Physical (cluster)</td>
+                            <td>Logical (table)</td>
+                        </tr>
+                        <tr>
+                            <td>Cross-version?</td>
+                            <td>❌ No</td>
+                            <td>✅ Yes</td>
+                        </tr>
+                        <tr>
+                            <td>Partial tables?</td>
+                            <td>❌ No</td>
+                            <td>✅ Yes</td>
+                        </tr>
+                        <tr>
+                            <td>Bidirectional?</td>
+                            <td>❌ No</td>
+                            <td>✅ Possible</td>
+                        </tr>
+                        <tr>
+                            <td>Performance</td>
+                            <td>Faster</td>
+                            <td>Slower</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3>🏢 Real Corporate Use Cases</h3>
+
+                <div class="metric-card">
+                    <h4>🏦 Banking Example</h4>
+                    <p>Replicate only <code>transactions</code> table from 50 branch DBs to HQ analytics server. No need for entire database replication.</p>
+                </div>
+
+                <div class="metric-card">
+                    <h4>🛒 E-commerce Split</h4>
+                    <p>Monolith → Microservices: Product service subscribes to <code>products</code>, Order service to <code>orders</code>.</p>
+                </div>
+
+                <div class="code-block">
+-- Publisher Setup
+CREATE PUBLICATION pub_orders FOR TABLE orders;
+
+-- Subscriber Setup
+CREATE SUBSCRIPTION sub_orders
+  CONNECTION 'host=192.168.1.10 dbname=sales user=rep_user'
+  PUBLICATION pub_orders;
+
+-- Monitor
+SELECT * FROM pg_stat_subscription;
+                </div>
+
+                <div class="warning-box">
+                    <strong>⚠️ Common Pitfalls:</strong>
+                    <p>• DDL (schema changes) are NOT replicated automatically</p>
+                    <p>• Replication slots can cause disk bloat if subscriber offline</p>
+                    <p>• Conflicts on dual writes require careful design</p>
+                </div>
+
+                <div class="success-box">
+                    <strong>✅ Mastery Milestone:</strong> You can now perform table-level replication, cross-version upgrades, and microservice data distribution with <2s replication lag.
+                </div>
+            </div>
+        </div>
+
+        <!-- CONCEPT 3: HOT STANDBY -->
+        <div id="concept3" class="concept-section">
+            <div class="section-card">
+                <h2>🔥 Concept #3 — Hot Standby & Read Replicas</h2>
+                
+                <h3>🧠 Core Concept</h3>
+                <p>A <span class="highlight">Hot Standby</span> is a replica that continuously receives WALs, replays them, AND serves <strong>read-only queries</strong> simultaneously.</p>
+
+                <div class="animation-container" id="hotStandbyAnimation">
+                    <div class="node" style="left: 50px; top: 100px;">
+                        <div class="node-label">Application</div>
+                        <div class="node-status">🎯 Routes Traffic</div>
+                    </div>
+                    <div class="node" style="left: 300px; top: 50px;">
+                        <div class="node-label">Primary (RW)</div>
+                        <div class="node-status">✍️ Writes</div>
+                    </div>
+                    <div class="node" style="left: 300px; top: 200px;">
+                        <div class="node-label">Standby (RO)</div>
+                        <div class="node-status">👀 Reads</div>
+                    </div>
+                </div>
+
+                <div class="process-flow">
+                    <div class="process-step">
+                        <h4>Write Queries</h4>
+                        <p>INSERT, UPDATE, DELETE</p>
+                        <p>↓</p>
+                        <p><strong>Primary</strong></p>
+                    </div>
+                    <div class="process-step">
+                        <h4>Read Queries</h4>
+                        <p>SELECT, Analytics</p>
+                        <p>↓</p>
+                        <p><strong>Standby</strong></p>
+                    </div>
+                </div>
+
+                <h3>🏢 Corporate Use Cases</h3>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Scenario</th>
+                            <th>Description</th>
+                            <th>Business Value</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><span class="badge">Read Scaling</span></td>
+                            <td>Offload BI & analytics queries</td>
+                            <td>↓ 30-50% primary CPU load</td>
+                        </tr>
+                        <tr>
+                            <td><span class="badge">Disaster Recovery</span></td>
+                            <td>Standby in another data center</td>
+                            <td>RPO < 5 seconds</td>
+                        </tr>
+                        <tr>
+                            <td><span class="badge">Geo-Replication</span></td>
+                            <td>Standby in remote region</td>
+                            <td>Faster local queries</td>
+                        </tr>
+                        <tr>
+                            <td><span class="badge">High Availability</span></td>
+                            <td>Auto-promote on failure</td>
+                            <td>99.99% uptime SLA</td>
+
+
+
+<tr>
+    <td><span class="badge">High Availability</span></td>
+    <td>Auto-promote on failure</td>
+    <td>99.99% uptime SLA</td>
+</tr>
+</tbody>
+</table>
+
+<h3>⚡ Query Conflicts Deep Dive</h3>
+
+<div class="interactive-demo">
+<button class="demo-button" onclick="animateQueryConflict()">▶ Simulate Query Conflict</button>
+</div>
+
+<div class="animation-container" id="queryConflictDemo" style="height: 450px;">
+<div id="conflictScenario" style="padding: 20px;">
+<div style="text-align: center; margin-bottom: 30px;">
+    <strong style="font-size: 1.2em;">QUERY CONFLICT SCENARIO</strong>
+</div>
+
+<div id="conflictStep1" style="display: none;">
+    <div style="display: flex; justify-content: space-around; align-items: start;">
+        <div class="node" style="position: relative;">
+            <div class="node-label">Primary</div>
+            <div class="node-status">🔄 DELETE rows</div>
+            <p style="font-size: 0.7em; margin-top: 10px;">Generates WAL</p>
+        </div>
+        <div class="node" style="position: relative;">
+            <div class="node-label">Standby</div>
+            <div class="node-status">📖 Long SELECT</div>
+            <p style="font-size: 0.7em; margin-top: 10px;">Reading same rows</p>
+        </div>
+    </div>
+    <p style="margin-top: 40px; text-align: center; color: #ffd700;">Standby must replay DELETE, but user query is still reading those rows!</p>
+</div>
+
+<div id="conflictStep2" style="display: none;">
+    <h4 style="color: #ff5757; text-align: center;">⚠️ CONFLICT DETECTED</h4>
+    <div class="metric-card">
+        <p><strong>Option 1:</strong> Cancel the SELECT query</p>
+        <p><strong>Option 2:</strong> Delay WAL replay</p>
+        <p><strong>Configured by:</strong> <code>max_standby_streaming_delay = 30s</code></p>
+    </div>
+    <div style="text-align: center; margin-top: 30px;">
+        <div class="process-step" style="display: inline-block; margin: 10px;">
+            <h4>If delay < 30s</h4>
+            <p>PostgreSQL waits for query</p>
+        </div>
+        <div class="process-step" style="display: inline-block; margin: 10px;">
+            <h4>If delay > 30s</h4>
+            <p>Cancels query, applies WAL</p>
+        </div>
+    </div>
+</div>
+</div>
+</div>
+
+<div class="code-block">
+# Hot Standby Configuration
+hot_standby = on
+max_standby_streaming_delay = 30s  # How long to delay WAL replay
+hot_standby_feedback = on          # Tell primary about queries
+
+# Monitor Query Conflicts
+SELECT * FROM pg_stat_database_conflicts;
+</div>
+
+<div class="metric-card">
+<h4>📊 Monitoring Queries</h4>
+<p><strong>pg_stat_activity:</strong> Active queries on standby</p>
+<p><strong>pg_stat_database_conflicts:</strong> Canceled queries count</p>
+<p><strong>hot_standby_feedback:</strong> Prevents conflicts by signaling primary</p>
+</div>
+
+<div class="success-box">
+<strong>✅ Mastery Milestone:</strong> Configure Hot Standby for read scaling with 3+ replicas, handling 10,000+ concurrent read queries while maintaining <2s replication lag.
+</div>
+</div>
+</div>
+
+<!-- SUMMARY SECTION COMPLETION -->
+<div class="section-card" style="margin-top: 40px;">
+<h2>🎯 Congratulations! You've Mastered PostgreSQL Replication</h2>
+
+<div class="process-flow">
+<div class="process-step">
+<h4>✅ Streaming Replication</h4>
+<p>Physical sync/async redundancy</p>
+<p>Binary WAL transmission</p>
+</div>
+<div class="process-step">
+<h4>✅ Logical Replication</h4>
+<p>Table-level data distribution</p>
+<p>Cross-version upgrades</p>
+</div>
+<div class="process-step">
+<h4>✅ Hot Standby</h4>
+<p>Read replicas for scaling</p>
+<p>Query conflict management</p>
+</div>
+<div class="process-step">
+<h4>✅ Repmgr</h4>
+<p>Automated failover</p>
+<p>Cluster health monitoring</p>
+</div>
+<div class="process-step">
+<h4>✅ PITR</h4>
+<p>WAL archiving</p>
+<p>Point-in-time recovery</p>
+</div>
+</div>
+
+<h3>🏆 Your New Superpowers</h3>
+
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin: 30px 0;">
+<div class="metric-card">
+<h4>🎯 High Availability</h4>
+<p>99.99% uptime with automatic failover</p>
+<p>RTO < 30 seconds</p>
+</div>
+<div class="metric-card">
+<h4>📈 Scalability</h4>
+<p>Read scaling with multiple replicas</p>
+<p>10x query throughput increase</p>
+</div>
+<div class="metric-card">
+<h4>🛡️ Disaster Recovery</h4>
+<p>RPO < 5 seconds (sync mode)</p>
+<p>PITR to any timestamp</p>
+</div>
+</div>
+
+<div class="success-box">
+<h3>🚀 Next Steps</h3>
+<p>• Set up a 3-node cluster with repmgr</p>
+<p>• Implement continuous WAL archiving to S3</p>
+<p>• Practice PITR recovery drills monthly</p>
+<p>• Monitor with Prometheus + Grafana dashboards</p>
+<p>• Document your runbooks for failover procedures</p>
+</div>
+</div>
+</div>
+
+<script>
+// Global animation state
+let animationTimers = [];
+
+// Clear all animations
+function clearAnimations() {
+animationTimers.forEach(timer => clearTimeout(timer));
+animationTimers = [];
+}
+
+// Navigation
+function showConcept(num) {
+clearAnimations();
+
+// Hide all sections
+document.querySelectorAll('.concept-section').forEach(section => {
+section.classList.remove('active');
+});
+
+// Show selected section
+document.getElementById('concept' + num).classList.add('active');
+
+// Update button styles
+document.querySelectorAll('.nav-btn').forEach(btn => {
+btn.classList.remove('active');
+});
+event.target.classList.add('active');
+
+// Scroll to top
+window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// STREAMING REPLICATION ANIMATIONS
+function animateAsync() {
+clearAnimations();
+const asyncFlow = document.getElementById('asyncFlow');
+const syncFlow = document.getElementById('syncFlow');
+
+syncFlow.style.display = 'none';
+asyncFlow.style.display = 'block';
+
+// Create WAL packet animation
+const packet = document.createElement('div');
+packet.className = 'wal-packet';
+packet.style.left = '100px';
+packet.style.top = '115px';
+asyncFlow.appendChild(packet);
+
+let position = 100;
+const interval = setInterval(() => {
+position += 5;
+packet.style.left = position + 'px';
+
+if (position > 400) {
+clearInterval(interval);
+asyncFlow.removeChild(packet);
+}
+}, 20);
+
+animationTimers.push(interval);
+}
+
+function animateSync() {
+clearAnimations();
+const asyncFlow = document.getElementById('asyncFlow');
+const syncFlow = document.getElementById('syncFlow');
+
+asyncFlow.style.display = 'none';
+syncFlow.style.display = 'block';
+
+// Create bidirectional animation
+const packet1 = document.createElement('div');
+packet1.className = 'wal-packet';
+packet1.style.left = '100px';
+packet1.style.top = '115px';
+packet1.style.background = '#87ceeb';
+syncFlow.appendChild(packet1);
+
+const packet2 = document.createElement('div');
+packet2.className = 'wal-packet';
+packet2.style.left = '400px';
+packet2.style.top = '115px';
+packet2.style.background = '#57ff57';
+packet2.style.display = 'none';
+syncFlow.appendChild(packet2);
+
+let position1 = 100;
+const interval1 = setInterval(() => {
+position1 += 5;
+packet1.style.left = position1 + 'px';
+
+if (position1 >= 400) {
+clearInterval(interval1);
+packet2.style.display = 'block';
+
+let position2 = 400;
+const interval2 = setInterval(() => {
+position2 -= 5;
+packet2.style.left = position2 + 'px';
+
+if (position2 <= 100) {
+    clearInterval(interval2);
+    syncFlow.removeChild(packet1);
+    syncFlow.removeChild(packet2);
+}
+}, 20);
+
+animationTimers.push(interval2);
+}
+}, 20);
+
+animationTimers.push(interval1);
+}
+
+function animateFailover() {
+clearAnimations();
+const beforeDiv = document.getElementById('beforeFailover');
+const afterDiv = document.getElementById('afterFailover');
+
+beforeDiv.style.display = 'block';
+afterDiv.style.display = 'none';
+
+const timer = setTimeout(() => {
+beforeDiv.style.display = 'none';
+afterDiv.style.display = 'block';
+}, 2000);
+
+animationTimers.push(timer);
+}
+
+function animateMultiReplica() {
+clearAnimations();
+const container = document.getElementById('multiReplicaDemo');
+
+// Create animated connection lines
+const lines = [
+{ x1: 330, y1: 150, x2: 180, y2: 200 },
+{ x1: 400, y1: 150, x2: 520, y2: 200 }
+];
+
+lines.forEach((line, index) => {
+const connectionLine = document.createElement('div');
+connectionLine.style.position = 'absolute';
+connectionLine.style.left = line.x1 + 'px';
+connectionLine.style.top = line.y1 + 'px';
+connectionLine.style.width = '0px';
+connectionLine.style.height = '3px';
+connectionLine.style.background = 'linear-gradient(90deg, #667eea, #764ba2)';
+connectionLine.style.transformOrigin = 'left center';
+
+const angle = Math.atan2(line.y2 - line.y1, line.x2 - line.x1);
+const length = Math.sqrt(Math.pow(line.x2 - line.x1, 2) + Math.pow(line.y2 - line.y1, 2));
+
+connectionLine.style.transform = `rotate(${angle}rad)`;
+container.appendChild(connectionLine);
+
+let width = 0;
+const interval = setInterval(() => {
+width += 5;
+connectionLine.style.width = width + 'px';
+
+if (width >= length) {
+clearInterval(interval);
+}
+}, 20);
+
+animationTimers.push(interval);
+});
+}
+
+// LOGICAL REPLICATION ANIMATIONS
+function animateLogicalSetup() {
+clearAnimations();
+
+const steps = ['setupStep1', 'setupStep2', 'setupStep3', 'setupStep4'];
+
+steps.forEach((stepId, index) => {
+const timer = setTimeout(() => {
+document.getElementById(stepId).style.display = 'flex';
+document.getElementById(stepId).style.animation = 'slideInLeft 0.5s ease forwards';
+}, index * 1000);
+
+animationTimers.push(timer);
+});
+
+// Reset after animation
+const resetTimer = setTimeout(() => {
+steps.forEach(stepId => {
+document.getElementById(stepId).style.display = 'none';
+});
+}, 6000);
+
+animationTimers.push(resetTimer);
+}
+
+// HOT STANDBY ANIMATIONS
+function animateQueryConflict() {
+clearAnimations();
+
+const step1 = document.getElementById('conflictStep1');
+const step2 = document.getElementById('conflictStep2');
+
+step1.style.display = 'block';
+step2.style.display = 'none';
+
+const timer = setTimeout(() => {
+step1.style.display = 'none';
+step2.style.display = 'block';
+}, 3000);
+
+animationTimers.push(timer);
+}
+
+// REPMGR ANIMATIONS
+function animateRepmgrFailover() {
+clearAnimations();
+
+const steps = ['repmgrStep1', 'repmgrStep2', 'repmgrStep3'];
+
+// Hide all steps first
+steps.forEach(stepId => {
+document.getElementById(stepId).style.display = 'none';
+});
+
+// Show steps sequentially
+steps.forEach((stepId, index) => {
+const timer = setTimeout(() => {
+steps.forEach(id => document.getElementById(id).style.display = 'none');
+document.getElementById(stepId).style.display = 'block';
+}, index * 2500);
+
+animationTimers.push(timer);
+});
+
+// Reset to step 1 for loop
+const resetTimer = setTimeout(() => {
+animateRepmgrFailover();
+}, steps.length * 2500 + 2000);
+
+animationTimers.push(resetTimer);
+}
+
+// PITR ANIMATIONS
+function animatePITRTimeline() {
+clearAnimations();
+
+const recoveryTarget = document.getElementById('recoveryTarget');
+
+recoveryTarget.style.display = 'block';
+
+// Animate marker pulsing
+let pulseCount = 0;
+const pulseInterval = setInterval(() => {
+pulseCount++;
+if (pulseCount > 5) {
+clearInterval(pulseInterval);
+}
+}, 1000);
+
+animationTimers.push(pulseInterval);
+
+// Create WAL replay animation
+const timelineViz = document.getElementById('timelineViz');
+const walReplay = document.createElement('div');
+walReplay.style.position = 'absolute';
+walReplay.style.left = '10%';
+walReplay.style.top = '50%';
+walReplay.style.width = '20px';
+walReplay.style.height = '20px';
+walReplay.style.background = '#ffd700';
+walReplay.style.borderRadius = '50%';
+walReplay.style.boxShadow = '0 0 20px #ffd700';
+walReplay.textContent = '📦';
+walReplay.style.display = 'flex';
+walReplay.style.alignItems = 'center';
+walReplay.style.justifyContent = 'center';
+
+timelineViz.appendChild(walReplay);
+
+let position = 10;
+const moveInterval = setInterval(() => {
+position += 0.5;
+walReplay.style.left = position + '%';
+
+if (position >= 65) {
+clearInterval(moveInterval);
+timelineViz.removeChild(walReplay);
+}
+}, 30);
+
+animationTimers.push(moveInterval);
+}
+
+// Initialize on load
+window.addEventListener('load', () => {
+// Add hover effects to nodes
+document.querySelectorAll('.node').forEach(node => {
+node.addEventListener('mouseenter', function() {
+this.style.transform = 'scale(1.1) rotate(2deg)';
+});
+
+node.addEventListener('mouseleave', function() {
+this.style.transform = 'scale(1) rotate(0deg)';
+});
+});
+
+// Auto-start streaming animation
+setTimeout(() => {
+const streamingContainer = document.getElementById('streamingAnimation');
+if (streamingContainer && streamingContainer.offsetParent !== null) {
+createContinuousWALStream();
+}
+}, 1000);
+});
+
+// Continuous WAL stream for concept 1
+function createContinuousWALStream() {
+const container = document.getElementById('streamingAnimation');
+if (!container) return;
+
+setInterval(() => {
+if (container.offsetParent === null) return; // Not visible
+
+const packet = document.createElement('div');
+packet.className = 'wal-packet';
+packet.style.left = '170px';
+packet.style.top = '65px';
+packet.style.width = '20px';
+packet.style.height = '20px';
+container.appendChild(packet);
+
+let position = 170;
+const moveInterval = setInterval(() => {
+position += 3;
+packet.style.left = position + 'px';
+
+if (position > 520) {
+clearInterval(moveInterval);
+if (packet.parentNode) {
+    container.removeChild(packet);
+}
+}
+}, 20);
+}, 2000);
+}
+
+// Add interactive tooltips
+document.addEventListener('DOMContentLoaded', () => {
+const codeBlocks = document.querySelectorAll('.code-block');
+
+codeBlocks.forEach(block => {
+block.addEventListener('click', function() {
+const selection = window.getSelection();
+const range = document.createRange();
+range.selectNodeContents(this);
+selection.removeAllRanges();
+selection.addRange(range);
+
+// Visual feedback
+this.style.background = '#2a2a2a';
+setTimeout(() => {
+this.style.background = '#1e1e1e';
+}, 200);
+});
+});
+});
+
+// Performance monitoring simulator
+function startMetricsSimulation() {
+const metrics = document.querySelectorAll('.metric-card p');
+
+setInterval(() => {
+metrics.forEach(metric => {
+if (metric.textContent.includes('lag:')) {
+const randomLag = (Math.random() * 5).toFixed(2);
+metric.innerHTML = metric.innerHTML.replace(/[\d.]+s/, randomLag + 's');
+}
+});
+}, 2000);
+}
+
+// Easter egg: Konami code for advanced mode
+let konamiCode = [];
+const konamiSequence = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight'];
+
+document.addEventListener('keydown', (e) => {
+konamiCode.push(e.key);
+konamiCode = konamiCode.slice(-8);
+
+if (konamiCode.join(',') === konamiSequence.join(',')) {
+document.body.style.animation = 'rainbow 2s infinite';
+alert('🎉 Expert Mode Unlocked! All animations will play faster.');
+}
+});
+</script>
+
+<style>
+@keyframes rainbow {
+0% { filter: hue-rotate(0deg); }
+100% { filter: hue-rotate(360deg); }
+}
+
+/* Enhanced hover effects */
+.demo-button:active {
+transform: scale(0.95);
+}
+
+.code-block:hover {
+border-left-color: #ffd700;
+box-shadow: 0 0 20px rgba(102, 126, 234, 0.3);
+}
+
+/* Smooth scrolling for all browsers */
+html {
+scroll-behavior: smooth;
+}
+
+/* Loading animation for dynamic content */
+@keyframes shimmer {
+0% { background-position: -1000px 0; }
+100% { background-position: 1000px 0; }
+}
+
+.loading {
+background: linear-gradient(90deg, rgba(255,255,255,0.1) 25%, rgba(255,255,255,0.2) 50%, rgba(255,255,255,0.1) 75%);
+background-size: 1000px 100%;
+animation: shimmer 2s infinite;
+}
+</style>
+</body>
+</html>

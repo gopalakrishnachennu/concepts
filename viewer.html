@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Folder Viewer - Portfolio</title>
+    <link rel="stylesheet" href="assets/main.css">
+</head>
+<body>
+    <div class="background-animation"></div>
+    <div class="floating-shapes">
+        <div class="shape"></div>
+        <div class="shape"></div>
+        <div class="shape"></div>
+        <div class="shape"></div>
+    </div>
+
+    <div class="container">
+        <!-- Breadcrumb Navigation -->
+        <nav class="breadcrumb">
+            <a href="index.html">🏠 Home</a>
+            <span class="separator">/</span>
+            <span id="currentFolder">Loading...</span>
+        </nav>
+
+        <header>
+            <div class="header-content">
+                <h1 id="folderTitle">📁 Loading...</h1>
+                <p class="tagline" id="folderDescription">Exploring files in this category</p>
+                <div class="stats">
+                    <div class="stat-item">
+                        <span class="stat-number" id="totalFiles">0</span>
+                        <span class="stat-label">Total Files</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-number" id="htmlFiles">0</span>
+                        <span class="stat-label">HTML Files</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-number" id="lastUpdated">Just now</span>
+                        <span class="stat-label">Last Updated</span>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Real-time Status Bar -->
+        <div class="status-bar">
+            <div class="status-item">
+                <div class="status-indicator"></div>
+                <span id="currentTime">Loading...</span>
+            </div>
+            <div class="status-item">
+                <span id="folderPath">📂 ...</span>
+            </div>
+            <div class="status-item">
+                <span>📊 Analytics Active</span>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="quick-actions">
+            <button class="quick-action-btn" onclick="window.location.href='index.html'">⬅️ Back to Home</button>
+            <button class="quick-action-btn" onclick="sortByName()">🔤 A-Z Sort</button>
+            <button class="quick-action-btn" onclick="sortByRecent()">🕐 Recent First</button>
+            <button class="quick-action-btn" onclick="sortBySize()">📏 By Size</button>
+            <button class="quick-action-btn" onclick="shareFolder()">📤 Share Folder</button>
+            <button class="quick-action-btn" onclick="refreshFiles()">🔄 Refresh</button>
+        </div>
+
+        <div class="controls">
+            <div class="left-controls">
+                <div class="view-toggle">
+                    <button class="view-btn active" data-view="grid">📱 Grid</button>
+                    <button class="view-btn" data-view="masonry">🎨 Masonry</button>
+                    <button class="view-btn" data-view="list">📋 List</button>
+                </div>
+                <select class="filter-btn" id="fileTypeFilter">
+                    <option value="all">📄 All Files</option>
+                    <option value="html">🌐 HTML Only</option>
+                    <option value="other">📂 Other Files</option>
+                </select>
+            </div>
+            <div class="search-box">
+                <span>🔍</span>
+                <input type="text" id="searchInput" placeholder="Search files...">
+            </div>
+        </div>
+
+        <div id="filesContainer" class="links-grid"></div>
+        <div id="noResults" class="no-results" style="display: none;">
+            <p>😔 No files found</p>
+            <p style="font-size: 1.2rem; margin-top: 10px; opacity: 0.6;">Try a different search term</p>
+        </div>
+
+        <!-- Loading Spinner -->
+        <div id="loadingSpinner" class="loading-spinner">
+            <div class="spinner"></div>
+            <p>Loading files from GitHub...</p>
+        </div>
+    </div>
+
+    <div class="fab-container">
+        <div class="fab-menu" id="fabMenu">
+            <div class="fab-menu-item" onclick="window.location.href='index.html'">
+                <span>⬅️</span>
+                <span>Back Home</span>
+            </div>
+            <div class="fab-menu-item" onclick="refreshFiles()">
+                <span>🔄</span>
+                <span>Refresh Files</span>
+            </div>
+            <div class="fab-menu-item" onclick="downloadFolder()">
+                <span>💾</span>
+                <span>Download Folder</span>
+            </div>
+            <div class="fab-menu-item" onclick="openFolderInGitHub()">
+                <span>🔗</span>
+                <span>View on GitHub</span>
+            </div>
+        </div>
+        <button class="add-link-btn" id="fabBtn">⚙️</button>
+    </div>
+
+    <script src="assets/main.js"></script>
+    <script>
+        // Initialize viewer
+        initFileViewer();
+    </script>
+</body>
+</html>

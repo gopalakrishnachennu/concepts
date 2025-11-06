@@ -1,0 +1,2669 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Database Backup Types Visualized</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .nav {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-bottom: 2px solid #e0e0e0;
+            justify-content: center;
+        }
+
+        .nav-btn {
+            padding: 12px 24px;
+            border: none;
+            background: white;
+            color: #667eea;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .nav-btn:hover {
+            background: #667eea;
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .nav-btn.active {
+            background: #667eea;
+            color: white;
+        }
+
+        .content {
+            padding: 40px;
+            min-height: 600px;
+        }
+
+        .backup-section {
+            display: none;
+            animation: fadeIn 0.5s ease;
+        }
+
+        .backup-section.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .section-title {
+            font-size: 2em;
+            color: #667eea;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 3px solid #667eea;
+        }
+
+        .description {
+            font-size: 1.1em;
+            line-height: 1.8;
+            color: #333;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+
+        .visualization {
+            background: #fff;
+            border: 2px solid #e0e0e0;
+            border-radius: 15px;
+            padding: 30px;
+            margin: 20px 0;
+            min-height: 400px;
+            position: relative;
+        }
+
+        .database-box {
+            width: 120px;
+            height: 120px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 15px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            position: relative;
+        }
+
+        .backup-box {
+            width: 100px;
+            height: 100px;
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        .arrow {
+            stroke: #667eea;
+            stroke-width: 3;
+            fill: none;
+            marker-end: url(#arrowhead);
+        }
+
+        .data-block {
+            width: 60px;
+            height: 60px;
+            background: #4CAF50;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 0.9em;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+
+        .changed-block {
+            background: #FF9800;
+        }
+
+        .timeline {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            margin: 30px 0;
+            flex-wrap: wrap;
+        }
+
+        .time-point {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .flow-animation {
+            animation: flow 2s ease-in-out infinite;
+        }
+
+        @keyframes flow {
+            0%, 100% { transform: translateX(0); opacity: 1; }
+            50% { transform: translateX(10px); opacity: 0.7; }
+        }
+
+        .grid-layout {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .server-node {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+            font-weight: bold;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            background: white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .comparison-table th {
+            background: #667eea;
+            color: white;
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+        }
+
+        .comparison-table td {
+            padding: 15px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .comparison-table tr:hover {
+            background: #f8f9fa;
+        }
+
+        .icon {
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+
+        .legend {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            margin: 20px 0;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .legend-color {
+            width: 30px;
+            height: 30px;
+            border-radius: 5px;
+        }
+
+        .highlight-box {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+
+        .success-box {
+            background: #d4edda;
+            border-left: 4px solid #28a745;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+
+        .flex-container {
+            display: flex;
+            gap: 30px;
+            align-items: center;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin: 30px 0;
+        }
+
+        .rotate {
+            animation: rotate 4s linear infinite;
+        }
+
+        @keyframes rotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .slide-in {
+            animation: slideIn 1s ease;
+        }
+
+        @keyframes slideIn {
+            from { transform: translateX(-100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 30px;
+            background: #e0e0e0;
+            border-radius: 15px;
+            overflow: hidden;
+            margin: 20px 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            animation: progress 3s ease-in-out infinite;
+        }
+
+        @keyframes progress {
+            0% { width: 0%; }
+            50% { width: 100%; }
+            100% { width: 0%; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📊 Database Backup Types</h1>
+            <p>Interactive Visual Guide for DBAs</p>
+        </div>
+
+        <div class="nav" id="navigation"></div>
+
+        <div class="content" id="content"></div>
+    </div>
+
+    <script>
+        const backupTypes = [
+            // {
+            //     id: 'logical',
+            //     name: 'Logical Backup',
+            //     icon: '📄',
+            //     description: 'Backs up data in readable format (SQL dumps). Perfect for migrating specific tables or databases between systems.',
+            //     visualization: function() {
+            //         return `
+            //             <div class="flex-container">
+            //                 <div class="database-box pulse">
+            //                     <div class="icon">🗄️</div>
+            //                     <div>Database</div>
+            //                     <div style="font-size: 0.8em;">Tables & Data</div>
+            //                 </div>
+            //                 <div style="font-size: 3em; color: #667eea;" class="flow-animation">→</div>
+            //                 <div class="backup-box pulse">
+            //                     <div class="icon">📄</div>
+            //                     <div>.sql File</div>
+            //                     <div style="font-size: 0.7em;">Readable</div>
+            //                 </div>
+            //             </div>
+            //             <div class="highlight-box">
+            //                 <strong>Real Use:</strong> Export customer table to migrate to new server
+            //             </div>
+            //             <div class="legend">
+            //                 <div class="legend-item">
+            //                     <div class="legend-color" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);"></div>
+            //                     <span>Source Database</span>
+            //                 </div>
+            //                 <div class="legend-item">
+            //                     <div class="legend-color" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);"></div>
+            //                     <span>Backup File</span>
+            //                 </div>
+            //             </div>
+            //             <div style="margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 10px;">
+            //                 <strong>Tools:</strong> pg_dump, mysqldump<br>
+            //                 <strong>Format:</strong> SQL statements, CSV, JSON
+            //             </div>
+            //         `;
+            //     }
+            // },
+            // {
+            //     id: 'physical',
+            //     name: 'Physical Backup',
+            //     icon: '💾',
+            //     description: 'Direct copy of database files on disk. Fast recovery for complete system restoration after hardware failure.',
+            //     visualization: function() {
+            //         return `
+            //             <div class="flex-container">
+            //                 <div class="database-box pulse">
+            //                     <div class="icon">🗄️</div>
+            //                     <div>DB Files</div>
+            //                     <div style="font-size: 0.7em;">data/ logs/</div>
+            //                 </div>
+            //                 <div style="font-size: 3em; color: #667eea;" class="flow-animation">⚡</div>
+            //                 <div class="backup-box pulse">
+            //                     <div class="icon">💾</div>
+            //                     <div>File Copy</div>
+            //                     <div style="font-size: 0.7em;">Exact replica</div>
+            //                 </div>
+            //             </div>
+            //             <div class="success-box">
+            //                 <strong>Advantage:</strong> Fastest backup and restore method!
+            //             </div>
+            //             <div class="grid-layout" style="margin-top: 20px;">
+            //                 <div class="data-block">data.db</div>
+            //                 <div class="data-block">logs.wal</div>
+            //                 <div class="data-block">index.idx</div>
+            //                 <div class="data-block">config.cnf</div>
+            //             </div>
+            //             <div style="margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 10px;">
+            //                 <strong>Tools:</strong> rsync, tar, cp<br>
+            //                 <strong>Speed:</strong> Very Fast ⚡⚡⚡
+            //             </div>
+            //         `;
+            //     }
+            // },
+            // {
+            //     id: 'full',
+            //     name: 'Full Backup',
+            //     icon: '📦',
+            //     description: 'Complete snapshot of entire database. Base backup for all incremental/differential backups.',
+            //     visualization: function() {
+            //         return `
+            //             <div class="flex-container">
+            //                 <div class="database-box pulse" style="width: 150px; height: 150px;">
+            //                     <div class="icon">🗄️</div>
+            //                     <div>Complete DB</div>
+            //                     <div style="font-size: 0.7em;">All Data</div>
+            //                     <div style="font-size: 0.7em;">All Schema</div>
+            //                     <div style="font-size: 0.7em;">All Settings</div>
+            //                 </div>
+            //                 <div style="font-size: 3em; color: #667eea;" class="flow-animation">📸</div>
+            //                 <div class="backup-box pulse" style="width: 150px; height: 150px;">
+            //                     <div class="icon">📦</div>
+            //                     <div>Full Backup</div>
+            //                     <div style="font-size: 0.7em;">Sunday 00:00</div>
+            //                 </div>
+            //             </div>
+            //             <div class="timeline">
+            //                 <div class="time-point">
+            //                     <div style="font-weight: bold; color: #667eea;">Sunday</div>
+            //                     <div class="backup-box" style="width: 80px; height: 80px;">FULL</div>
+            //                     <div style="font-size: 0.9em;">100%</div>
+            //                 </div>
+            //                 <div style="font-size: 2em; color: #ccc;">→</div>
+            //                 <div class="time-point">
+            //                     <div style="font-weight: bold;">Mon-Sat</div>
+            //                     <div class="backup-box" style="width: 50px; height: 50px; font-size: 0.8em;">INC</div>
+            //                     <div style="font-size: 0.9em;">Changes only</div>
+            //                 </div>
+            //             </div>
+            //             <div class="highlight-box">
+            //                 <strong>Strategy:</strong> Take full backup weekly, then incremental daily
+            //             </div>
+            //         `;
+            //     }
+            // },
+            // {
+            //     id: 'incremental',
+            //     name: 'Incremental Backup',
+            //     icon: '📈',
+            //     description: 'Only backs up changes since last backup. Saves space and time for daily production backups.',
+            //     visualization: function() {
+            //         return `
+            //             <div class="timeline" style="flex-direction: column; align-items: flex-start;">
+            //                 <div style="display: flex; gap: 20px; align-items: center;">
+            //                     <div class="time-point">
+            //                         <div style="font-weight: bold; color: #667eea;">Sunday</div>
+            //                         <div class="backup-box">FULL</div>
+            //                         <div style="font-size: 0.9em;">10 GB</div>
+            //                     </div>
+            //                 </div>
+            //                 <div style="font-size: 2em; margin: 10px 0;">↓</div>
+            //                 <div style="display: flex; gap: 20px; align-items: center; flex-wrap: wrap;">
+            //                     <div class="time-point slide-in">
+            //                         <div style="font-weight: bold;">Monday</div>
+            //                         <div class="backup-box" style="width: 60px; height: 60px; font-size: 0.8em;">INC 1</div>
+            //                         <div style="font-size: 0.9em;">+500 MB</div>
+            //                     </div>
+            //                     <div style="font-size: 2em;">→</div>
+            //                     <div class="time-point slide-in">
+            //                         <div style="font-weight: bold;">Tuesday</div>
+            //                         <div class="backup-box" style="width: 60px; height: 60px; font-size: 0.8em;">INC 2</div>
+            //                         <div style="font-size: 0.9em;">+300 MB</div>
+            //                     </div>
+            //                     <div style="font-size: 2em;">→</div>
+            //                     <div class="time-point slide-in">
+            //                         <div style="font-weight: bold;">Wednesday</div>
+            //                         <div class="backup-box" style="width: 60px; height: 60px; font-size: 0.8em;">INC 3</div>
+            //                         <div style="font-size: 0.9em;">+400 MB</div>
+            //                     </div>
+            //                 </div>
+            //             </div>
+            //             <div class="success-box">
+            //                 <strong>Total Storage:</strong> 10 GB + 500 MB + 300 MB + 400 MB = 11.2 GB<br>
+            //                 <strong>vs Full Daily:</strong> 10 GB × 4 = 40 GB (saved 28.8 GB!)
+            //             </div>
+            //             <div class="grid-layout" style="margin-top: 20px;">
+            //                 <div class="data-block">Changed rows</div>
+            //                 <div class="data-block">New records</div>
+            //                 <div class="data-block">Updated data</div>
+            //             </div>
+            //         `;
+            //     }
+            // },
+            // {
+            //     id: 'differential',
+            //     name: 'Differential Backup',
+            //     icon: '📊',
+            //     description: 'Backs up all changes since last FULL backup. Faster recovery than incremental, but larger backup size.',
+            //     visualization: function() {
+            //         return `
+            //             <div class="timeline" style="flex-direction: column; align-items: flex-start;">
+            //                 <div style="display: flex; gap: 20px; align-items: center;">
+            //                     <div class="time-point">
+            //                         <div style="font-weight: bold; color: #667eea;">Sunday</div>
+            //                         <div class="backup-box" style="width: 100px; height: 100px;">FULL</div>
+            //                         <div style="font-size: 0.9em;">10 GB</div>
+            //                     </div>
+            //                 </div>
+            //                 <div style="font-size: 2em; margin: 10px 0;">↓</div>
+            //                 <div style="display: flex; gap: 20px; align-items: center; flex-wrap: wrap;">
+            //                     <div class="time-point slide-in">
+            //                         <div style="font-weight: bold;">Monday</div>
+            //                         <div class="backup-box" style="width: 70px; height: 70px;">DIFF</div>
+            //                         <div style="font-size: 0.9em;">+500 MB</div>
+            //                     </div>
+            //                     <div style="font-size: 2em;">→</div>
+            //                     <div class="time-point slide-in">
+            //                         <div style="font-weight: bold;">Tuesday</div>
+            //                         <div class="backup-box" style="width: 75px; height: 75px;">DIFF</div>
+            //                         <div style="font-size: 0.9em;">+800 MB</div>
+            //                     </div>
+            //                     <div style="font-size: 2em;">→</div>
+            //                     <div class="time-point slide-in">
+            //                         <div style="font-weight: bold;">Wednesday</div>
+            //                         <div class="backup-box" style="width: 80px; height: 80px;">DIFF</div>
+            //                         <div style="font-size: 0.9em;">+1.2 GB</div>
+            //                     </div>
+            //                 </div>
+            //             </div>
+            //             <div class="comparison-table">
+            //                 <tr>
+            //                     <th>Restore Day</th>
+            //                     <th>Incremental Needs</th>
+            //                     <th>Differential Needs</th>
+            //                 </tr>
+            //                 <tr>
+            //                     <td>Wednesday</td>
+            //                     <td>FULL + INC1 + INC2 + INC3</td>
+            //                     <td>FULL + DIFF-Wed only</td>
+            //                 </tr>
+            //             </table>
+            //             <div class="success-box">
+            //                 <strong>Advantage:</strong> Faster restore (only 2 backups needed)<br>
+            //                 <strong>Trade-off:</strong> Each differential gets progressively larger
+            //             </div>
+            //         `;
+            //     }
+            // },
+            // {
+            //     id: 'wal',
+            //     name: 'WAL Archiving',
+            //     icon: '📝',
+            //     description: 'Continuously saves Write-Ahead Logs for Point-in-Time Recovery. Can restore to any specific second!',
+            //     visualization: function() {
+            //         return `
+            //             <div class="flex-container">
+            //                 <div class="database-box pulse">
+            //                     <div class="icon">🗄️</div>
+            //                     <div>Database</div>
+            //                     <div style="font-size: 0.7em;">Active</div>
+            //                 </div>
+            //                 <div style="font-size: 2em; color: #667eea;" class="flow-animation">→</div>
+            //                 <div style="display: flex; flex-direction: column; gap: 10px;">
+            //                     <div class="data-block changed-block">WAL 001</div>
+            //                     <div class="data-block changed-block">WAL 002</div>
+            //                     <div class="data-block changed-block">WAL 003</div>
+            //                 </div>
+            //                 <div style="font-size: 2em; color: #667eea;" class="flow-animation">→</div>
+            //                 <div class="backup-box pulse">
+            //                     <div class="icon">📝</div>
+            //                     <div>Archive</div>
+            //                     <div style="font-size: 0.7em;">Continuous</div>
+            //                 </div>
+            //             </div>
+            //             <div class="progress-bar">
+            //                 <div class="progress-fill"></div>
+            //             </div>
+            //             <div style="text-align: center; margin: 10px 0; color: #667eea; font-weight: bold;">
+            //                 ⏱️ Continuous Logging in Progress...
+            //             </div>
+            //             <div class="highlight-box">
+            //                 <strong>Example:</strong> Accidental DELETE at 14:35:22? <br>
+            //                 Restore to 14:35:21 and recover everything!
+            //             </div>
+            //             <div class="success-box">
+            //                 <strong>Use Case:</strong> Critical production databases that need second-level recovery precision
+            //             </div>
+            //         `;
+            //     }
+            // },
+            // {
+            //     id: 'pitr',
+            //     name: 'Point-in-Time Recovery',
+            //     icon: '⏰',
+            //     description: 'Restore database to exact moment in time. Essential for recovering from accidental deletions or corruption.',
+            //     visualization: function() {
+            //         return `
+            //             <div style="margin: 30px 0;">
+            //                 <div style="display: flex; align-items: center; gap: 20px; margin-bottom: 30px;">
+            //                     <div class="backup-box">
+            //                         <div>Base Backup</div>
+            //                         <div style="font-size: 0.8em;">Sunday 00:00</div>
+            //                     </div>
+            //                     <div style="flex: 1; height: 4px; background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);"></div>
+            //                     <div style="font-size: 2em; animation: pulse 1s infinite;">❌</div>
+            //                     <div style="font-size: 0.9em; background: #ffebee; padding: 10px; border-radius: 5px;">
+            //                         <strong>Error at Wed 14:35</strong><br>
+            //                         Data deleted
+            //                     </div>
+            //                 </div>
+            //                 <div style="display: flex; justify-content: space-around; margin: 30px 0;">
+            //                     <div class="time-point">
+            //                         <div style="color: #999;">Sunday</div>
+            //                         <div style="font-size: 2em;">📦</div>
+            //                     </div>
+            //                     <div class="time-point">
+            //                         <div style="color: #999;">Monday</div>
+            //                         <div style="font-size: 1.5em;">📝</div>
+            //                     </div>
+            //                     <div class="time-point">
+            //                         <div style="color: #999;">Tuesday</div>
+            //                         <div style="font-size: 1.5em;">📝</div>
+            //                     </div>
+            //                     <div class="time-point">
+            //                         <div style="color: #4CAF50; font-weight: bold;">Wed 14:34</div>
+            //                         <div style="font-size: 2em;">✅</div>
+            //                         <div style="font-size: 0.8em; color: #4CAF50;">Restore here!</div>
+            //                     </div>
+            //                     <div class="time-point">
+            //                         <div style="color: #f44336; font-weight: bold;">Wed 14:35</div>
+            //                         <div style="font-size: 2em;">❌</div>
+            //                     </div>
+            //                 </div>
+            //             </div>
+            //             <div class="success-box">
+            //                 <strong>Recovery Process:</strong><br>
+            //                 1. Restore base backup (Sunday)<br>
+            //                 2. Apply WAL logs up to Wed 14:34:59<br>
+            //                 3. Database restored to 1 second before disaster!
+            //             </div>
+            //             <div class="highlight-box">
+            //                 <strong>Real Scenario:</strong> Developer accidentally runs DROP TABLE on production at 2:35 PM. 
+            //                 PITR restores to 2:34:59 PM, recovering all data!
+            //             </div>
+            //         `;
+            //     }
+            // },
+            // {
+            //     id: 'cold-hot',
+            //     name: 'Cold vs Hot Backup',
+            //     icon: '🔥',
+            //     description: 'Cold: Database offline (downtime). Hot: Database online (no downtime). Choose based on availability needs.',
+            //     visualization: function() {
+            //         return `
+            //             <div class="grid-layout" style="grid-template-columns: 1fr 1fr; gap: 30px;">
+            //                 <div style="border: 3px solid #2196F3; border-radius: 15px; padding: 20px;">
+            //                     <h3 style="color: #2196F3; text-align: center;">❄️ Cold Backup</h3>
+            //                     <div class="flex-container" style="flex-direction: column; margin: 20px 0;">
+            //                         <div class="database-box" style="background: #ccc; animation: none;">
+            //                             <div class="icon">🔌</div>
+            //                             <div>DB Offline</div>
+            //                         </div>
+            //                         <div style="font-size: 2em; color: #2196F3;">↓</div>
+            //                         <div class="backup-box pulse">
+            //                             <div class="icon">💾</div>
+            //                             <div>Backup</div>
+            //                         </div>
+            //                         <div style="font-size: 2em; color: #2196F3;">↓</div>
+            //                         <div class="database-box pulse">
+            //                             <div class="icon">✅</div>
+            //                             <div>DB Online</div>
+            //                         </div>
+            //                     </div>
+            //                     <div style="background: #e3f2fd; padding: 15px; border-radius: 10px;">
+            //                         <strong>Pros:</strong> Simple, consistent<br>
+            //                         <strong>Cons:</strong> Downtime required<br>
+            //                         <strong>Use:</strong> Maintenance windows
+            //                     </div>
+            //                 </div>
+            //                 <div style="border: 3px solid #f44336; border-radius: 15px; padding: 20px;">
+            //                     <h3 style="color: #f44336; text-align: center;">🔥 Hot Backup</h3>
+            //                     <div class="flex-container" style="margin: 20px 0;">
+            //                         <div style="display: flex; align-items: center; gap: 15px;">
+            //                             <div class="database-box pulse">
+            //                                 <div class="icon">⚡</div>
+            //                                 <div>DB Online</div>
+            //                                 <div style="font-size: 0.7em;">Users Active</div>
+            //                             </div>
+            //                             <div style="font-size: 2em; color: #f44336;">→</div>
+            //                             <div class="backup-box pulse">
+            //                                 <div class="icon">💾</div>
+            //                                 <div>Backup</div>
+            //                                 <div style="font-size: 0.7em;">Simultaneous</div>
+            //                             </div>
+            //                         </div>
+            //                     </div>
+            //                     <div style="background: #ffebee; padding: 15px; border-radius: 10px;">
+            //                         <strong>Pros:</strong> No downtime<br>
+            //                         <strong>Cons:</strong> More complex<br>
+            //                         <strong>Use:</strong> 24/7 production systems
+            //                     </div>
+            //                 </div>
+            //             </div>
+            //             <div class="comparison-table">
+            //                 <tr>
+            //                     <th>Feature</th>
+            //                     <th>Cold Backup</th>
+            //                     <th>Hot Backup</th>
+            //                 </tr>
+            //                 <tr>
+            //                     <td>Downtime</td>
+            //                     <td>Required ❄️</td>
+            //                     <td>None 🔥</td>
+            //                 </tr>
+            //                 <tr>
+            //                     <td>Consistency</td>
+            //                     <td>Guaranteed ✅</td>
+            //                     <td>Needs handling ⚠️</td>
+            //                 </tr>
+            //                 <tr>
+            //                     <td>Complexity</td>
+            //                     <td>Simple</td>
+            //                     <td>Complex</td>
+            //                 </tr>
+            //                 <tr>
+            //                     <td>Tools</td>
+            //                     <td>tar, rsync</td>
+            //                     <td>pg_basebackup</td>
+            //                 </tr>
+            //             </table>
+            //         `;
+            //     }
+            // },
+            // {
+            //     id: 'streaming',
+            //     name: 'Streaming Replication',
+            //     icon: '🔄',
+            //     description: 'Standby server mirrors primary in real-time. Instant failover for high availability and disaster recovery.',
+            //     visualization: function() {
+            //         return `
+            //             <div class="flex-container">
+            //                 <div class="server-node">
+            //                     <div class="icon">🖥️</div>
+            //                     <div>Primary Server</div>
+            //                     <div style="font-size: 0.8em;">Active</div>
+            //                 </div>
+            //                 <div style="display: flex; flex-direction: column; align-items: center;">
+            //                     <div style="font-size: 2em; color: #667eea;" class="flow-animation">⟹</div>
+            //                     <div style="font-size: 0.8em; color: #667eea;">Real-time stream</div>
+            //                 </div>
+            //                 <div class="server-node" style="background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);">
+            //                     <div class="icon">🖥️</div>
+            //                     <div>Standby Server</div>
+            //                     <div style="font-size: 0.8em;">Mirror</div>
+            //                 </div>
+            //             </div>
+            //             <div class="timeline" style="margin-top: 30px;">
+            //                 <div class="time-point">
+            //                     <div style="font-weight: bold;">Normal</div>
+            //                     <div class="data-block" style="background: #667eea;">Primary Active</div>
+            //                 </div>
+            //                 <div style="font-size: 2em;">→</div>
+            //                 <div class="time-point">
+            //                     <div style="font-weight: bold; color: #f44336;">Failure!</div>
+            //                     <div class="data-block" style="background: #f44336;">Primary Down</div>
+            //                 </div>
+            //                 <div style="font-size: 2em;">→</div>
+            //                 <div class="time-point">
+            //                     <div style="font-weight: bold; color: #4CAF50;">Recovery</div>
+            //                     <div class="data-block" style="background: #4CAF50;">Standby Promoted</div>
+            //                 </div>
+            //             </div>
+            //             <div class="success-box">
+            //                 <strong>Zero Data Loss!</strong> Standby is always up-to-date<br>
+            //                 <strong>Recovery Time:</strong> Seconds to minutes
+            //             </div>
+            //             <div style="margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 10px;">
+            //                 <strong>Use Case:</strong> Mission-critical databases that cannot afford downtime
+            //             </div>
+            //         `;
+            //     }
+            // },
+            // {
+            //     id: 'snapshot',
+            //     name: 'Snapshot Backup',
+            //     icon: '📸',
+            //     description: 'Instant point-in-time copy of filesystem. Perfect for cloud environments with fast backup/restore.',
+            //     visualization: function() {
+            //         return `
+            //             <div class="flex-container" style="flex-direction: column;">
+            //                 <div class="database-box pulse" style="width: 200px; height: 120px;">
+            //                     <div class="icon">☁️</div>
+            //                     <div>Database Volume</div>
+            //                     <div style="font-size: 0.8em;">Cloud Storage</div>
+            //                 </div>
+            //                 <div style="font-size: 3em; color: #667eea;" class="pulse">📸</div>
+            //                 <div style="display: flex; gap: 20px; flex-wrap: wrap; justify-content: center;">
+            //                     <div class="backup-box slide-in">
+            //                         <div>Snapshot 1</div>
+            //                         <div style="font-size: 0.7em;">10:00 AM</div>
+            //                     </div>
+            //                     <div class="backup-box slide-in">
+            //                         <div>Snapshot 2</div>
+            //                         <div style="font-size: 0.7em;">2:00 PM</div>
+            //                     </div>
+            //                     <div class="backup-box slide-in">
+            //                         <div>Snapshot 3</div>
+            //                         <div style="font-size: 0.7em;">6:00 PM</div>
+            //                     </div>
+            //                 </div>
+            //             </div>
+            //             <div class="highlight-box">
+            //                 <strong>Speed:</strong> Snapshots complete in seconds!<br>
+            //                 <strong>Storage:</strong> Only changed blocks stored (incremental)
+            //             </div>
+            //             <div class="grid-layout" style="margin-top: 20px;">
+            //                 <div class="server-node" style="font-size: 0.9em;">AWS EBS Snapshot</div>
+            //                 <div class="server-node" style="font-size: 0.9em;">Azure Disk Snapshot</div>
+            //                 <div class="server-node" style="font-size: 0.9em;">LVM Snapshot</div>
+            //             </div>
+            //             <div class="success-box">
+            //                 <strong>Recovery:</strong> Restore entire volume in minutes<br>
+            //                 <strong>Cost:</strong> Pay only for changed data
+            //             </div>
+            //         `;
+            //     }
+            // },
+            {
+                id: 'logical',
+                name: 'Logical Backup',
+                icon: '📄',
+                description: 'Backs up data in readable format (SQL dumps). Perfect for migrating specific tables or databases between systems.',
+                visualization: function() {
+                    return `
+                        <div class="flex-container">
+                            <div class="database-box pulse">
+                                <div class="icon">🗄️</div>
+                                <div>Database</div>
+                                <div style="font-size: 0.8em;">Tables & Data</div>
+                            </div>
+                            <div style="font-size: 3em; color: #667eea;" class="flow-animation">→</div>
+                            <div class="backup-box pulse">
+                                <div class="icon">📄</div>
+                                <div>.sql File</div>
+                                <div style="font-size: 0.7em;">Readable</div>
+                            </div>
+                        </div>
+                        <div class="highlight-box">
+                            <strong>Real Use:</strong> Export customer table to migrate to new server
+                        </div>
+                        <div class="legend">
+                            <div class="legend-item">
+                                <div class="legend-color" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);"></div>
+                                <span>Source Database</span>
+                            </div>
+                            <div class="legend-item">
+                                <div class="legend-color" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);"></div>
+                                <span>Backup File</span>
+                            </div>
+                        </div>
+                        <div style="margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 10px;">
+                            <strong>Tools:</strong> pg_dump, mysqldump<br>
+                            <strong>Format:</strong> SQL statements, CSV, JSON
+                        </div>
+                        <div style="margin-top: 15px; padding: 15px; background: #263238; color: #aed581; border-radius: 8px; font-family: monospace; font-size: 0.85em;">
+                            <strong style="color: #fff;">PostgreSQL Commands:</strong><br>
+                            <code style="display: block; margin: 8px 0;">pg_dump -U postgres -d mydb > backup.sql</code>
+                            <code style="display: block; margin: 8px 0;">pg_dump -U postgres -d mydb -t customers > customers.sql</code>
+                            <code style="display: block; margin: 8px 0;">pg_dump -U postgres -d mydb -Fc > backup.dump</code>
+                            <code style="display: block; margin: 8px 0;">pg_restore -U postgres -d newdb backup.dump</code>
+                            <br><strong style="color: #fff;">MySQL Commands:</strong><br>
+                            <code style="display: block; margin: 8px 0;">mysqldump -u root -p mydb > backup.sql</code>
+                            <code style="display: block; margin: 8px 0;">mysqldump -u root -p mydb customers > customers.sql</code>
+                            <code style="display: block; margin: 8px 0;">mysqldump -u root -p --all-databases > all_dbs.sql</code>
+                            <code style="display: block; margin: 8px 0;">mysql -u root -p mydb < backup.sql</code>
+                        </div>
+                        <div style="margin-top: 15px; padding: 15px; background: #fff3cd; border-left: 4px solid #ffc107; border-radius: 5px;">
+                            <strong>DBA Must Know:</strong><br>
+                            • Default PostgreSQL port: <strong>5432</strong><br>
+                            • Default MySQL port: <strong>3306</strong><br>
+                            • Max connections (PostgreSQL): <strong>100</strong> (default)<br>
+                            • Max packet size (MySQL): <strong>16MB</strong> (default)
+                        </div>
+                    `;
+                }
+            },
+            {
+                id: 'physical',
+                name: 'Physical Backup',
+                icon: '💾',
+                description: 'Direct copy of database files on disk. Fast recovery for complete system restoration after hardware failure.',
+                visualization: function() {
+                    return `
+                        <div class="flex-container">
+                            <div class="database-box pulse">
+                                <div class="icon">🗄️</div>
+                                <div>DB Files</div>
+                                <div style="font-size: 0.7em;">data/ logs/</div>
+                            </div>
+                            <div style="font-size: 3em; color: #667eea;" class="flow-animation">⚡</div>
+                            <div class="backup-box pulse">
+                                <div class="icon">💾</div>
+                                <div>File Copy</div>
+                                <div style="font-size: 0.7em;">Exact replica</div>
+                            </div>
+                        </div>
+                        <div class="success-box">
+                            <strong>Advantage:</strong> Fastest backup and restore method!
+                        </div>
+                        <div class="grid-layout" style="margin-top: 20px;">
+                            <div class="data-block">data.db</div>
+                            <div class="data-block">logs.wal</div>
+                            <div class="data-block">index.idx</div>
+                            <div class="data-block">config.cnf</div>
+                        </div>
+                        <div style="margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 10px;">
+                            <strong>Tools:</strong> rsync, tar, cp<br>
+                            <strong>Speed:</strong> Very Fast ⚡⚡⚡
+                        </div>
+                        <div style="margin-top: 15px; padding: 15px; background: #263238; color: #aed581; border-radius: 8px; font-family: monospace; font-size: 0.85em;">
+                            <strong style="color: #fff;">PostgreSQL Commands:</strong><br>
+                            <code style="display: block; margin: 8px 0;">pg_basebackup -U postgres -D /backup/base -Ft -z -P</code>
+                            <code style="display: block; margin: 8px 0;">rsync -av /var/lib/postgresql/14/main/ /backup/pgdata/</code>
+                            <code style="display: block; margin: 8px 0;">tar -czf backup.tar.gz /var/lib/postgresql/14/main/</code>
+                            <br><strong style="color: #fff;">MySQL Commands:</strong><br>
+                            <code style="display: block; margin: 8px 0;">systemctl stop mysql</code>
+                            <code style="display: block; margin: 8px 0;">rsync -av /var/lib/mysql/ /backup/mysql/</code>
+                            <code style="display: block; margin: 8px 0;">tar -czf mysql_backup.tar.gz /var/lib/mysql/</code>
+                            <code style="display: block; margin: 8px 0;">systemctl start mysql</code>
+                            <br><strong style="color: #fff;">Restore Commands:</strong><br>
+                            <code style="display: block; margin: 8px 0;">tar -xzf backup.tar.gz -C /var/lib/postgresql/14/main/</code>
+                            <code style="display: block; margin: 8px 0;">chown -R postgres:postgres /var/lib/postgresql/14/main/</code>
+                        </div>
+                        <div style="margin-top: 15px; padding: 15px; background: #fff3cd; border-left: 4px solid #ffc107; border-radius: 5px;">
+                            <strong>DBA Must Know:</strong><br>
+                            • PostgreSQL data directory: <strong>/var/lib/postgresql/{version}/main</strong><br>
+                            • MySQL data directory: <strong>/var/lib/mysql</strong><br>
+                            • WAL segment size: <strong>16MB</strong> (PostgreSQL)<br>
+                            • InnoDB buffer pool: <strong>80% of RAM</strong> (recommended)
+                        </div>
+                    `;
+                }
+            },
+            {
+                id: 'full',
+                name: 'Full Backup',
+                icon: '📦',
+                description: 'Complete snapshot of entire database. Base backup for all incremental/differential backups.',
+                visualization: function() {
+                    return `
+                        <div class="flex-container">
+                            <div class="database-box pulse" style="width: 150px; height: 150px;">
+                                <div class="icon">🗄️</div>
+                                <div>Complete DB</div>
+                                <div style="font-size: 0.7em;">All Data</div>
+                                <div style="font-size: 0.7em;">All Schema</div>
+                                <div style="font-size: 0.7em;">All Settings</div>
+                            </div>
+                            <div style="font-size: 3em; color: #667eea;" class="flow-animation">📸</div>
+                            <div class="backup-box pulse" style="width: 150px; height: 150px;">
+                                <div class="icon">📦</div>
+                                <div>Full Backup</div>
+                                <div style="font-size: 0.7em;">Sunday 00:00</div>
+                            </div>
+                        </div>
+                        <div class="timeline">
+                            <div class="time-point">
+                                <div style="font-weight: bold; color: #667eea;">Sunday</div>
+                                <div class="backup-box" style="width: 80px; height: 80px;">FULL</div>
+                                <div style="font-size: 0.9em;">100%</div>
+                            </div>
+                            <div style="font-size: 2em; color: #ccc;">→</div>
+                            <div class="time-point">
+                                <div style="font-weight: bold;">Mon-Sat</div>
+                                <div class="backup-box" style="width: 50px; height: 50px; font-size: 0.8em;">INC</div>
+                                <div style="font-size: 0.9em;">Changes only</div>
+                            </div>
+                        </div>
+                        <div class="highlight-box">
+                            <strong>Strategy:</strong> Take full backup weekly, then incremental daily
+                        </div>
+                        <div style="margin-top: 15px; padding: 15px; background: #263238; color: #aed581; border-radius: 8px; font-family: monospace; font-size: 0.85em;">
+                            <strong style="color: #fff;">PostgreSQL Full Backup:</strong><br>
+                            <code style="display: block; margin: 8px 0;">pg_dumpall -U postgres -f full_backup.sql</code>
+                            <code style="display: block; margin: 8px 0;">pg_basebackup -U postgres -D /backup/full -Ft -z</code>
+                            <br><strong style="color: #fff;">MySQL Full Backup:</strong><br>
+                            <code style="display: block; margin: 8px 0;">mysqldump -u root -p --all-databases --single-transaction > full_backup.sql</code>
+                            <code style="display: block; margin: 8px 0;">mysqldump -u root -p --all-databases --routines --triggers > full_complete.sql</code>
+                            <br><strong style="color: #fff;">Restore Full Backup:</strong><br>
+                            <code style="display: block; margin: 8px 0;">psql -U postgres -f full_backup.sql</code>
+                            <code style="display: block; margin: 8px 0;">mysql -u root -p < full_backup.sql</code>
+                        </div>
+                        <div style="margin-top: 15px; padding: 15px; background: #fff3cd; border-left: 4px solid #ffc107; border-radius: 5px;">
+                            <strong>DBA Must Know:</strong><br>
+                            • Full backup frequency: <strong>Weekly</strong> (standard practice)<br>
+                            • Backup retention: <strong>4 weeks minimum</strong><br>
+                            • Compression ratio: <strong>70-90%</strong> (typical)<br>
+                            • Backup window: <strong>Off-peak hours</strong> (2-6 AM recommended)
+                        </div>
+                    `;
+                }
+            },
+            {
+                id: 'incremental',
+                name: 'Incremental Backup',
+                icon: '📈',
+                description: 'Only backs up changes since last backup. Saves space and time for daily production backups.',
+                visualization: function() {
+                    return `
+                        <div class="timeline" style="flex-direction: column; align-items: flex-start;">
+                            <div style="display: flex; gap: 20px; align-items: center;">
+                                <div class="time-point">
+                                    <div style="font-weight: bold; color: #667eea;">Sunday</div>
+                                    <div class="backup-box">FULL</div>
+                                    <div style="font-size: 0.9em;">10 GB</div>
+                                </div>
+                            </div>
+                            <div style="font-size: 2em; margin: 10px 0;">↓</div>
+                            <div style="display: flex; gap: 20px; align-items: center; flex-wrap: wrap;">
+                                <div class="time-point slide-in">
+                                    <div style="font-weight: bold;">Monday</div>
+                                    <div class="backup-box" style="width: 60px; height: 60px; font-size: 0.8em;">INC 1</div>
+                                    <div style="font-size: 0.9em;">+500 MB</div>
+                                </div>
+                                <div style="font-size: 2em;">→</div>
+                                <div class="time-point slide-in">
+                                    <div style="font-weight: bold;">Tuesday</div>
+                                    <div class="backup-box" style="width: 60px; height: 60px; font-size: 0.8em;">INC 2</div>
+                                    <div style="font-size: 0.9em;">+300 MB</div>
+                                </div>
+                                <div style="font-size: 2em;">→</div>
+                                <div class="time-point slide-in">
+                                    <div style="font-weight: bold;">Wednesday</div>
+                                    <div class="backup-box" style="width: 60px; height: 60px; font-size: 0.8em;">INC 3</div>
+                                    <div style="font-size: 0.9em;">+400 MB</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="success-box">
+                            <strong>Total Storage:</strong> 10 GB + 500 MB + 300 MB + 400 MB = 11.2 GB<br>
+                            <strong>vs Full Daily:</strong> 10 GB × 4 = 40 GB (saved 28.8 GB!)
+                        </div>
+                        <div class="grid-layout" style="margin-top: 20px;">
+                            <div class="data-block">Changed rows</div>
+                            <div class="data-block">New records</div>
+                            <div class="data-block">Updated data</div>
+                        </div>
+                        <div style="margin-top: 15px; padding: 15px; background: #263238; color: #aed581; border-radius: 8px; font-family: monospace; font-size: 0.85em;">
+                            <strong style="color: #fff;">PostgreSQL Incremental (WAL-based):</strong><br>
+                            <code style="display: block; margin: 8px 0;">archive_mode = on</code>
+                            <code style="display: block; margin: 8px 0;">archive_command = 'cp %p /backup/wal/%f'</code>
+                            <code style="display: block; margin: 8px 0;">pg_basebackup -U postgres -D /backup/base -X stream</code>
+                            <br><strong style="color: #fff;">MySQL Incremental (Binary Logs):</strong><br>
+                            <code style="display: block; margin: 8px 0;">mysqlbinlog --start-datetime="2025-01-01 00:00:00" binlog.000001 > incr.sql</code>
+                            <code style="display: block; margin: 8px 0;">mysqlbinlog binlog.000001 binlog.000002 > all_changes.sql</code>
+                            <code style="display: block; margin: 8px 0;">FLUSH BINARY LOGS;</code>
+                            <br><strong style="color: #fff;">Restore Process:</strong><br>
+                            <code style="display: block; margin: 8px 0;">mysql -u root -p < full_backup.sql</code>
+                            <code style="display: block; margin: 8px 0;">mysql -u root -p < incr.sql</code>
+                        </div>
+                        <div style="margin-top: 15px; padding: 15px; background: #fff3cd; border-left: 4px solid #ffc107; border-radius: 5px;">
+                            <strong>DBA Must Know:</strong><br>
+                            • WAL segment size: <strong>16MB</strong> (PostgreSQL)<br>
+                            • Binary log retention: <strong>7 days minimum</strong><br>
+                            • Incremental backup speed: <strong>10-50MB/s</strong> (typical)<br>
+                            • Recovery time: <strong>Base + all increments</strong>
+                        </div>
+                    `;
+                }
+            },
+            {
+                id: 'differential',
+                name: 'Differential Backup',
+                icon: '📊',
+                description: 'Backs up all changes since last FULL backup. Faster recovery than incremental, but larger backup size.',
+                visualization: function() {
+                    return `
+                        <div class="timeline" style="flex-direction: column; align-items: flex-start;">
+                            <div style="display: flex; gap: 20px; align-items: center;">
+                                <div class="time-point">
+                                    <div style="font-weight: bold; color: #667eea;">Sunday</div>
+                                    <div class="backup-box" style="width: 100px; height: 100px;">FULL</div>
+                                    <div style="font-size: 0.9em;">10 GB</div>
+                                </div>
+                            </div>
+                            <div style="font-size: 2em; margin: 10px 0;">↓</div>
+                            <div style="display: flex; gap: 20px; align-items: center; flex-wrap: wrap;">
+                                <div class="time-point slide-in">
+                                    <div style="font-weight: bold;">Monday</div>
+                                    <div class="backup-box" style="width: 70px; height: 70px;">DIFF</div>
+                                    <div style="font-size: 0.9em;">+500 MB</div>
+                                </div>
+                                <div style="font-size: 2em;">→</div>
+                                <div class="time-point slide-in">
+                                    <div style="font-weight: bold;">Tuesday</div>
+                                    <div class="backup-box" style="width: 75px; height: 75px;">DIFF</div>
+                                    <div style="font-size: 0.9em;">+800 MB</div>
+                                </div>
+                                <div style="font-size: 2em;">→</div>
+                                <div class="time-point slide-in">
+                                    <div style="font-weight: bold;">Wednesday</div>
+                                    <div class="backup-box" style="width: 80px; height: 80px;">DIFF</div>
+                                    <div style="font-size: 0.9em;">+1.2 GB</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="comparison-table">
+                            <tr>
+                                <th>Restore Day</th>
+                                <th>Incremental Needs</th>
+                                <th>Differential Needs</th>
+                            </tr>
+                            <tr>
+                                <td>Wednesday</td>
+                                <td>FULL + INC1 + INC2 + INC3</td>
+                                <td>FULL + DIFF-Wed only</td>
+                            </tr>
+                        </table>
+                        <div class="success-box">
+                            <strong>Advantage:</strong> Faster restore (only 2 backups needed)<br>
+                            <strong>Trade-off:</strong> Each differential gets progressively larger
+                        </div>
+                        <div style="margin-top: 15px; padding: 15px; background: #263238; color: #aed581; border-radius: 8px; font-family: monospace; font-size: 0.85em;">
+                            <strong style="color: #fff;">PostgreSQL Differential Approach:</strong><br>
+                            <code style="display: block; margin: 8px 0;">pg_basebackup -U postgres -D /backup/base_sunday -Ft</code>
+                            <code style="display: block; margin: 8px 0;">rsync -av --link-dest=/backup/base_sunday /pgdata/ /backup/diff_monday/</code>
+                            <code style="display: block; margin: 8px 0;">rsync -av --link-dest=/backup/base_sunday /pgdata/ /backup/diff_tuesday/</code>
+                            <br><strong style="color: #fff;">MySQL Differential (with binary logs):</strong><br>
+                            <code style="display: block; margin: 8px 0;">mysqlbinlog --start-datetime="2025-01-07 00:00:00" binlog.* > diff_backup.sql</code>
+                            <code style="display: block; margin: 8px 0;">SHOW BINARY LOGS;</code>
+                            <code style="display: block; margin: 8px 0;">PURGE BINARY LOGS BEFORE '2025-01-01';</code>
+                            <br><strong style="color: #fff;">Restore Differential:</strong><br>
+                            <code style="display: block; margin: 8px 0;">mysql -u root -p < full_sunday.sql</code>
+                            <code style="display: block; margin: 8px 0;">mysql -u root -p < diff_wednesday.sql</code>
+                        </div>
+                        <div style="margin-top: 15px; padding: 15px; background: #fff3cd; border-left: 4px solid #ffc107; border-radius: 5px;">
+                            <strong>DBA Must Know:</strong><br>
+                            • Differential growth: <strong>10-30% daily</strong> (typical)<br>
+                            • Restore speed: <strong>2x faster than incremental</strong><br>
+                            • Storage overhead: <strong>30-50% more than incremental</strong><br>
+                            • Best for: <strong>Weekly full + daily differential</strong>
+                        </div>
+                    `;
+                }
+            },
+            {
+                id: 'wal',
+                name: 'WAL Archiving',
+                icon: '📝',
+                description: 'Continuously saves Write-Ahead Logs for Point-in-Time Recovery. Can restore to any specific second!',
+                visualization: function() {
+                    return `
+                        <div class="flex-container">
+                            <div class="database-box pulse">
+                                <div class="icon">🗄️</div>
+                                <div>Database</div>
+                                <div style="font-size: 0.7em;">Active</div>
+                            </div>
+                            <div style="font-size: 2em; color: #667eea;" class="flow-animation">→</div>
+                            <div style="display: flex; flex-direction: column; gap: 10px;">
+                                <div class="data-block changed-block">WAL 001</div>
+                                <div class="data-block changed-block">WAL 002</div>
+                                <div class="data-block changed-block">WAL 003</div>
+                            </div>
+                            <div style="font-size: 2em; color: #667eea;" class="flow-animation">→</div>
+                            <div class="backup-box pulse">
+                                <div class="icon">📝</div>
+                                <div>Archive</div>
+                                <div style="font-size: 0.7em;">Continuous</div>
+                            </div>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill"></div>
+                        </div>
+                        <div style="text-align: center; margin: 10px 0; color: #667eea; font-weight: bold;">
+                            ⏱️ Continuous Logging in Progress...
+                        </div>
+                        <div class="highlight-box">
+                            <strong>Example:</strong> Accidental DELETE at 14:35:22? <br>
+                            Restore to 14:35:21 and recover everything!
+                        </div>
+                        <div class="success-box">
+                            <strong>Use Case:</strong> Critical production databases that need second-level recovery precision
+                        </div>
+                        <div style="margin-top: 15px; padding: 15px; background: #263238; color: #aed581; border-radius: 8px; font-family: monospace; font-size: 0.85em;">
+                            <strong style="color: #fff;">PostgreSQL WAL Configuration:</strong><br>
+                            <code style="display: block; margin: 8px 0;">wal_level = replica</code>
+                            <code style="display: block; margin: 8px 0;">archive_mode = on</code>
+                            <code style="display: block; margin: 8px 0;">archive_command = 'cp %p /backup/wal/%f'</code>
+                            <code style="display: block; margin: 8px 0;">archive_timeout = 300</code>
+                            <br><strong style="color: #fff;">Manual WAL Operations:</strong><br>
+                            <code style="display: block; margin: 8px 0;">SELECT pg_switch_wal();</code>
+                            <code style="display: block; margin: 8px 0;">SELECT pg_current_wal_lsn();</code>
+                            <code style="display: block; margin: 8px 0;">SELECT pg_walfile_name(pg_current_wal_lsn());</code>
+                            <br><strong style="color: #fff;">MySQL Binary Log Setup:</strong><br>
+                            <code style="display: block; margin: 8px 0;">log_bin = /var/log/mysql/mysql-bin.log</code>
+                            <code style="display: block; margin: 8px 0;">expire_logs_days = 7</code>
+                            <code style="display: block; margin: 8px 0;">max_binlog_size = 100M</code>
+                            <code style="display: block; margin: 8px 0;">SHOW BINARY LOGS;</code>
+                        </div>
+                        <div style="margin-top: 15px; padding: 15px; background: #fff3cd; border-left: 4px solid #ffc107; border-radius: 5px;">
+                            <strong>DBA Must Know:</strong><br>
+                            • WAL segment size: <strong>16MB</strong> (PostgreSQL default)<br>
+                            • WAL write speed: <strong>~100MB/s</strong> (typical SSD)<br>
+                            • Archive timeout: <strong>5 minutes</strong> (recommended)<br>
+                            • Retention period: <strong>Match backup retention</strong>
+                        </div>
+                    `;
+                }
+            },
+            {
+                id: 'pitr',
+                name: 'Point-in-Time Recovery',
+                icon: '⏰',
+                description: 'Restore database to exact moment in time. Essential for recovering from accidental deletions or corruption.',
+                visualization: function() {
+                    return `
+                        <div style="margin: 30px 0;">
+                            <div style="display: flex; align-items: center; gap: 20px; margin-bottom: 30px;">
+                                <div class="backup-box">
+                                    <div>Base Backup</div>
+                                    <div style="font-size: 0.8em;">Sunday 00:00</div>
+                                </div>
+                                <div style="flex: 1; height: 4px; background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);"></div>
+                                <div style="font-size: 2em; animation: pulse 1s infinite;">❌</div>
+                                <div style="font-size: 0.9em; background: #ffebee; padding: 10px; border-radius: 5px;">
+                                    <strong>Error at Wed 14:35</strong><br>
+                                    Data deleted
+                                </div>
+                            </div>
+                            <div style="display: flex; justify-content: space-around; margin: 30px 0;">
+                                <div class="time-point">
+                                    <div style="color: #999;">Sunday</div>
+                                    <div style="font-size: 2em;">📦</div>
+                                </div>
+                                <div class="time-point">
+                                    <div style="color: #999;">Monday</div>
+                                    <div style="font-size: 1.5em;">📝</div>
+                                </div>
+                                <div class="time-point">
+                                    <div style="color: #999;">Tuesday</div>
+                                    <div style="font-size: 1.5em;">📝</div>
+                                </div>
+                                <div class="time-point">
+                                    <div style="color: #4CAF50; font-weight: bold;">Wed 14:34</div>
+                                    <div style="font-size: 2em;">✅</div>
+                                    <div style="font-size: 0.8em; color: #4CAF50;">Restore here!</div>
+                                </div>
+                                <div class="time-point">
+                                    <div style="color: #f44336; font-weight: bold;">Wed 14:35</div>
+                                    <div style="font-size: 2em;">❌</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="success-box">
+                            <strong>Recovery Process:</strong><br>
+                            1. Restore base backup (Sunday)<br>
+                            2. Apply WAL logs up to Wed 14:34:59<br>
+                            3. Database restored to 1 second before disaster!
+                        </div>
+                        <div class="highlight-box">
+                            <strong>Real Scenario:</strong> Developer accidentally runs DROP TABLE on production at 2:35 PM. 
+                            PITR restores to 2:34:59 PM, recovering all data!
+                        </div>
+                        <div style="margin-top: 15px; padding: 15px; background: #263238; color: #aed581; border-radius: 8px; font-family: monospace; font-size: 0.85em;">
+                            <strong style="color: #fff;">PostgreSQL PITR Recovery:</strong><br>
+                            <code style="display: block; margin: 8px 0;">restore_command = 'cp /backup/wal/%f %p'</code>
+                            <code style="display: block; margin: 8px 0;">recovery_target_time = '2025-01-10 14:34:59'</code>
+                            <code style="display: block; margin: 8px 0;">recovery_target_action = 'promote'</code>
+                            <code style="display: block; margin: 8px 0;">touch /var/lib/postgresql/14/main/recovery.signal</code>
+                            <code style="display: block; margin: 8px 0;">pg_ctl start</code>
+                            <br><strong style="color: #fff;">MySQL PITR Recovery:</strong><br>
+                            <code style="display: block; margin: 8px 0;">mysql -u root -p < full_backup.sql</code>
+                            <code style="display: block; margin: 8px 0;">mysqlbinlog --stop-datetime="2025-01-10 14:34:59" binlog.* | mysql -u root -p</code>
+                            <br><strong style="color: #fff;">Verify Recovery:</strong><br>
+                            <code style="display: block; margin: 8px 0;">SELECT pg_last_wal_replay_lsn();</code>
+                            <code style="display: block; margin: 8px 0;">SELECT COUNT(*) FROM critical_table;</code>
+                        </div>
+                        <div style="margin-top: 15px; padding: 15px; background: #fff3cd; border-left: 4px solid #ffc107; border-radius: 5px;">
+                            <strong>DBA Must Know:</strong><br>
+                            • Recovery time: <strong>Base backup time + WAL replay time</strong><br>
+                            • WAL replay speed: <strong>~50-100MB/s</strong><br>
+                            • Max recovery window: <strong>Limited by WAL retention</strong><br>
+                            • Test recovery: <strong>Monthly minimum</strong> (best practice)
+                        </div>
+                    `;
+                }
+            },
+            {
+                id: 'cold-hot',
+                name: 'Cold vs Hot Backup',
+                icon: '🔥',
+                description: 'Cold: Database offline (downtime). Hot: Database online (no downtime). Choose based on availability needs.',
+                visualization: function() {
+                    return `
+                        <div class="grid-layout" style="grid-template-columns: 1fr 1fr; gap: 30px;">
+                            <div style="border: 3px solid #2196F3; border-radius: 15px; padding: 20px;">
+                                <h3 style="color: #2196F3; text-align: center;">❄️ Cold Backup</h3>
+                                <div class="flex-container" style="flex-direction: column; margin: 20px 0;">
+                                    <div class="database-box" style="background: #ccc; animation: none;">
+                                        <div class="icon">🔌</div>
+                                        <div>DB Offline</div>
+                                    </div>
+                                    <div style="font-size: 2em; color: #2196F3;">↓</div>
+                                    <div class="backup-box pulse">
+                                        <div class="icon">💾</div>
+                                        <div>Backup</div>
+                                    </div>
+                                    <div style="font-size: 2em; color: #2196F3;">↓</div>
+                                    <div class="database-box pulse">
+                                        <div class="icon">✅</div>
+                                        <div>DB Online</div>
+                                    </div>
+                                </div>
+                                <div style="background: #e3f2fd; padding: 15px; border-radius: 10px;">
+                                    <strong>Pros:</strong> Simple, consistent<br>
+                                    <strong>Cons:</strong> Downtime required<br>
+                                    <strong>Use:</strong> Maintenance windows
+                                </div>
+                            </div>
+                            <div style="border: 3px solid #f44336; border-radius: 15px; padding: 20px;">
+                                <h3 style="color: #f44336; text-align: center;">🔥 Hot Backup</h3>
+                                <div class="flex-container" style="margin: 20px 0;">
+                                    <div style="display: flex; align-items: center; gap: 15px;">
+                                        <div class="database-box pulse">
+                                            <div class="icon">⚡</div>
+                                            <div>DB Online</div>
+                                            <div style="font-size: 0.7em;">Users Active</div>
+                                        </div>
+                                        <div style="font-size: 2em; color: #f44336;">→</div>
+                                        <div class="backup-box pulse">
+                                            <div class="icon">💾</div>
+                                            <div>Backup</div>
+                                            <div style="font-size: 0.7em;">Simultaneous</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div style="background: #ffebee; padding: 15px; border-radius: 10px;">
+                                    <strong>Pros:</strong> No downtime<br>
+                                    <strong>Cons:</strong> More complex<br>
+                                    <strong>Use:</strong> 24/7 production systems
+                                </div>
+                            </div>
+                        </div>
+                        <div class="comparison-table">
+                            <tr>
+                                <th>Feature</th>
+                                <th>Cold Backup</th>
+                                <th>Hot Backup</th>
+                            </tr>
+                            <tr>
+                                <td>Downtime</td>
+                                <td>Required ❄️</td>
+                                <td>None 🔥</td>
+                            </tr>
+                            <tr>
+                                <td>Consistency</td>
+                                <td>Guaranteed ✅</td>
+                                <td>Needs handling ⚠️</td>
+                            </tr>
+                            <tr>
+                                <td>Complexity</td>
+                                <td>Simple</td>
+                                <td>Complex</td>
+                            </tr>
+                            <tr>
+                                <td>Tools</td>
+                                <td>tar, rsync</td>
+                                <td>pg_basebackup</td>
+                            </tr>
+                        </table>
+                        <div style="margin-top: 15px; padding: 15px; background: #263238; color: #aed581; border-radius: 8px; font-family: monospace; font-size: 0.85em;">
+                            <strong style="color: #fff;">Cold Backup Commands:</strong><br>
+                            <code style="display: block; margin: 8px 0;">systemctl stop postgresql</code>
+                            <code style="display: block; margin: 8px 0;">tar -czf /backup/cold_backup.tar.gz /var/lib/postgresql/</code>
+                            <code style="display: block; margin: 8px 0;">systemctl start postgresql</code>
+                            <br><strong style="color: #fff;">Hot Backup Commands:</strong><br>
+                            <code style="display: block; margin: 8px 0;">pg_basebackup -U replication -D /backup/hot -Ft -z -P</code>
+                            <code style="display: block; margin: 8px 0;">mysqldump -u root -p --single-transaction --quick mydb > hot_backup.sql</code>
+                            <br><strong style="color: #fff;">MySQL Hot Backup (InnoDB):</strong><br>
+                            <code style="display: block; margin: 8px 0;">mysqldump -u root -p --single-transaction --master-data=2 --all-databases > hot.sql</code>
+                        </div>
+                        <div style="margin-top: 15px; padding: 15px; background: #fff3cd; border-left: 4px solid #ffc107; border-radius: 5px;">
+                            <strong>DBA Must Know:</strong><br>
+                            • Cold backup downtime: <strong>5-30 minutes</strong> (typical)<br>
+                            • Hot backup overhead: <strong>10-20% CPU/IO</strong><br>
+                            • Maintenance window: <strong>2-6 AM</strong> (recommended)<br>
+                            • SLA target: <strong>99.9% = 8.76 hours/year downtime</strong>
+                        </div>
+                    `;
+                }
+            },
+            {
+                id: 'streaming',
+                name: 'Streaming Replication',
+                icon: '🔄',
+                description: 'Standby server mirrors primary in real-time. Instant failover for high availability and disaster recovery.',
+                visualization: function() {
+                    return `
+                        <div class="flex-container">
+                            <div class="server-node">
+                                <div class="icon">🖥️</div>
+                                <div>Primary Server</div>
+                                <div style="font-size: 0.8em;">Active</div>
+                            </div>
+                            <div style="display: flex; flex-direction: column; align-items: center;">
+                                <div style="font-size: 2em; color: #667eea;" class="flow-animation">⟹</div>
+                                <div style="font-size: 0.8em; color: #667eea;">Real-time stream</div>
+                            </div>
+                            <div class="server-node" style="background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);">
+                                <div class="icon">🖥️</div>
+                                <div>Standby Server</div>
+                                <div style="font-size: 0.8em;">Mirror</div>
+                            </div>
+                        </div>
+                        <div class="timeline" style="margin-top: 30px;">
+                            <div class="time-point">
+                                <div style="font-weight: bold;">Normal</div>
+                                <div class="data-block" style="background: #667eea;">Primary Active</div>
+                            </div>
+                            <div style="font-size: 2em;">→</div>
+                            <div class="time-point">
+                                <div style="font-weight: bold; color: #f44336;">Failure!</div>
+                                <div class="data-block" style="background: #f44336;">Primary Down</div>
+                            </div>
+                            <div style="font-size: 2em;">→</div>
+                            <div class="time-point">
+                                <div style="font-weight: bold; color: #4CAF50;">Recovery</div>
+                                <div class="data-block" style="background: #4CAF50;">Standby Promoted</div>
+                            </div>
+                        </div>
+                        <div class="success-box">
+                            <strong>Zero Data Loss!</strong> Standby is always up-to-date<br>
+                            <strong>Recovery Time:</strong> Seconds to minutes
+                        </div>
+                        <div style="margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 10px;">
+                            <strong>Use Case:</strong> Mission-critical databases that cannot afford downtime
+                        </div>
+                        <div style="margin-top: 15px; padding: 15px; background: #263238; color: #aed581; border-radius: 8px; font-family: monospace; font-size: 0.85em;">
+                            <strong style="color: #fff;">PostgreSQL Primary Configuration:</strong><br>
+                            <code style="display: block; margin: 8px 0;">wal_level = replica</code>
+                            <code style="display: block; margin: 8px 0;">max_wal_senders = 10</code>
+                            <code style="display: block; margin: 8px 0;">wal_keep_size = 1GB</code>
+                            <code style="display: block; margin: 8px 0;">hot_standby = on</code>
+                            <br><strong style="color: #fff;">Setup Standby Server:</strong><br>
+                            <code style="display: block; margin: 8px 0;">pg_basebackup -h primary -D /pgdata -U replication -P -X stream</code>
+                            <code style="display: block; margin: 8px 0;">touch /pgdata/standby.signal</code>
+                            <code style="display: block; margin: 8px 0;">primary_conninfo = 'host=primary port=5432 user=replication'</code>
+                            <br><strong style="color: #fff;">MySQL Replication Setup:</strong><br>
+                            <code style="display: block; margin: 8px 0;">CHANGE MASTER TO MASTER_HOST='primary', MASTER_USER='repl', MASTER_PASSWORD='pass';</code>
+                            <code style="display: block; margin: 8px 0;">START SLAVE;</code>
+                            <code style="display: block; margin: 8px 0;">SHOW SLAVE STATUS\G</code>
+                            <br><strong style="color: #fff;">Promote Standby (Failover):</strong><br>
+                            <code style="display: block; margin: 8px 0;">pg_ctl promote -D /pgdata</code>
+                        </div>
+                        <div style="margin-top: 15px; padding: 15px; background: #fff3cd; border-left: 4px solid #ffc107; border-radius: 5px;">
+                            <strong>DBA Must Know:</strong><br>
+                            • Replication lag: <strong>< 1 second</strong> (target)<br>
+                            • max_wal_senders: <strong>10</strong> (default, supports 10 standbys)<br>
+                            • wal_keep_size: <strong>1GB minimum</strong><br>
+                            • RPO (Recovery Point Objective): <strong>0 seconds</strong> (sync replication)
+                        </div>
+                    `;
+                }
+            },
+            {
+                id: 'snapshot',
+                name: 'Snapshot Backup',
+                icon: '📸',
+                description: 'Instant point-in-time copy of filesystem. Perfect for cloud environments with fast backup/restore.',
+                visualization: function() {
+                    return `
+                        <div class="flex-container" style="flex-direction: column;">
+                            <div class="database-box pulse" style="width: 200px; height: 120px;">
+                                <div class="icon">☁️</div>
+                                <div>Database Volume</div>
+                                <div style="font-size: 0.8em;">Cloud Storage</div>
+                            </div>
+                            <div style="font-size: 3em; color: #667eea;" class="pulse">📸</div>
+                            <div style="display: flex; gap: 20px; flex-wrap: wrap; justify-content: center;">
+                                <div class="backup-box slide-in">
+                                    <div>Snapshot 1</div>
+                                    <div style="font-size: 0.7em;">10:00 AM</div>
+                                </div>
+                                <div class="backup-box slide-in">
+                                    <div>Snapshot 2</div>
+                                    <div style="font-size: 0.7em;">2:00 PM</div>
+                                </div>
+                                <div class="backup-box slide-in">
+                                    <div>Snapshot 3</div>
+                                    <div style="font-size: 0.7em;">6:00 PM</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="highlight-box">
+                            <strong>Speed:</strong> Snapshots complete in seconds!<br>
+                            <strong>Storage:</strong> Only changed blocks stored (incremental)
+                        </div>
+                        <div class="grid-layout" style="margin-top: 20px;">
+                            <div class="server-node" style="font-size: 0.9em;">AWS EBS Snapshot</div>
+                            <div class="server-node" style="font-size: 0.9em;">Azure Disk Snapshot</div>
+                            <div class="server-node" style="font-size: 0.9em;">LVM Snapshot</div>
+                        </div>
+                        <div class="success-box">
+                            <strong>Recovery:</strong> Restore entire volume in minutes<br>
+                            <strong>Cost:</strong> Pay only for changed data
+                        </div>
+                        <div style="margin-top: 15px; padding: 15px; background: #263238; color: #aed581; border-radius: 8px; font-family: monospace; font-size: 0.85em;">
+                            <strong style="color: #fff;">AWS EBS Snapshot:</strong><br>
+                            <code style="display: block; margin: 8px 0;">aws ec2 create-snapshot --volume-id vol-1234567890 --description "DB Backup"</code>
+                            <code style="display: block; margin: 8px 0;">aws ec2 describe-snapshots --snapshot-ids snap-1234567890</code>
+                            <code style="display: block; margin: 8px 0;">aws ec2 create-volume --snapshot-id snap-1234567890 --availability-zone us-east-1a</code>
+                            <br><strong style="color: #fff;">Azure Disk Snapshot:</strong><br>
+                            <code style="display: block; margin: 8px 0;">az snapshot create --resource-group myRG --name mySnapshot --source myDisk</code>
+                            <code style="display: block; margin: 8px 0;">az disk create --resource-group myRG --name myNewDisk --source mySnapshot</code>
+                            <br><strong style="color: #fff;">LVM Snapshot (Linux):</strong><br>
+                            <code style="display: block; margin: 8px 0;">lvcreate -L 10G -s -n db_snap /dev/vg0/db_volume</code>
+                            <code style="display: block; margin: 8px 0;">mount /dev/vg0/db_snap /mnt/snapshot</code>
+                            <code style="display: block; margin: 8px 0;">rsync -av /mnt/snapshot/ /backup/</code>
+                            <code style="display: block; margin: 8px 0;">lvremove /dev/vg0/db_snap</code>
+                        </div>
+                        <div style="margin-top: 15px; padding: 15px; background: #fff3cd; border-left: 4px solid #ffc107; border-radius: 5px;">
+                            <strong>DBA Must Know:</strong><br>
+                            • Snapshot speed: <strong>< 10 seconds</strong> (creation time)<br>
+                            • Block size: <strong>512KB</strong> (AWS EBS default)<br>
+                            • Retention: <strong>30-90 days</strong> (typical)<br>
+                            • Cost: <strong>$0.05/GB/month</strong> (AWS EBS, approximate)
+                        </div>
+                    `;
+                }
+            },
+            
+            
+            
+            {
+                id: 'compressed',
+                name: 'Compressed Backup',
+                icon: '🗜️',
+                description: 'Reduces backup size significantly. Essential for large databases to save storage costs.',
+                visualization: function() {
+                    return `
+                        <div class="flex-container">
+                            <div style="text-align: center;">
+                                <div class="database-box pulse" style="width: 150px; height: 150px;">
+                                    <div class="icon">📦</div>
+                                    <div>Backup</div>
+                                    <div style="font-size: 1.5em; margin-top: 10px;">100 GB</div>
+                                </div>
+                                <div style="margin-top: 10px; color: #999;">Original Size</div>
+                            </div>
+                            <div style="font-size: 3em; color: #667eea;" class="flow-animation">🗜️</div>
+                            <div style="text-align: center;">
+                                <div class="backup-box pulse" style="width: 100px; height: 100px;">
+                                    <div class="icon">📦</div>
+                                    <div>Compressed</div>
+                                    <div style="font-size: 1.2em; margin-top: 5px;">20 GB</div>
+                                </div>
+                                <div style="margin-top: 10px; color: #4CAF50; font-weight: bold;">80% smaller!</div>
+                            </div>
+                        </div>
+                        <div class="comparison-table">
+                            <tr>
+                                <th>Compression</th>
+                                <th>Ratio</th>
+                                <th>Speed</th>
+                                <th>CPU Usage</th>
+                            </tr>
+                            <tr>
+                                <td>gzip</td>
+                                <td>70-80%</td>
+                                <td>Medium</td>
+                                <td>Medium</td>
+                            </tr>
+                            <tr>
+                                <td>bzip2</td>
+                                <td>80-90%</td>
+                                <td>Slow</td>
+                                <td>High</td>
+                            </tr>
+                            <tr>
+                                <td>lz4</td>
+                                <td>50-60%</td>
+                                <td>Very Fast</td>
+                                <td>Low</td>
+                            </tr>
+                        </table>
+                        <div class="success-box">
+                            <strong>Storage Savings:</strong> $1000/month → $200/month<br>
+                            <strong>Transfer Time:</strong> 5x faster uploads to cloud
+                        </div>
+                        <div style="margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 10px;">
+                            <strong>Command:</strong> pg_dump database | gzip > backup.sql.gz
+                        </div>
+                    `;
+                }
+            },
+            {
+                id: 'encrypted',
+                name: 'Encrypted Backup',
+                icon: '🔐',
+                description: 'Secures backup data with encryption. Mandatory for sensitive data and compliance requirements.',
+                visualization: function() {
+                    return `
+                        <div class="flex-container">
+                            <div class="database-box pulse">
+                                <div class="icon">🗄️</div>
+                                <div>Database</div>
+                                <div style="font-size: 0.7em;">Sensitive Data</div>
+                            </div>
+                            <div style="font-size: 3em; color: #667eea;" class="flow-animation">→</div>
+                            <div style="text-align: center;">
+                                <div class="backup-box pulse" style="background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);">
+                                    <div class="icon">🔐</div>
+                                    <div>Encryption</div>
+                                    <div style="font-size: 0.7em;">AES-256</div>
+                                </div>
+                            </div>
+                            <div style="font-size: 3em; color: #667eea;" class="flow-animation">→</div>
+                            <div class="backup-box pulse">
+                                <div class="icon">🔒</div>
+                                <div>Secure Backup</div>
+                                <div style="font-size: 0.7em;">Protected</div>
+                            </div>
+                        </div>
+                        <div class="highlight-box">
+                            <strong>⚠️ Critical for:</strong><br>
+                            • Customer personal information (PII)<br>
+                            • Financial records<br>
+                            • Healthcare data (HIPAA)<br>
+                            • Credit card information (PCI-DSS)
+                        </div>
+                        <div class="grid-layout" style="margin-top: 20px;">
+                            <div class="data-block" style="background: #f44336;">
+                                <div style="font-size: 0.8em;">Without</div>
+                                Readable
+                            </div>
+                            <div class="data-block" style="background: #4CAF50;">
+                                <div style="font-size: 0.8em;">With</div>
+                                Protected
+                            </div>
+                        </div>
+                        <div class="success-box">
+                            <strong>Encryption Methods:</strong><br>
+                            • gpg --encrypt backup.sql<br>
+                            • openssl enc -aes-256-cbc<br>
+                            • Native DB encryption features
+                        </div>
+                    `;
+                }
+            },
+            {
+                id: 'cloud',
+                name: 'Cloud/Remote Backup',
+                icon: '☁️',
+                description: 'Store backups offsite in cloud. Essential disaster recovery strategy for geographic redundancy.',
+                visualization: function() {
+                    return `
+                        <div class="flex-container" style="flex-direction: column; gap: 30px;">
+                            <div style="display: flex; gap: 30px; align-items: center; justify-content: center; flex-wrap: wrap;">
+                                <div class="server-node">
+                                    <div class="icon">🏢</div>
+                                    <div>On-Premise</div>
+                                    <div style="font-size: 0.8em;">Local Datacenter</div>
+                                </div>
+                                <div style="font-size: 3em; color: #667eea;" class="flow-animation">☁️→</div>
+                                <div class="server-node" style="background: linear-gradient(135deg, #FF6B6B 0%, #ee5a6f 100%);">
+                                    <div class="icon">☁️</div>
+                                    <div>AWS S3</div>
+                                    <div style="font-size: 0.8em;">Virginia</div>
+                                </div>
+                                <div style="font-size: 2em;">+</div>
+                                <div class="server-node" style="background: linear-gradient(135deg, #4ECDC4 0%, #44a4a1 100%);">
+                                    <div class="icon">☁️</div>
+                                    <div>Azure Blob</div>
+                                    <div style="font-size: 0.8em;">Europe</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="timeline">
+                            <div class="time-point">
+                                <div style="font-weight: bold; color: #f44336;">Disaster</div>
+                                <div style="font-size: 2em;">🔥</div>
+                                <div style="font-size: 0.8em;">Building fire</div>
+                            </div>
+                            <div style="font-size: 2em;">→</div>
+                            <div class="time-point">
+                                <div style="font-weight: bold; color: #4CAF50;">Recovery</div>
+                                <div style="font-size: 2em;">✅</div>
+                                <div style="font-size: 0.8em;">Restore from cloud</div>
+                            </div>
+                        </div>
+                        <div class="success-box">
+                            <strong>Protection against:</strong><br>
+                            • Fire, flood, earthquake<br>
+                            • Hardware failure<br>
+                            • Ransomware attacks<br>
+                            • Complete site loss
+                        </div>
+                        <div class="comparison-table">
+                            <tr>
+                                <th>Provider</th>
+                                <th>Service</th>
+                                <th>Durability</th>
+                            </tr>
+                            <tr>
+                                <td>AWS</td>
+                                <td>S3 Glacier</td>
+                                <td>99.999999999%</td>
+                            </tr>
+                            <tr>
+                                <td>Azure</td>
+                                <td>Blob Storage</td>
+                                <td>99.999999999%</td>
+                            </tr>
+                            <tr>
+                                <td>Google Cloud</td>
+                                <td>Cloud Storage</td>
+                                <td>99.999999999%</td>
+                            </tr>
+                        </table>
+                    `;
+                }
+            },
+            {
+                id: 'summary',
+                name: 'Quick Reference',
+                icon: '📋',
+                description: 'Compare all backup types at a glance and choose the right strategy for your needs.',
+                visualization: function() {
+                    return `
+                        <div class="comparison-table">
+                            <tr>
+                                <th>Backup Type</th>
+                                <th>Best For</th>
+                                <th>Recovery Speed</th>
+                                <th>Storage Need</th>
+                            </tr>
+                            <tr>
+                                <td>📄 Logical</td>
+                                <td>Table migration</td>
+                                <td>Medium</td>
+                                <td>Medium</td>
+                            </tr>
+                            <tr>
+                                <td>💾 Physical</td>
+                                <td>Full recovery</td>
+                                <td>Very Fast</td>
+                                <td>Large</td>
+                            </tr>
+                            <tr>
+                                <td>📦 Full</td>
+                                <td>Base backup</td>
+                                <td>Fast</td>
+                                <td>Largest</td>
+                            </tr>
+                            <tr>
+                                <td>📈 Incremental</td>
+                                <td>Daily backups</td>
+                                <td>Slow (many files)</td>
+                                <td>Smallest</td>
+                            </tr>
+                            <tr>
+                                <td>📊 Differential</td>
+                                <td>Weekly strategy</td>
+                                <td>Medium-Fast</td>
+                                <td>Medium</td>
+                            </tr>
+                            <tr>
+                                <td>📝 WAL</td>
+                                <td>PITR</td>
+                                <td>Fast</td>
+                                <td>Large</td>
+                            </tr>
+                            <tr>
+                                <td>❄️ Cold</td>
+                                <td>Maintenance windows</td>
+                                <td>Fast</td>
+                                <td>Medium</td>
+                            </tr>
+                            <tr>
+                                <td>🔥 Hot</td>
+                                <td>24/7 systems</td>
+                                <td>Fast</td>
+                                <td>Medium</td>
+                            </tr>
+                            <tr>
+                                <td>🔄 Streaming</td>
+                                <td>High availability</td>
+                                <td>Instant</td>
+                                <td>Large</td>
+                            </tr>
+                            <tr>
+                                <td>📸 Snapshot</td>
+                                <td>Cloud environments</td>
+                                <td>Very Fast</td>
+                                <td>Efficient</td>
+                            </tr>
+                            <tr>
+                                <td>🗜️ Compressed</td>
+                                <td>Save storage</td>
+                                <td>Medium</td>
+                                <td>Small</td>
+                            </tr>
+                            <tr>
+                                <td>🔐 Encrypted</td>
+                                <td>Sensitive data</td>
+                                <td>Medium</td>
+                                <td>Medium</td>
+                            </tr>
+                            <tr>
+                                <td>☁️ Cloud</td>
+                                <td>Disaster recovery</td>
+                                <td>Depends on network</td>
+                                <td>Variable</td>
+                            </tr>
+                        </table>
+                        <div style="margin-top: 30px;">
+                            <h3 style="color: #667eea; margin-bottom: 15px;">Recommended Strategies</h3>
+                            <div class="success-box">
+                                <strong>🏢 Small Business:</strong><br>
+                                Full backup weekly + Differential daily + Cloud storage
+                            </div>
+                            <div class="success-box">
+                                <strong>🏭 Enterprise:</strong><br>
+                                Full + Incremental + WAL + Streaming Replication + Cloud
+                            </div>
+                            <div class="success-box">
+                                <strong>☁️ Cloud-Native:</strong><br>
+                                Snapshots + Automated backups + Multi-region replication
+                            </div>
+                            <div class="highlight-box">
+                                <strong>💡 Pro Tips:</strong><br>
+                                • Test restore regularly (monthly)<br>
+                                • Keep 3 copies (3-2-1 rule)<br>
+                                • Automate everything<br>
+                                • Monitor backup success<br>
+                                • Document procedures
+                            </div>
+                        </div>
+                    `;
+                }
+            },
+            {
+    id: '3-2-1-rule',
+    name: '3-2-1 Backup Rule',
+    icon: '🎯',
+    description: 'Industry-standard backup strategy: 3 copies of data, 2 different media types, 1 offsite copy. The golden rule that saved countless businesses from data disasters.',
+    visualization: function() {
+        return `
+            <div class="highlight-box" style="background: #e8f5e9; border-color: #4CAF50;">
+                <h3 style="color: #2e7d32; margin-bottom: 15px;">🎯 The 3-2-1 Rule Explained</h3>
+                <strong>Keep 3 copies:</strong> 1 production + 2 backups<br>
+                <strong>On 2 different media:</strong> Local disk + Tape/Cloud<br>
+                <strong>With 1 offsite:</strong> Geographic protection
+            </div>
+
+            <div class="flex-container" style="margin: 30px 0; justify-content: space-around;">
+                <div style="text-align: center;">
+                    <div class="database-box pulse" style="width: 100px; height: 100px;">
+                        <div class="icon">🖥️</div>
+                        <div style="font-size: 0.8em;">Production</div>
+                    </div>
+                    <div style="margin-top: 10px; font-weight: bold; color: #667eea;">Copy #1</div>
+                </div>
+                
+                <div style="text-align: center;">
+                    <div class="backup-box pulse" style="width: 100px; height: 100px;">
+                        <div class="icon">💾</div>
+                        <div style="font-size: 0.8em;">Local Backup</div>
+                    </div>
+                    <div style="margin-top: 10px; font-weight: bold; color: #667eea;">Copy #2</div>
+                </div>
+                
+                <div style="text-align: center;">
+                    <div class="backup-box pulse" style="width: 100px; height: 100px; background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);">
+                        <div class="icon">☁️</div>
+                        <div style="font-size: 0.8em;">Cloud Backup</div>
+                    </div>
+                    <div style="margin-top: 10px; font-weight: bold; color: #4CAF50;">Copy #3</div>
+                </div>
+            </div>
+
+            <div class="success-box">
+                <h4 style="margin-bottom: 10px;">📋 Real-World DBA Implementation</h4>
+                <strong>Scenario:</strong> E-commerce PostgreSQL database (500GB)<br><br>
+                
+                <strong>Copy 1 - Production Server:</strong><br>
+                <code style="background: #f5f5f5; padding: 5px; display: block; margin: 5px 0;">
+                Location: /var/lib/postgresql/14/main<br>
+                Server: prod-db-01.company.com
+                </code>
+
+                <strong>Copy 2 - Local NAS Backup (Different Media):</strong><br>
+                <code style="background: #f5f5f5; padding: 5px; display: block; margin: 5px 0;">
+                $ pg_basebackup -h localhost -D /mnt/nas/backups/daily -Fp -Xs -P<br>
+                Location: /mnt/nas/backups/ (Network Storage)<br>
+                Schedule: Daily at 2 AM
+                </code>
+
+                <strong>Copy 3 - AWS S3 Offsite (Different Location):</strong><br>
+                <code style="background: #f5f5f5; padding: 5px; display: block; margin: 5px 0;">
+                $ aws s3 sync /mnt/nas/backups/ s3://company-db-backups/prod/ --storage-class GLACIER<br>
+                Location: us-west-2 (Different region)<br>
+                Schedule: Daily at 4 AM
+                </code>
+            </div>
+
+            <div class="comparison-table">
+                <tr>
+                    <th>Copy</th>
+                    <th>Location</th>
+                    <th>Media Type</th>
+                    <th>Recovery Time</th>
+                    <th>Protection Against</th>
+                </tr>
+                <tr>
+                    <td>Copy 1</td>
+                    <td>Production Server</td>
+                    <td>Local SSD</td>
+                    <td>0 seconds</td>
+                    <td>-</td>
+                </tr>
+                <tr>
+                    <td>Copy 2</td>
+                    <td>NAS in same datacenter</td>
+                    <td>Network Storage</td>
+                    <td>1-2 hours</td>
+                    <td>Disk failure, corruption</td>
+                </tr>
+                <tr>
+                    <td>Copy 3</td>
+                    <td>AWS S3 (remote region)</td>
+                    <td>Cloud Storage</td>
+                    <td>4-6 hours</td>
+                    <td>Fire, flood, ransomware</td>
+                </tr>
+            </table>
+
+            <div class="highlight-box">
+                <h4>⚠️ Real Disaster Story</h4>
+                <strong>Company:</strong> GitLab (2017)<br>
+                <strong>Incident:</strong> Accidental deletion of production database<br>
+                <strong>Problem:</strong> 5 backup methods failed, only 1 worked<br>
+                <strong>Lesson:</strong> They didn't test restores regularly<br>
+                <strong>Result:</strong> Lost 6 hours of data, but 3-2-1 rule saved the company
+            </div>
+
+            <div style="margin-top: 20px; padding: 20px; background: #fff3cd; border-radius: 10px;">
+                <h4 style="color: #856404;">💡 DBA Pro Tips</h4>
+                <ul style="margin-left: 20px; line-height: 1.8;">
+                    <li><strong>Test monthly:</strong> Restore to dev environment from each copy</li>
+                    <li><strong>Automate verification:</strong> Use scripts to check backup integrity</li>
+                    <li><strong>Monitor actively:</strong> Alert if any copy fails</li>
+                    <li><strong>Document procedures:</strong> Junior DBAs should be able to restore</li>
+                    <li><strong>Version control:</strong> Keep multiple generations (7 daily, 4 weekly, 12 monthly)</li>
+                </ul>
+            </div>
+
+            <div class="success-box">
+                <h4>🔧 Quick Implementation Script</h4>
+                <code style="background: #2d2d2d; color: #f8f8f2; padding: 15px; display: block; margin: 10px 0; border-radius: 5px; overflow-x: auto;">
+                #!/bin/bash<br>
+                # 3-2-1 Backup Script for PostgreSQL<br>
+                DATE=$(date +%Y%m%d)<br>
+                <br>
+                # Copy 2: Local NAS backup<br>
+                pg_basebackup -h localhost -D /mnt/nas/backup-$DATE -Fp -Xs -P<br>
+                <br>
+                # Copy 3: Sync to S3<br>
+                aws s3 sync /mnt/nas/backup-$DATE s3://backups/prod/$DATE/<br>
+                <br>
+                # Verify all 3 copies exist<br>
+                if [ -d "/var/lib/postgresql/14/main" ] && \<br>
+                [ -d "/mnt/nas/backup-$DATE" ] && \<br>
+                aws s3 ls s3://backups/prod/$DATE/; then<br>
+                    echo "✅ 3-2-1 rule satisfied"<br>
+                else<br>
+                    echo "❌ ALERT: Backup incomplete!" | mail -s "URGENT" dba@company.com<br>
+                fi
+                                </code>
+                            </div>
+                        `;
+                    }
+                },
+
+                {
+    id: 'testing-validation',
+    name: 'Backup Testing & Validation',
+    icon: '🧪',
+    description: 'Untested backups are useless backups. Learn how DBAs validate backups are actually restorable before disaster strikes.',
+    visualization: function() {
+        return `
+            <div class="highlight-box" style="background: #ffebee; border-color: #f44336;">
+                <h3 style="color: #c62828;">⚠️ The Uncomfortable Truth</h3>
+                <div style="font-size: 1.2em; margin: 15px 0;">
+                    <strong>"You don't have a backup until you've verified you can restore it."</strong>
+                </div>
+                Studies show 30% of backups fail when actually needed!
+            </div>
+
+            <div class="timeline" style="margin: 30px 0;">
+                <div class="time-point">
+                    <div style="font-weight: bold; color: #4CAF50;">Step 1</div>
+                    <div class="data-block" style="background: #4CAF50;">Create Backup</div>
+                    <div style="font-size: 0.9em;">Daily automated</div>
+                </div>
+                <div style="font-size: 2em;">→</div>
+                <div class="time-point">
+                    <div style="font-weight: bold; color: #FF9800;">Step 2</div>
+                    <div class="data-block" style="background: #FF9800;">Verify Files</div>
+                    <div style="font-size: 0.9em;">Check integrity</div>
+                </div>
+                <div style="font-size: 2em;">→</div>
+                <div class="time-point">
+                    <div style="font-weight: bold; color: #2196F3;">Step 3</div>
+                    <div class="data-block" style="background: #2196F3;">Test Restore</div>
+                    <div style="font-size: 0.9em;">Monthly drill</div>
+                </div>
+                <div style="font-size: 2em;">→</div>
+                <div class="time-point">
+                    <div style="font-weight: bold; color: #9C27B0;">Step 4</div>
+                    <div class="data-block" style="background: #9C27B0;">Validate Data</div>
+                    <div style="font-size: 0.9em;">Run queries</div>
+                </div>
+            </div>
+
+            <div class="success-box">
+                <h4>🔍 PostgreSQL Backup Verification Commands</h4>
+                
+                <strong>1. Check Backup File Exists & Size:</strong>
+                <code style="background: #2d2d2d; color: #f8f8f2; padding: 10px; display: block; margin: 10px 0; border-radius: 5px;">
+$ ls -lh /backups/prod_backup_20241103.sql.gz<br>
+-rw-r--r-- 1 postgres postgres 2.3G Nov  3 02:15 prod_backup_20241103.sql.gz<br>
+✅ File exists and size looks correct (expected ~2.5GB)
+                </code>
+
+                <strong>2. Verify Compressed Backup Integrity:</strong>
+                <code style="background: #2d2d2d; color: #f8f8f2; padding: 10px; display: block; margin: 10px 0; border-radius: 5px;">
+$ gzip -t /backups/prod_backup_20241103.sql.gz<br>
+✅ No output = file is valid<br>
+<br>
+$ gunzip -c /backups/prod_backup_20241103.sql.gz | head -n 5<br>
+-- PostgreSQL database dump<br>
+-- Dumped from database version 14.9<br>
+-- Dumped by pg_dump version 14.9<br>
+✅ File can be decompressed and contains valid SQL
+                </code>
+
+                <strong>3. Test Restore to Separate Database:</strong>
+                <code style="background: #2d2d2d; color: #f8f8f2; padding: 10px; display: block; margin: 10px 0; border-radius: 5px;">
+$ createdb test_restore<br>
+$ gunzip -c /backups/prod_backup_20241103.sql.gz | psql test_restore<br>
+SET<br>
+SET<br>
+... (lots of output)<br>
+CREATE TABLE<br>
+COPY 1000000<br>
+✅ Restore completed successfully
+                </code>
+
+                <strong>4. Validate Data Integrity:</strong>
+                <code style="background: #2d2d2d; color: #f8f8f2; padding: 10px; display: block; margin: 10px 0; border-radius: 5px;">
+$ psql test_restore -c "SELECT COUNT(*) FROM users;"<br>
+  count  <br>
+---------<br>
+ 1000000<br>
+✅ Expected 1M users, got 1M users<br>
+<br>
+$ psql test_restore -c "SELECT MAX(created_at) FROM orders;"<br>
+         max         <br>
+---------------------<br>
+ 2024-11-03 01:59:42<br>
+✅ Latest order matches production snapshot time
+                </code>
+
+                <strong>5. Performance Test (Query Response):</strong>
+                <code style="background: #2d2d2d; color: #f8f8f2; padding: 10px; display: block; margin: 10px 0; border-radius: 5px;">
+$ psql test_restore -c "\\timing" -c "SELECT * FROM users WHERE email = 'test@example.com';"<br>
+Timing is on.<br>
+Time: 15.234 ms<br>
+✅ Query performance acceptable (indexes restored correctly)
+                </code>
+
+                <strong>6. Cleanup Test Database:</strong>
+                <code style="background: #2d2d2d; color: #f8f8f2; padding: 10px; display: block; margin: 10px 0; border-radius: 5px;">
+$ dropdb test_restore<br>
+✅ Test environment cleaned up
+                </code>
+            </div>
+
+            <div class="comparison-table">
+                <tr>
+                    <th>Test Type</th>
+                    <th>Frequency</th>
+                    <th>Time Required</th>
+                    <th>Purpose</th>
+                </tr>
+                <tr>
+                    <td>File Integrity Check</td>
+                    <td>Every backup</td>
+                    <td>1-2 minutes</td>
+                    <td>Ensure file not corrupted</td>
+                </tr>
+                <tr>
+                    <td>Partial Restore Test</td>
+                    <td>Weekly</td>
+                    <td>15-30 minutes</td>
+                    <td>Verify restore process works</td>
+                </tr>
+                <tr>
+                    <td>Full Restore Test</td>
+                    <td>Monthly</td>
+                    <td>1-4 hours</td>
+                    <td>Complete disaster recovery drill</td>
+                </tr>
+                <tr>
+                    <td>Data Validation</td>
+                    <td>Monthly</td>
+                    <td>30 minutes</td>
+                    <td>Confirm data integrity</td>
+                </tr>
+                <tr>
+                    <td>DR Failover Test</td>
+                    <td>Quarterly</td>
+                    <td>4-8 hours</td>
+                    <td>Test complete failover procedure</td>
+                </tr>
+            </table>
+
+            <div class="highlight-box">
+                <h4>🎯 Automated Validation Script</h4>
+                <code style="background: #2d2d2d; color: #f8f8f2; padding: 15px; display: block; margin: 10px 0; border-radius: 5px; overflow-x: auto; font-size: 0.9em;">
+#!/bin/bash<br>
+# backup_validator.sh - Run after each backup<br>
+<br>
+BACKUP_FILE="/backups/prod_backup_$(date +%Y%m%d).sql.gz"<br>
+TEST_DB="test_restore_$(date +%s)"<br>
+VALIDATION_FAILED=0<br>
+<br>
+echo "🔍 Starting backup validation..."<br>
+<br>
+# Test 1: File exists<br>
+if [ ! -f "$BACKUP_FILE" ]; then<br>
+    echo "❌ Backup file not found!"<br>
+    exit 1<br>
+fi<br>
+echo "✅ Backup file exists"<br>
+<br>
+# Test 2: File size reasonable (> 100MB)<br>
+FILE_SIZE=$(stat -f%z "$BACKUP_FILE" 2>/dev/null || stat -c%s "$BACKUP_FILE")<br>
+if [ "$FILE_SIZE" -lt 104857600 ]; then<br>
+    echo "❌ Backup file suspiciously small: $FILE_SIZE bytes"<br>
+    VALIDATION_FAILED=1<br>
+fi<br>
+echo "✅ File size acceptable: $(($FILE_SIZE / 1024 / 1024))MB"<br>
+<br>
+# Test 3: Compression integrity<br>
+if ! gzip -t "$BACKUP_FILE" 2>/dev/null; then<br>
+    echo "❌ Backup file corrupted (gzip test failed)"<br>
+    exit 1<br>
+fi<br>
+echo "✅ Compression integrity verified"<br>
+<br>
+# Test 4: Restore to test database<br>
+createdb "$TEST_DB" 2>/dev/null<br>
+if gunzip -c "$BACKUP_FILE" | psql "$TEST_DB" > /dev/null 2>&1; then<br>
+    echo "✅ Backup successfully restored to test database"<br>
+    <br>
+    # Test 5: Validate record counts<br>
+    USER_COUNT=$(psql -t "$TEST_DB" -c "SELECT COUNT(*) FROM users;" 2>/dev/null | tr -d ' ')<br>
+    if [ "$USER_COUNT" -gt 0 ]; then<br>
+        echo "✅ Data validation passed: $USER_COUNT users found"<br>
+    else<br>
+        echo "❌ Data validation failed: No users found"<br>
+        VALIDATION_FAILED=1<br>
+    fi<br>
+    <br>
+    dropdb "$TEST_DB"<br>
+else<br>
+    echo "❌ Restore failed!"<br>
+    VALIDATION_FAILED=1<br>
+fi<br>
+<br>
+# Report results<br>
+if [ $VALIDATION_FAILED -eq 0 ]; then<br>
+    echo "🎉 All validation tests passed!"<br>
+    echo "Backup validated at $(date)" >> /var/log/backup_validation.log<br>
+else<br>
+    echo "⚠️  VALIDATION FAILED - CHECK BACKUPS!"<br>
+    echo "CRITICAL: Backup validation failed at $(date)" | mail -s "URGENT: Backup Validation Failed" dba@company.com<br>
+    exit 1<br>
+fi
+                </code>
+            </div>
+
+            <div style="margin-top: 20px; padding: 20px; background: #e3f2fd; border-radius: 10px;">
+                <h4 style="color: #1565c0;">📊 Real-World Failure Examples</h4>
+                <ul style="margin-left: 20px; line-height: 1.8;">
+                    <li><strong>Case 1:</strong> Backup script ran daily but permissions were wrong - all backups were 0 bytes (discovered after 3 months)</li>
+                    <li><strong>Case 2:</strong> Backup succeeded but restore failed due to missing custom extensions</li>
+                    <li><strong>Case 3:</strong> Incremental backups worked, but base backup was corrupted - entire chain unusable</li>
+                    <li><strong>Case 4:</strong> Cloud backups uploaded successfully but S3 bucket had accidental delete policy</li>
+                    <li><strong>Case 5:</strong> Encryption password stored on same server as backup - both destroyed in fire</li>
+                </ul>
+            </div>
+
+            <div class="success-box">
+                <h4>💎 Gold Standard Testing Checklist</h4>
+                <ul style="margin-left: 20px; line-height: 1.8;">
+                    <li>☐ Automated validation runs after every backup</li>
+                    <li>☐ Monthly full restore drill to separate environment</li>
+                    <li>☐ Document restore time in runbook (RTO tracking)</li>
+                    <li>☐ Test restores with different team members</li>
+                    <li>☐ Verify application works with restored data</li>
+                    <li>☐ Test encrypted backup decryption process</li>
+                    <li>☐ Validate cloud backups are accessible</li>
+                    <li>☐ Simulate network failure during restore</li>
+                    <li>☐ Check backup retention policy enforcement</li>
+                    <li>☐ Alert system tested and working</li>
+                </ul>
+            </div>
+        `;
+    }
+},
+{
+    id: 'backup-window-performance',
+    name: 'Backup Window & Performance',
+    icon: '⏱️',
+    description: 'Optimize backup time to avoid impacting production. Learn tricks DBAs use to backup large databases within tight maintenance windows.',
+    visualization: function() {
+        return `
+            <div class="highlight-box" style="background: #fff3cd; border-color: #ffc107;">
+                <h3 style="color: #856404;">⏱️ The Backup Window Challenge</h3>
+                <strong>Problem:</strong> 5TB database needs backup, but you only have 4-hour maintenance window<br>
+                <strong>Reality:</strong> Full backup takes 8 hours at current speed<br>
+                <strong>Solution:</strong> Optimize or change strategy!
+            </div>
+
+            <div class="flex-container" style="margin: 30px 0; flex-direction: column;">
+                <div style="display: flex; justify-content: space-around; width: 100%; margin-bottom: 20px;">
+                    <div style="text-align: center;">
+                        <div class="database-box" style="background: linear-gradient(135deg, #f44336 0%, #e53935 100%);">
+                            <div class="icon">🐌</div>
+                            <div>Slow Backup</div>
+                            <div style="font-size: 0.8em;">8 hours</div>
+                        </div>
+                        <div style="margin-top: 10px; color: #f44336; font-weight: bold;">Unacceptable</div>
+                    </div>
+                    <div style="font-size: 3em; align-self: center;">→</div>
+                    <div style="text-align: center;">
+                        <div class="database-box pulse" style="background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);">
+                            <div class="icon">⚡</div>
+                            <div>Fast Backup</div>
+                            <div style="font-size: 0.8em;">3 hours</div>
+                        </div>
+                        <div style="margin-top: 10px; color: #4CAF50; font-weight: bold;">Optimized!</div>
+                    </div>
+                </div>
+            </div>
+
+            <table class="comparison-table">
+                <tr>
+                    <th>Optimization Technique</th>
+                    <th>Speed Improvement</th>
+                    <th>Implementation</th>
+                    <th>Trade-offs</th>
+                </tr>
+                <tr>
+                    <td>Parallel Compression</td>
+                    <td>2-3x faster</td>
+                    <td>Use pigz instead of gzip</td>
+                    <td>Higher CPU usage</td>
+                </tr>
+                <tr>
+                    <td>Multiple Jobs</td>
+                    <td>2-4x faster</td>
+                    <td>pg_dump -j 4</td>
+                    <td>More connections needed</td>
+                </tr>
+                <tr>
+                    <td>Network Optimization</td>
+                    <td>1.5-2x faster</td>
+                    <td>10Gbps NIC, tune buffers</td>
+                    <td>Hardware cost</td>
+                </tr>
+                <tr>
+                    <td>Incremental Strategy</td>
+                    <td>10-20x faster daily</td>
+                    <td>WAL archiving + base backup</td>
+                    <td>More complex restore</td>
+                </tr>
+                <tr>
+                    <td>Storage Speed</td>
+                    <td>2-5x faster</td>
+                    <td>NVMe SSD vs HDD</td>
+                    <td>Storage cost</td>
+                </tr>
+            </table>
+
+            <div class="success-box">
+                <h4>🚀 PostgreSQL Performance Optimization Examples</h4>
+                
+                <strong>SLOW (Single-threaded, no compression):</strong>
+                <code style="background: #ffebee; color: #c62828; padding: 10px; display: block; margin: 10px 0; border-radius: 5px;">
+$ time pg_dump -h localhost -U postgres production > backup.sql<br>
+real    487m15.332s  (8+ hours!)<br>
+user    145m32.123s<br>
+sys     12m43.432s
+                </code>
+
+                <strong>BETTER (With compression):</strong>
+                <code style="background: #fff3cd; color: #856404; padding: 10px; display: block; margin: 10px 0; border-radius: 5px;">
+$ time pg_dump -h localhost -U postgres production | gzip > backup.sql.gz<br>
+real    312m45.123s  (5.2 hours - 36% faster)<br>
+Backup size: 450GB → 95GB compressed
+                </code>
+
+                <strong>OPTIMIZED (Parallel + fast compression):</strong>
+                <code style="background: #e8f5e9; color: #2e7d32; padding: 10px; display: block; margin: 10px 0; border-radius: 5px;">
+$ time pg_dump -h localhost -U postgres -Fd -j 8 -f backup_dir production<br>
+$ time tar -cf - backup_dir | pigz -p 8 > backup.tar.gz<br>
+real    178m32.654s  (3 hours - 63% faster than original!)<br>
+<br>
+# Explanation:<br>
+# -Fd: Directory format (enables parallel)<br>
+# -j 8: Use 8 parallel workers<br>
+# pigz -p 8: Parallel compression with 8 threads
+                </code>
+
+                <strong>ULTIMATE (Network-optimized + parallel):</strong>
+                <code style="background: #e8f5e9; color: #2e7d32; padding: 10px; display: block; margin: 10px 0; border-radius: 5px;">
+$ pg_dump -h db-server -U postgres -Fd -j 16 -Z 0 -f - production | \\<br>
+  pigz -p 16 | \\<br>
+  mbuffer -m 2G | \\<br>
+  ssh backup-server "cat > /backups/prod_\\$(date +%Y%m%d).tar.gz"<br>
+<br>
+real    142m18.234s  (2.4 hours - 71% faster!)<br>
+<br>
+# Explanation:<br>
+# -Z 0: No compression in pg_dump (offload to pigz)<br>
+# -j 16: 16 parallel dump workers<br>
+# pigz -p 16: 16 parallel compression threads<br>
+# mbuffer -m 2G: 2GB network buffer to smooth out variations
+                </code>
+            </div>
+
+            <div class="grid-layout" style="margin: 30px 0;">
+                <div style="background: #f44336; color: white; padding: 20px; border-radius: 12px;">
+                    <div style="font-size: 2em; margin-bottom: 10px;">🐌</div>
+                    <div style="font-weight: bold;">Before</div>
+                    <div style="font-size: 1.5em; margin: 10px 0;">8h 7m</div>
+                    <div style="font-size: 0.9em;">Single-threaded</div>
+                </div>
+                <div style="background: #4CAF50; color: white; padding: 20px; border-radius: 12px;" class="pulse">
+                    <div style="font-size: 2em; margin-bottom: 10px;">⚡</div>
+                    <div style="font-weight: bold;">After</div>
+                    <div style="font-size: 1.5em; margin: 10px 0;">2h 22m</div>
+                    <div style="font-size: 0.9em;">Optimized</div>
+                </div>
+                <div style="background: #2196F3; color: white; padding: 20px; border-radius: 12px;">
+                    <div style="font-size: 2em; margin-bottom: 10px;">💾</div>
+                    <div style="font-weight: bold;">Saved</div>
+                    <div style="font-size: 1.5em; margin: 10px 0;">5h 45m</div>
+                    <div style="font-size: 0.9em;">71% faster</div>
+                </div>
+            </div>
+
+            <div class="highlight-box">
+                <h4>⚙️ System-Level Optimizations</h4>
+                
+                <strong>1. Tune Linux I/O Scheduler:</strong>
+                <code style="background: #2d2d2d; color: #f8f8f2; padding: 10px; display: block; margin: 10px 0; border-radius: 5px;">
+# Check current scheduler<br>
+$ cat /sys/block/sda/queue/scheduler<br>
+noop deadline [cfq]<br>
+<br>
+# Switch to deadline for better backup performance<br>
+$ echo deadline > /sys/block/sda/queue/scheduler<br>
+✅ 15-20% faster sequential writes
+                </code>
+
+                <strong>2. Increase Network Buffer Sizes:</strong>
+                <code style="background: #2d2d2d; color: #f8f8f2; padding: 10px; display: block; margin: 10px 0; border-radius: 5px;">
+$ sysctl -w net.core.rmem_max=134217728<br>
+$ sysctl -w net.core.wmem_max=134217728<br>
+$ sysctl -w net.ipv4.tcp_rmem="4096 87380 134217728"<br>
+$ sysctl -w net.ipv4.tcp_wmem="4096 65536 134217728"<br>
+✅ Improves network backup throughput by 30-40%
+                </code>
+
+                <strong>3. PostgreSQL Configuration for Backups:</strong>
+                <code style="background: #2d2d2d; color: #f8f8f2; padding: 10px; display: block; margin: 10px 0; border-radius: 5px;">
+# postgresql.conf<br>
+max_wal_senders = 10          # Allow parallel base backups<br>
+wal_keep_size = 1GB           # Prevent WAL recycling during backup<br>
+checkpoint_timeout = 15min    # Spread out I/O load<br>
+max_parallel_workers = 16     # For parallel operations<br>
+<br>
+# Reload configuration<br>
+$ psql -c "SELECT pg_reload_conf();"<br>
+✅ Reduces contention during backup operations
+                </code>
+
+                <strong>4. Dedicated Backup Network Interface:</strong>
+                <code style="background: #2d2d2d; color: #f8f8f2; padding: 10px; display: block; margin: 10px 0; border-radius: 5px;">
+# Use separate 10Gbps interface for backups<br>
+$ pg_basebackup -h 10.0.2.100 -D /backup -Xs -P<br>
+<br>
+# Monitor network usage<br>
+$ iftop -i eth1<br>
+✅ Backup traffic doesn't impact production network
+                </code>
+            </div>
+
+            <div class="success-box">
+                <h4>📊 Real-World Backup Time Comparison (5TB Database)</h4>
+                
+                <div style="margin: 20px 0;">
+                    <div style="display: flex; justify-content: space-between; margin: 10px 0;">
+                        <span><strong>Method 1: Basic pg_dump</strong></span>
+                        <span style="color: #f44336;">8h 15m ❌</span>
+                    </div>
+                    <div style="background: #f44336; height: 30px; border-radius: 5px; width: 100%;"></div>
+                </div>
+
+                <div style="margin: 20px 0;">
+                    <div style="display: flex; justify-content: space-between; margin: 10px 0;">
+                        <span><strong>Method 2: Compressed (gzip)</strong></span>
+                        <span style="color: #FF9800;">5h 20m ⚠️</span>
+                    </div>
+                    <div style="background: #FF9800; height: 30px; border-radius: 5px; width: 65%;"></div>
+                </div>
+
+                <div style="margin: 20px 0;">
+                    <div style="display: flex; justify-content: space-between; margin: 10px 0;">
+                        <span><strong>Method 3: Parallel + pigz</strong></span>
+                        <span style="color: #4CAF50;">2h 58m ✅</span>
+                    </div>
+                    <div style="background: #4CAF50; height: 30px; border-radius: 5px; width: 36%;"></div>
+                </div>
+
+                <div style="margin: 20px 0;">
+                    <div style="display: flex; justify-content: space-between; margin: 10px 0;">
+                        <span><strong>Method 4: Snapshot (AWS EBS)</strong></span>
+                        <span style="color: #2196F3;">18 minutes 🚀</span>
+                    </div>
+                    <div style="background: #2196F3; height: 30px; border-radius: 5px; width: 4%;"></div>
+                </div>
+
+                <div style="margin: 20px 0;">
+                    <div style="display: flex; justify-content: space-between; margin: 10px 0;">
+                        <span><strong>Method 5: Incremental (daily after full)</strong></span>
+                        <span style="color: #9C27B0;">12 minutes ⚡</span>
+                    </div>
+                    <div style="background: #9C27B0; height: 30px; border-radius: 5px; width: 2.5%;"></div>
+                </div>
+            </div>
+
+            <div style="margin-top: 30px; padding: 20px; background: #e3f2fd; border-radius: 10px;">
+                <h4 style="color: #1565c0;">💡 DBA Decision Matrix</h4>
+                
+                <table class="comparison-table">
+                    <tr>
+                        <th>Scenario</th>
+                        <th>Database Size</th>
+                        <th>Window Available</th>
+                        <th>Best Strategy</th>
+                    </tr>
+                    <tr>
+                        <td>Small DB, long window</td>
+                        <td>< 100GB</td>
+                        <td>4+ hours</td>
+                        <td>Simple pg_dump with compression</td>
+                    </tr>
+                    <tr>
+                        <td>Medium DB, moderate window</td>
+                        <td>100GB - 1TB</td>
+                        <td>2-4 hours</td>
+                        <td>Parallel pg_dump (-j 8) + pigz</td>
+                    </tr>
+                    <tr>
+                        <td>Large DB, short window</td>
+                        <td>1TB - 5TB</td>
+                        <td>< 2 hours</td>
+                        <td>Parallel + incremental strategy</td>
+                    </tr>
+                    <tr>
+                        <td>Very large DB, minimal window</td>
+                        <td>5TB+</td>
+                        <td>< 1 hour</td>
+                        <td>Snapshots + streaming replication</td>
+                    </tr>
+                    <tr>
+                        <td>24/7 availability required</td>
+                        <td>Any size</td>
+                        <td>No window!</td>
+                        <td>Hot backup + continuous WAL archiving</td>
+                    </tr>
+                </table>
+            </div>
+
+            <div class="highlight-box">
+                <h4>🎯 Monitoring Backup Performance</h4>
+                
+                <strong>Track backup metrics over time:</strong>
+                <code style="background: #2d2d2d; color: #f8f8f2; padding: 15px; display: block; margin: 10px 0; border-radius: 5px; overflow-x: auto;">
+#!/bin/bash<br>
+# backup_metrics.sh - Log backup performance<br>
+<br>
+START_TIME=$(date +%s)<br>
+START_SIZE=$(psql -t -c "SELECT pg_database_size('production');")<br>
+<br>
+# Run backup<br>
+pg_dump -Fd -j 8 -f /backup/prod production<br>
+<br>
+END_TIME=$(date +%s)<br>
+DURATION=$((END_TIME - START_TIME))<br>
+BACKUP_SIZE=$(du -sb /backup/prod | awk '{print $1}')<br>
+THROUGHPUT=$((BACKUP_SIZE / DURATION / 1024 / 1024))<br>
+<br>
+# Log to monitoring system<br>
+echo "$(date)|$DURATION|$START_SIZE|$BACKUP_SIZE|\${THROUGHPUT}MB/s" >> /var/log/backup_metrics.csv<br>
+<br>
+# Alert if slower than baseline<br>
+if [ $DURATION -gt 7200 ]; then<br>
+    echo "⚠️ Backup took \${DURATION}s (> 2 hours)" | mail -s "Slow Backup Alert" dba@company.com<br>
+fi
+                </code>
+
+                <strong>Visualize trends with simple query:</strong>
+                <code style="background: #2d2d2d; color: #f8f8f2; padding: 10px; display: block; margin: 10px 0; border-radius: 5px;">
+# View last 30 days of backup performance<br>
+$ awk -F'|' '{print $1, $2/60 "min", $5}' /var/log/backup_metrics.csv | tail -30<br>
+<br>
+2024-10-04  142min  95MB/s<br>
+2024-10-05  145min  93MB/s<br>
+2024-10-06  138min  98MB/s<br>
+...<br>
+2024-11-02  178min  76MB/s  ⚠️ Getting slower!<br>
+2024-11-03  182min  74MB/s  ⚠️ Time to optimize
+                </code>
+            </div>
+
+            <div style="margin-top: 20px; padding: 20px; background: #fff3cd; border-radius: 10px;">
+                <h4 style="color: #856404;">🔥 Pro Tips from Production DBAs</h4>
+                <ul style="margin-left: 20px; line-height: 1.8;">
+                    <li><strong>Run during low-traffic hours:</strong> Schedule backups at 2-4 AM when user activity is minimal</li>
+                    <li><strong>Use ionice:</strong> <code>ionice -c3 pg_dump...</code> prevents backup from starving production I/O</li>
+                    <li><strong>Monitor pg_stat_progress_basebackup:</strong> Real-time progress tracking in PostgreSQL 13+</li>
+                    <li><strong>Test on replica first:</strong> Try new backup strategies on standby server before production</li>
+                    <li><strong>Separate tablespaces:</strong> Put large tables on fast storage to speed up selective backups</li>
+                    <li><strong>Vacuum before backup:</strong> <code>vacuumdb -z</code> to remove dead tuples = smaller backup</li>
+                    <li><strong>Exclude unnecessary data:</strong> Use <code>--exclude-table-data</code> for logs/temp tables</li>
+                    <li><strong>Compression level tuning:</strong> <code>pigz -6</code> (fast) vs <code>pigz -9</code> (smaller) based on CPU availability</li>
+                </ul>
+            </div>
+
+            <div class="success-box">
+                <h4>📈 Backup Performance Troubleshooting</h4>
+                
+                <strong>Symptom: Backup suddenly slower</strong><br>
+                <code style="background: #f5f5f5; padding: 10px; display: block; margin: 10px 0; border-radius: 5px;">
+✅ Check database growth: SELECT pg_size_pretty(pg_database_size('production'));<br>
+✅ Check disk I/O: iostat -x 5<br>
+✅ Check for locks: SELECT * FROM pg_locks WHERE NOT granted;<br>
+✅ Check autovacuum running: SELECT * FROM pg_stat_progress_vacuum;<br>
+✅ Check network saturation: iftop
+                </code>
+
+                <strong>Symptom: Backup fails intermittently</strong><br>
+                <code style="background: #f5f5f5; padding: 10px; display: block; margin: 10px 0; border-radius: 5px;">
+✅ Check disk space: df -h<br>
+✅ Check WAL retention: SELECT pg_current_wal_lsn(), pg_walfile_name(pg_current_wal_lsn());<br>
+✅ Check max_wal_senders: SHOW max_wal_senders;<br>
+✅ Review PostgreSQL logs: tail -f /var/log/postgresql/postgresql-14-main.log
+                </code>
+            </div>
+        `;
+    }
+}
+
+
+
+
+     ];
+
+        // Initialize navigation
+        
+        
+        
+        
+        function initNavigation() {
+            const nav = document.getElementById('navigation');
+            backupTypes.forEach(type => {
+                const btn = document.createElement('button');
+                btn.className = 'nav-btn';
+                btn.textContent = `${type.icon} ${type.name}`;
+                btn.onclick = () => showBackup(type.id);
+                nav.appendChild(btn);
+            });
+        }
+
+        // Show backup section
+        function showBackup(id) {
+            const content = document.getElementById('content');
+            const backup = backupTypes.find(b => b.id === id);
+            
+            if (!backup) return;
+
+            // Update active button
+            document.querySelectorAll('.nav-btn').forEach((btn, idx) => {
+                btn.classList.toggle('active', backupTypes[idx].id === id);
+            });
+
+            // Render content
+            content.innerHTML = `
+                <div class="backup-section active">
+                    <h2 class="section-title">${backup.icon} ${backup.name}</h2>
+                    <div class="description">${backup.description}</div>
+                    <div class="visualization">
+                        ${backup.visualization()}
+                    </div>
+                </div>
+            `;
+        }
+
+        // Initialize on load
+        initNavigation();
+        showBackup('logical'); // Show first backup type by default
+    </script>
+</body>
+</html>

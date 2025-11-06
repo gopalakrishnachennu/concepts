@@ -1,0 +1,2573 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ansible Complete Learning Hub</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0f0f1e 0%, #1a1a2e 50%, #16213e 100%);
+            color: #e0e0e0;
+            overflow-x: hidden;
+        }
+
+        .hero {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .particles {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+
+        .particle {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: #ff6b6b;
+            border-radius: 50%;
+            animation: float 20s infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0) translateX(0); opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { transform: translateY(-100vh) translateX(100px); opacity: 0; }
+        }
+
+        .hero-title {
+            font-size: 5rem;
+            font-weight: 900;
+            background: linear-gradient(45deg, #ff6b6b, #ee5a6f, #ff6b6b);
+            background-size: 200% 200%;
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: gradientShift 3s ease infinite;
+            z-index: 10;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        @keyframes gradientShift {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+
+        .hero-subtitle {
+            font-size: 1.5rem;
+            color: #b0b0b0;
+            z-index: 10;
+            margin-bottom: 40px;
+        }
+
+        .start-btn {
+            padding: 18px 50px;
+            font-size: 1.2rem;
+            background: linear-gradient(45deg, #ff6b6b, #ee5a6f);
+            border: none;
+            border-radius: 50px;
+            color: white;
+            cursor: pointer;
+            z-index: 10;
+            transition: all 0.3s;
+            box-shadow: 0 10px 30px rgba(255, 107, 107, 0.3);
+        }
+
+        .start-btn:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(255, 107, 107, 0.5);
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        .nav-bar {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            background: rgba(15, 15, 30, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 20px 0;
+            z-index: 1000;
+            box-shadow: 0 2px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .nav-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 20px;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 30px;
+        }
+
+        .nav-link {
+            color: #e0e0e0;
+            text-decoration: none;
+            font-weight: 600;
+            transition: color 0.3s;
+            cursor: pointer;
+        }
+
+        .nav-link:hover {
+            color: #ff6b6b;
+        }
+
+        .section {
+            margin: 100px 0;
+            padding: 60px 40px;
+            background: rgba(26, 26, 46, 0.6);
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 107, 107, 0.1);
+            transition: all 0.5s;
+        }
+
+        .section:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 20px 60px rgba(255, 107, 107, 0.2);
+        }
+
+        .section-title {
+            font-size: 3rem;
+            color: #ff6b6b;
+            margin-bottom: 30px;
+            position: relative;
+            padding-bottom: 15px;
+        }
+
+        .section-title::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100px;
+            height: 4px;
+            background: linear-gradient(90deg, #ff6b6b, transparent);
+        }
+
+        .concept-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin-top: 40px;
+        }
+
+        .concept-card {
+            background: linear-gradient(135deg, rgba(255, 107, 107, 0.1), rgba(238, 90, 111, 0.05));
+            padding: 30px;
+            border-radius: 15px;
+            border: 2px solid rgba(255, 107, 107, 0.2);
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+
+        .concept-card:hover {
+            transform: translateY(-10px) scale(1.02);
+            border-color: #ff6b6b;
+            box-shadow: 0 15px 40px rgba(255, 107, 107, 0.3);
+        }
+
+        .concept-icon {
+            font-size: 3rem;
+            margin-bottom: 20px;
+        }
+
+        .concept-title {
+            font-size: 1.5rem;
+            color: #ff6b6b;
+            margin-bottom: 15px;
+        }
+
+        .concept-desc {
+            color: #b0b0b0;
+            line-height: 1.6;
+        }
+
+        .animation-demo {
+            margin: 40px 0;
+            padding: 40px;
+            background: rgba(15, 15, 30, 0.8);
+            border-radius: 15px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .playbook-flow {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            padding: 40px 0;
+            position: relative;
+        }
+
+        .flow-node {
+            width: 120px;
+            height: 120px;
+            background: linear-gradient(135deg, #ff6b6b, #ee5a6f);
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            position: relative;
+            animation: pulse 2s infinite;
+            box-shadow: 0 10px 30px rgba(255, 107, 107, 0.4);
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        .flow-arrow {
+            font-size: 3rem;
+            color: #ff6b6b;
+            animation: slideRight 1.5s infinite;
+        }
+
+        @keyframes slideRight {
+            0%, 100% { transform: translateX(0); opacity: 0.5; }
+            50% { transform: translateX(10px); opacity: 1; }
+        }
+
+        .code-block {
+            background: #1a1a2e;
+            padding: 30px;
+            border-radius: 10px;
+            border-left: 4px solid #ff6b6b;
+            margin: 20px 0;
+            overflow-x: auto;
+            position: relative;
+        }
+
+        .code-block::before {
+            content: attr(data-lang);
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: #ff6b6b;
+            padding: 5px 15px;
+            border-radius: 5px;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+
+        .code-block pre {
+            color: #e0e0e0;
+            font-family: 'Courier New', monospace;
+            font-size: 0.95rem;
+            line-height: 1.6;
+        }
+
+        .keyword { color: #ff6b6b; }
+        .string { color: #a8e6cf; }
+        .comment { color: #6c757d; font-style: italic; }
+        .number { color: #ffd93d; }
+
+        .topology-viz {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            margin: 40px 0;
+            padding: 40px;
+            background: rgba(15, 15, 30, 0.6);
+            border-radius: 15px;
+        }
+
+        .server {
+            width: 100px;
+            height: 100px;
+            background: linear-gradient(135deg, #4a90e2, #357abd);
+            border-radius: 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            animation: serverPulse 3s infinite;
+            box-shadow: 0 5px 20px rgba(74, 144, 226, 0.4);
+        }
+
+        @keyframes serverPulse {
+            0%, 100% { transform: scale(1); box-shadow: 0 5px 20px rgba(74, 144, 226, 0.4); }
+            50% { transform: scale(1.05); box-shadow: 0 10px 30px rgba(74, 144, 226, 0.6); }
+        }
+
+        .connection-line {
+            width: 150px;
+            height: 3px;
+            background: linear-gradient(90deg, #ff6b6b, #4a90e2);
+            position: relative;
+            animation: dataFlow 2s infinite;
+        }
+
+        @keyframes dataFlow {
+            0% { background-position: 0% 50%; }
+            100% { background-position: 100% 50%; }
+        }
+
+        .expandable {
+            margin: 20px 0;
+        }
+
+        .expand-header {
+            background: rgba(255, 107, 107, 0.2);
+            padding: 20px;
+            border-radius: 10px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.3s;
+        }
+
+        .expand-header:hover {
+            background: rgba(255, 107, 107, 0.3);
+        }
+
+        .expand-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.5s ease;
+            padding: 0 20px;
+        }
+
+        .expand-content.active {
+            max-height: 2000px;
+            padding: 20px;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 5px 15px;
+            background: #ff6b6b;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            margin: 5px;
+            font-weight: 600;
+        }
+
+        .production-tip {
+            background: linear-gradient(135deg, rgba(255, 193, 7, 0.2), rgba(255, 152, 0, 0.1));
+            border-left: 4px solid #ffc107;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 10px;
+        }
+
+        .production-tip strong {
+            color: #ffc107;
+            display: block;
+            margin-bottom: 10px;
+            font-size: 1.2rem;
+        }
+
+        .scroll-progress {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 0%;
+            height: 4px;
+            background: linear-gradient(90deg, #ff6b6b, #ee5a6f);
+            z-index: 10000;
+            transition: width 0.1s;
+        }
+
+        .toc {
+            position: fixed;
+            right: 20px;
+            top: 120px;
+            background: rgba(26, 26, 46, 0.9);
+            padding: 20px;
+            border-radius: 15px;
+            max-width: 250px;
+            max-height: 70vh;
+            overflow-y: auto;
+            border: 1px solid rgba(255, 107, 107, 0.2);
+        }
+
+        .toc-title {
+            color: #ff6b6b;
+            font-weight: bold;
+            margin-bottom: 15px;
+            font-size: 1.1rem;
+        }
+
+        .toc-item {
+            padding: 8px 0;
+            color: #b0b0b0;
+            cursor: pointer;
+            transition: all 0.3s;
+            border-left: 3px solid transparent;
+            padding-left: 10px;
+        }
+
+        .toc-item:hover {
+            color: #ff6b6b;
+            border-left-color: #ff6b6b;
+        }
+
+        .architecture-diagram {
+            margin: 40px 0;
+            padding: 40px;
+            background: rgba(15, 15, 30, 0.8);
+            border-radius: 15px;
+        }
+
+        @media (max-width: 768px) {
+            .hero-title { font-size: 3rem; }
+            .nav-links { flex-direction: column; gap: 15px; }
+            .toc { display: none; }
+            .concept-grid { grid-template-columns: 1fr; }
+            .playbook-flow { flex-direction: column; }
+            .flow-arrow { transform: rotate(90deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="scroll-progress" id="scrollProgress"></div>
+    
+    <div class="nav-bar">
+        <div class="nav-content">
+            <div style="font-weight: bold; font-size: 1.3rem; color: #ff6b6b;">🚀 Ansible Hub-Gopall</div>
+            <div class="nav-links">
+                <a class="nav-link" onclick="scrollToSection('core')">Core Concepts</a>
+                <a class="nav-link" onclick="scrollToSection('architecture')">Architecture</a>
+                <a class="nav-link" onclick="scrollToSection('components')">Components</a>
+                <a class="nav-link" onclick="scrollToSection('production')">Production</a>
+                <a class="nav-link" onclick="scrollToSection('examples')">Examples</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="toc">
+        <div class="toc-title">📑 Contents</div>
+        <div class="toc-item" onclick="scrollToSection('core')">Core Concepts</div>
+        <div class="toc-item" onclick="scrollToSection('architecture')">Architecture</div>
+        <div class="toc-item" onclick="scrollToSection('components')">Components</div>
+        <div class="toc-item" onclick="scrollToSection('modules')">Modules</div>
+        <div class="toc-item" onclick="scrollToSection('playbooks')">Playbooks</div>
+        <div class="toc-item" onclick="scrollToSection('inventory')">Inventory</div>
+        <div class="toc-item" onclick="scrollToSection('roles')">Roles</div>
+        <div class="toc-item" onclick="scrollToSection('variables')">Variables</div>
+        <div class="toc-item" onclick="scrollToSection('handlers')">Handlers</div>
+        <div class="toc-item" onclick="scrollToSection('vault')">Vault</div>
+        <div class="toc-item" onclick="scrollToSection('production')">Production Best Practices</div>
+        <div class="toc-item" onclick="scrollToSection('examples')">Real-World Examples</div>
+    </div>
+
+    <div class="hero" id="hero">
+        <div class="particles" id="particles"></div>
+        <h1 class="hero-title">Master Ansible</h1>
+        <p class="hero-subtitle">Complete Production-Level Guide with Interactive Animations</p>
+        <p class="hero-subtitle">Gopala Krishna Chennu</p>
+
+        <button class="start-btn" onclick="startLearning()">Start Learning 🚀</button>
+    </div>
+
+    <div class="container" id="content" style="display: none;">
+        
+        <!-- Core Concepts Section -->
+        <section class="section" id="core">
+            <h2 class="section-title">🎯 Core Concepts</h2>
+            <p style="font-size: 1.2rem; line-height: 1.8; color: #b0b0b0;">
+                Ansible is an open-source IT automation tool that automates provisioning, configuration management, 
+                application deployment, orchestration, and many other IT processes. It's agentless, using SSH for 
+                Linux/Unix and WinRM for Windows systems.
+            </p>
+
+            <div class="animation-demo">
+                <h3 style="color: #ff6b6b; margin-bottom: 30px;">How Ansible Works</h3>
+                <div class="playbook-flow">
+                    <div class="flow-node">Control Node</div>
+                    <div class="flow-arrow">→</div>
+                    <div class="flow-node">SSH/WinRM</div>
+                    <div class="flow-arrow">→</div>
+                    <div class="flow-node">Managed Nodes</div>
+                </div>
+            </div>
+
+            <div class="concept-grid">
+                <div class="concept-card">
+                    <div class="concept-icon">🎮</div>
+                    <h3 class="concept-title">Control Node</h3>
+                    <p class="concept-desc">
+                        The machine where Ansible is installed. This is where you write playbooks, inventory files, 
+                        and execute Ansible commands. Only one control node is needed to manage hundreds of managed nodes.
+                    </p>
+                </div>
+
+                <div class="concept-card">
+                    <div class="concept-icon">🖥️</div>
+                    <h3 class="concept-title">Managed Nodes</h3>
+                    <p class="concept-desc">
+                        Remote systems/servers that Ansible manages. Also called "hosts". No agent installation required - 
+                        Ansible connects via SSH (Linux) or WinRM (Windows).
+                    </p>
+                </div>
+
+                <div class="concept-card">
+                    <div class="concept-icon">📋</div>
+                    <h3 class="concept-title">Inventory</h3>
+                    <p class="concept-desc">
+                        List of managed nodes organized in groups. Can be static (INI/YAML files) or dynamic 
+                        (scripts that fetch from cloud providers like AWS, Azure, GCP).
+                    </p>
+                </div>
+
+                <div class="concept-card">
+                    <div class="concept-icon">📦</div>
+                    <h3 class="concept-title">Modules</h3>
+                    <p class="concept-desc">
+                        Units of code that Ansible executes. Each module has a specific purpose - managing packages, 
+                        files, services, users, etc. Over 3000+ modules available.
+                    </p>
+                </div>
+
+                <div class="concept-card">
+                    <div class="concept-icon">📖</div>
+                    <h3 class="concept-title">Playbooks</h3>
+                    <p class="concept-desc">
+                        YAML files that describe automation jobs. They contain plays, which contain tasks. 
+                        Each task calls a module to perform an action on managed nodes.
+                    </p>
+                </div>
+
+                <div class="concept-card">
+                    <div class="concept-icon">🎭</div>
+                    <h3 class="concept-title">Roles</h3>
+                    <p class="concept-desc">
+                        Way to organize playbooks and other files for reusability. Follows a standardized 
+                        file structure with tasks, handlers, variables, templates, and files.
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Architecture Section -->
+        <section class="section" id="architecture">
+            <h2 class="section-title">🏗️ Ansible Architecture</h2>
+            
+            <div class="architecture-diagram">
+                <h3 style="color: #ff6b6b; margin-bottom: 30px; text-align: center;">Complete Architecture Flow</h3>
+                <div class="topology-viz">
+                    <div style="text-align: center;">
+                        <div class="server" style="background: linear-gradient(135deg, #ff6b6b, #ee5a6f);">
+                            <span style="font-size: 2rem;">🎮</span>
+                            <span style="font-size: 0.8rem;">Control Node</span>
+                        </div>
+                        <p style="margin-top: 15px; color: #b0b0b0;">Playbooks<br>Inventory<br>Config</p>
+                    </div>
+                    
+                    <div class="connection-line"></div>
+                    
+                    <div style="text-align: center;">
+                        <div class="server">
+                            <span style="font-size: 2rem;">🖥️</span>
+                            <span style="font-size: 0.8rem;">Web Server</span>
+                        </div>
+                    </div>
+                    
+                    <div class="connection-line"></div>
+                    
+                    <div style="text-align: center;">
+                        <div class="server">
+                            <span style="font-size: 2rem;">💾</span>
+                            <span style="font-size: 0.8rem;">DB Server</span>
+                        </div>
+                    </div>
+                    
+                    <div class="connection-line"></div>
+                    
+                    <div style="text-align: center;">
+                        <div class="server">
+                            <span style="font-size: 2rem;">⚖️</span>
+                            <span style="font-size: 0.8rem;">Load Balancer</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="expandable">
+                <div class="expand-header" onclick="toggleExpand(this)">
+                    <span><strong>Ansible Execution Flow</strong></span>
+                    <span>▼</span>
+                </div>
+                <div class="expand-content">
+                    <ol style="line-height: 2; color: #b0b0b0; padding-left: 20px;">
+                        <li><strong style="color: #ff6b6b;">Read Configuration:</strong> Ansible reads ansible.cfg for settings</li>
+                        <li><strong style="color: #ff6b6b;">Parse Inventory:</strong> Loads managed hosts from inventory file</li>
+                        <li><strong style="color: #ff6b6b;">Load Playbook:</strong> Reads YAML playbook and validates syntax</li>
+                        <li><strong style="color: #ff6b6b;">Gather Facts:</strong> Collects system information from managed nodes</li>
+                        <li><strong style="color: #ff6b6b;">Execute Tasks:</strong> Runs tasks sequentially on target hosts</li>
+                        <li><strong style="color: #ff6b6b;">Module Execution:</strong> Copies Python modules to remote hosts, executes them</li>
+                        <li><strong style="color: #ff6b6b;">Return Results:</strong> Collects JSON output and displays results</li>
+                        <li><strong style="color: #ff6b6b;">Cleanup:</strong> Removes temporary files from managed nodes</li>
+                    </ol>
+                </div>
+            </div>
+
+            <div class="production-tip">
+                <strong>🎯 Production Architecture Tip:</strong>
+                In production, use separate control nodes for different environments (dev, staging, prod). 
+                Implement Git workflows for playbook version control and use Ansible Tower/AWX for centralized 
+                execution, scheduling, and RBAC (Role-Based Access Control).
+            </div>
+        </section>
+
+        <!-- Components Deep Dive -->
+        <section class="section" id="components">
+            <h2 class="section-title">🔧 Ansible Components Deep Dive</h2>
+
+            <!-- Modules Section -->
+            <div class="expandable" id="modules">
+                <div class="expand-header" onclick="toggleExpand(this)">
+                    <span><strong>📦 Modules - The Building Blocks</strong></span>
+                    <span>▼</span>
+                </div>
+                <div class="expand-content">
+                    <p style="color: #b0b0b0; line-height: 1.8; margin-bottom: 20px;">
+                        Modules are reusable, standalone scripts that Ansible runs on managed nodes. They are idempotent 
+                        (running multiple times produces the same result) and return JSON data.
+                    </p>
+                    
+                    <h4 style="color: #ff6b6b; margin: 20px 0;">Module Categories:</h4>
+                    <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 20px;">
+                        <span class="badge">System</span>
+                        <span class="badge">Commands</span>
+                        <span class="badge">Files</span>
+                        <span class="badge">Database</span>
+                        <span class="badge">Cloud</span>
+                        <span class="badge">Network</span>
+                        <span class="badge">Monitoring</span>
+                        <span class="badge">Web Infrastructure</span>
+                    </div>
+
+                    <h4 style="color: #ff6b6b; margin: 20px 0;">Most Common Modules:</h4>
+                    <ul style="color: #b0b0b0; line-height: 2; padding-left: 20px;">
+                        <li><strong>copy:</strong> Copy files from control to managed nodes</li>
+                        <li><strong>template:</strong> Process Jinja2 templates and deploy</li>
+                        <li><strong>file:</strong> Manage file properties (permissions, ownership)</li>
+                        <li><strong>yum/apt:</strong> Package management for RedHat/Debian systems</li>
+                        <li><strong>service:</strong> Manage system services (start, stop, restart)</li>
+                        <li><strong>user:</strong> Manage user accounts</li>
+                        <li><strong>shell/command:</strong> Execute commands (use sparingly, not idempotent)</li>
+                        <li><strong>git:</strong> Deploy from Git repositories</li>
+                        <li><strong>docker_container:</strong> Manage Docker containers</li>
+                        <li><strong>ec2/azure_rm:</strong> Manage cloud resources</li>
+                    </ul>
+
+                    <div class="code-block" data-lang="YAML">
+<pre><span class="comment"># Module usage examples</span>
+<span class="keyword">- name:</span> Install nginx package
+  <span class="keyword">ansible.builtin.yum:</span>
+    <span class="keyword">name:</span> nginx
+    <span class="keyword">state:</span> present
+
+<span class="keyword">- name:</span> Copy configuration file
+  <span class="keyword">ansible.builtin.copy:</span>
+    <span class="keyword">src:</span> <span class="string">/local/path/nginx.conf</span>
+    <span class="keyword">dest:</span> <span class="string">/etc/nginx/nginx.conf</span>
+    <span class="keyword">owner:</span> root
+    <span class="keyword">group:</span> root
+    <span class="keyword">mode:</span> <span class="string">'0644'</span></pre>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Playbooks Section -->
+            <div class="expandable" id="playbooks">
+                <div class="expand-header" onclick="toggleExpand(this)">
+                    <span><strong>📖 Playbooks - Automation Scripts</strong></span>
+                    <span>▼</span>
+                </div>
+                <div class="expand-content">
+                    <p style="color: #b0b0b0; line-height: 1.8; margin-bottom: 20px;">
+                        Playbooks are YAML files that define automation workflows. They contain one or more "plays" 
+                        that map hosts to tasks. Each task calls a module with specific parameters.
+                    </p>
+
+                    <h4 style="color: #ff6b6b; margin: 20px 0;">Playbook Structure:</h4>
+                    <div class="code-block" data-lang="YAML">
+<pre><span class="comment">---</span>
+<span class="comment"># Play 1: Web Server Configuration</span>
+<span class="keyword">- name:</span> Configure Web Servers
+  <span class="keyword">hosts:</span> webservers
+  <span class="keyword">become:</span> yes
+  <span class="keyword">vars:</span>
+    <span class="keyword">http_port:</span> <span class="number">80</span>
+    <span class="keyword">app_dir:</span> <span class="string">/var/www/html</span>
+  
+  <span class="keyword">tasks:</span>
+    <span class="keyword">- name:</span> Install Apache
+      <span class="keyword">yum:</span>
+        <span class="keyword">name:</span> httpd
+        <span class="keyword">state:</span> present
+    
+    <span class="keyword">- name:</span> Start Apache service
+      <span class="keyword">service:</span>
+        <span class="keyword">name:</span> httpd
+        <span class="keyword">state:</span> started
+        <span class="keyword">enabled:</span> yes
+    
+        <span class="keyword">- name:</span> Deploy application
+        <span class="keyword">copy:</span>
+          <span class="keyword">src:</span> <span class="string">{{ app_dir }}/index.html</span>
+          <span class="keyword">dest:</span> <span class="string">/var/www/html/</span>
+    
+    <span class="keyword">handlers:</span>
+      <span class="keyword">- name:</span> Restart Apache
+        <span class="keyword">service:</span>
+          <span class="keyword">name:</span> httpd
+          <span class="keyword">state:</span> restarted</pre>
+                      </div>
+  
+                      <div class="production-tip">
+                          <strong>📝 Best Practices:</strong>
+                          • Use meaningful play and task names<br>
+                          • Group related tasks logically<br>
+                          • Use variables for configuration values<br>
+                          • Implement error handling with blocks/rescue<br>
+                          • Tag tasks for selective execution
+                      </div>
+                  </div>
+              </div>
+  
+              <!-- Inventory Section -->
+              <div class="expandable" id="inventory">
+                  <div class="expand-header" onclick="toggleExpand(this)">
+                      <span><strong>📋 Inventory - Managing Hosts</strong></span>
+                      <span>▼</span>
+                  </div>
+                  <div class="expand-content">
+                      <p style="color: #b0b0b0; line-height: 1.8; margin-bottom: 20px;">
+                          Inventory defines which hosts Ansible manages and how to connect to them. Supports static 
+                          (INI/YAML files) and dynamic inventory (scripts/plugins).
+                      </p>
+  
+                      <h4 style="color: #ff6b6b; margin: 20px 0;">Static Inventory (INI Format):</h4>
+                      <div class="code-block" data-lang="INI">
+  <pre><span class="comment"># hosts.ini</span>
+  <span class="keyword">[webservers]</span>
+  web1.example.com ansible_host=<span class="number">192.168.1.10</span> ansible_user=ubuntu
+  web2.example.com ansible_host=<span class="number">192.168.1.11</span> ansible_user=ubuntu
+  web3.example.com ansible_host=<span class="number">192.168.1.12</span> ansible_user=ubuntu
+  
+  <span class="keyword">[databases]</span>
+  db1.example.com ansible_host=<span class="number">192.168.1.20</span>
+  db2.example.com ansible_host=<span class="number">192.168.1.21</span>
+  
+  <span class="keyword">[loadbalancers]</span>
+  lb1.example.com ansible_host=<span class="number">192.168.1.30</span>
+  
+  <span class="comment"># Group variables</span>
+  <span class="keyword">[webservers:vars]</span>
+  http_port=<span class="number">80</span>
+  ansible_python_interpreter=/usr/bin/python3
+  
+  <span class="comment"># Parent groups</span>
+  <span class="keyword">[production:children]</span>
+  webservers
+  databases
+  loadbalancers</pre>
+                      </div>
+  
+                      <h4 style="color: #ff6b6b; margin: 20px 0;">Static Inventory (YAML Format):</h4>
+                      <div class="code-block" data-lang="YAML">
+  <pre><span class="comment"># inventory.yml</span>
+  <span class="keyword">all:</span>
+    <span class="keyword">children:</span>
+      <span class="keyword">webservers:</span>
+        <span class="keyword">hosts:</span>
+          <span class="keyword">web1.example.com:</span>
+            <span class="keyword">ansible_host:</span> <span class="number">192.168.1.10</span>
+            <span class="keyword">http_port:</span> <span class="number">80</span>
+          <span class="keyword">web2.example.com:</span>
+            <span class="keyword">ansible_host:</span> <span class="number">192.168.1.11</span>
+        <span class="keyword">vars:</span>
+          <span class="keyword">ansible_user:</span> ubuntu
+          <span class="keyword">ansible_python_interpreter:</span> /usr/bin/python3
+      
+      <span class="keyword">databases:</span>
+        <span class="keyword">hosts:</span>
+          <span class="keyword">db1.example.com:</span>
+            <span class="keyword">ansible_host:</span> <span class="number">192.168.1.20</span>
+            <span class="keyword">db_type:</span> postgresql</pre>
+                      </div>
+  
+                      <h4 style="color: #ff6b6b; margin: 20px 0;">Dynamic Inventory (AWS Example):</h4>
+                      <div class="code-block" data-lang="YAML">
+  <pre><span class="comment"># aws_ec2.yml - Dynamic inventory plugin</span>
+  <span class="keyword">plugin:</span> amazon.aws.aws_ec2
+  <span class="keyword">regions:</span>
+    - us-east-1
+    - us-west-2
+  <span class="keyword">keyed_groups:</span>
+    <span class="keyword">- key:</span> tags.Environment
+      <span class="keyword">prefix:</span> env
+    <span class="keyword">- key:</span> tags.Application
+      <span class="keyword">prefix:</span> app
+  <span class="keyword">hostnames:</span>
+    - <span class="string">tag:Name</span>
+    - <span class="string">private-ip-address</span></pre>
+                      </div>
+  
+                      <div class="production-tip">
+                          <strong>🏢 Production Inventory Management:</strong>
+                          • Use dynamic inventory for cloud environments<br>
+                          • Organize hosts by environment (dev/staging/prod)<br>
+                          • Store sensitive connection info in Ansible Vault<br>
+                          • Use group_vars and host_vars for variable management<br>
+                          • Implement inventory patterns for partial deployments
+                      </div>
+                  </div>
+              </div>
+  
+              <!-- Roles Section -->
+              <div class="expandable" id="roles">
+                  <div class="expand-header" onclick="toggleExpand(this)">
+                      <span><strong>🎭 Roles - Reusable Components</strong></span>
+                      <span>▼</span>
+                  </div>
+                  <div class="expand-content">
+                      <p style="color: #b0b0b0; line-height: 1.8; margin-bottom: 20px;">
+                          Roles provide a framework for fully independent or interdependent collections of variables, 
+                          tasks, files, templates, and modules. They promote reusability and organization.
+                      </p>
+  
+                      <h4 style="color: #ff6b6b; margin: 20px 0;">Role Directory Structure:</h4>
+                      <div class="code-block" data-lang="TEXT">
+  <pre>roles/
+  └── webserver/
+      ├── tasks/
+      │   └── main.yml          <span class="comment"># Main task list</span>
+      ├── handlers/
+      │   └── main.yml          <span class="comment"># Handler definitions</span>
+      ├── templates/
+      │   └── nginx.conf.j2     <span class="comment"># Jinja2 templates</span>
+      ├── files/
+      │   └── app.conf          <span class="comment"># Static files</span>
+      ├── vars/
+      │   └── main.yml          <span class="comment"># Role variables</span>
+      ├── defaults/
+      │   └── main.yml          <span class="comment"># Default variables</span>
+      ├── meta/
+      │   └── main.yml          <span class="comment"># Role dependencies</span>
+      └── README.md             <span class="comment"># Documentation</span></pre>
+                      </div>
+  
+                      <h4 style="color: #ff6b6b; margin: 20px 0;">Role Example - Nginx Web Server:</h4>
+                      <div class="code-block" data-lang="YAML">
+  <pre><span class="comment"># roles/nginx/tasks/main.yml</span>
+  <span class="keyword">---</span>
+  <span class="keyword">- name:</span> Install Nginx
+    <span class="keyword">apt:</span>
+      <span class="keyword">name:</span> nginx
+      <span class="keyword">state:</span> present
+      <span class="keyword">update_cache:</span> yes
+  
+  <span class="keyword">- name:</span> Deploy Nginx configuration
+    <span class="keyword">template:</span>
+      <span class="keyword">src:</span> nginx.conf.j2
+      <span class="keyword">dest:</span> /etc/nginx/nginx.conf
+      <span class="keyword">validate:</span> <span class="string">'nginx -t -c %s'</span>
+    <span class="keyword">notify:</span> Restart Nginx
+  
+  <span class="keyword">- name:</span> Ensure Nginx is running
+    <span class="keyword">service:</span>
+      <span class="keyword">name:</span> nginx
+      <span class="keyword">state:</span> started
+      <span class="keyword">enabled:</span> yes
+  
+  <span class="comment"># roles/nginx/handlers/main.yml</span>
+  <span class="keyword">---</span>
+  <span class="keyword">- name:</span> Restart Nginx
+    <span class="keyword">service:</span>
+      <span class="keyword">name:</span> nginx
+      <span class="keyword">state:</span> restarted
+  
+  <span class="comment"># roles/nginx/defaults/main.yml</span>
+  <span class="keyword">---</span>
+  <span class="keyword">nginx_port:</span> <span class="number">80</span>
+  <span class="keyword">nginx_user:</span> www-data
+  <span class="keyword">nginx_worker_processes:</span> auto</pre>
+                      </div>
+  
+                      <h4 style="color: #ff6b6b; margin: 20px 0;">Using Roles in Playbooks:</h4>
+                      <div class="code-block" data-lang="YAML">
+  <pre><span class="comment">---</span>
+  <span class="keyword">- name:</span> Configure Web Infrastructure
+    <span class="keyword">hosts:</span> webservers
+    <span class="keyword">become:</span> yes
+    
+    <span class="keyword">roles:</span>
+      - common              <span class="comment"># Base system configuration</span>
+      - <span class="keyword">role:</span> nginx
+        <span class="keyword">nginx_port:</span> <span class="number">8080</span>  <span class="comment"># Override default</span>
+      - security
+      - monitoring</pre>
+                      </div>
+                  </div>
+              </div>
+  
+              <!-- Variables Section -->
+              <div class="expandable" id="variables">
+                  <div class="expand-header" onclick="toggleExpand(this)">
+                      <span><strong>🔢 Variables - Dynamic Configuration</strong></span>
+                      <span>▼</span>
+                  </div>
+                  <div class="expand-content">
+                      <p style="color: #b0b0b0; line-height: 1.8; margin-bottom: 20px;">
+                          Variables make playbooks flexible and reusable. Ansible has a well-defined variable precedence 
+                          order (22 levels!) from lowest to highest priority.
+                      </p>
+  
+                      <h4 style="color: #ff6b6b; margin: 20px 0;">Variable Precedence (Highest to Lowest):</h4>
+                      <ol style="color: #b0b0b0; line-height: 2; padding-left: 20px;">
+                          <li>Extra vars (-e in CLI) - <strong style="color: #ff6b6b;">HIGHEST</strong></li>
+                          <li>Task vars (in task itself)</li>
+                          <li>Block vars</li>
+                          <li>Role and include vars</li>
+                          <li>Set_facts / registered vars</li>
+                          <li>Play vars_files</li>
+                          <li>Play vars_prompt</li>
+                          <li>Play vars</li>
+                          <li>Host facts (gathered)</li>
+                          <li>Playbook host_vars</li>
+                          <li>Playbook group_vars</li>
+                          <li>Inventory host_vars</li>
+                          <li>Inventory group_vars</li>
+                          <li>Role defaults - <strong style="color: #ff6b6b;">LOWEST</strong></li>
+                      </ol>
+  
+                      <h4 style="color: #ff6b6b; margin: 20px 0;">Variable Definition Examples:</h4>
+                      <div class="code-block" data-lang="YAML">
+  <pre><span class="comment"># In playbook</span>
+  <span class="keyword">- name:</span> Deploy Application
+    <span class="keyword">hosts:</span> webservers
+    <span class="keyword">vars:</span>
+      <span class="keyword">app_name:</span> myapp
+      <span class="keyword">app_version:</span> <span class="string">"1.2.3"</span>
+      <span class="keyword">app_config:</span>
+        <span class="keyword">port:</span> <span class="number">8080</span>
+        <span class="keyword">timeout:</span> <span class="number">30</span>
+    
+    <span class="keyword">vars_files:</span>
+      - <span class="string">vars/common.yml</span>
+      - <span class="string">vars/{{ ansible_os_family }}.yml</span>
+    
+    <span class="keyword">tasks:</span>
+      <span class="keyword">- name:</span> Register variable from command
+        <span class="keyword">command:</span> cat /etc/hostname
+        <span class="keyword">register:</span> hostname_output
+      
+      <span class="keyword">- name:</span> Set fact
+        <span class="keyword">set_fact:</span>
+          <span class="keyword">custom_var:</span> <span class="string">"{{ hostname_output.stdout }}"</span>
+      
+      <span class="keyword">- name:</span> Debug variables
+        <span class="keyword">debug:</span>
+          <span class="keyword">msg:</span> <span class="string">"App {{ app_name }} v{{ app_version }} on {{ custom_var }}"</span></pre>
+                      </div>
+  
+                      <h4 style="color: #ff6b6b; margin: 20px 0;">Magic Variables (Automatically Available):</h4>
+                      <ul style="color: #b0b0b0; line-height: 2; padding-left: 20px;">
+                          <li><strong>hostvars:</strong> Access variables of other hosts</li>
+                          <li><strong>groups:</strong> List of all groups in inventory</li>
+                          <li><strong>group_names:</strong> Groups current host belongs to</li>
+                          <li><strong>inventory_hostname:</strong> Name of current host</li>
+                          <li><strong>ansible_facts:</strong> Gathered system information</li>
+                          <li><strong>playbook_dir:</strong> Directory of current playbook</li>
+                          <li><strong>role_path:</strong> Path to current role</li>
+                      </ul>
+  
+                      <div class="code-block" data-lang="YAML">
+  <pre><span class="comment"># Using magic variables</span>
+  <span class="keyword">- name:</span> Configure cluster
+    <span class="keyword">debug:</span>
+      <span class="keyword">msg:</span> <span class="string">"DB Host: {{ hostvars['db1.example.com']['ansible_host'] }}"</span>
+  
+  <span class="keyword">- name:</span> Get all web servers
+    <span class="keyword">debug:</span>
+      <span class="keyword">msg:</span> <span class="string">"Web servers: {{ groups['webservers'] }}"</span></pre>
+                      </div>
+                  </div>
+              </div>
+  
+              <!-- Handlers Section -->
+              <div class="expandable" id="handlers">
+                  <div class="expand-header" onclick="toggleExpand(this)">
+                      <span><strong>⚡ Handlers - Event-Driven Tasks</strong></span>
+                      <span>▼</span>
+                  </div>
+                  <div class="expand-content">
+                      <p style="color: #b0b0b0; line-height: 1.8; margin-bottom: 20px;">
+                          Handlers are special tasks that run only when notified by other tasks. They run once at the 
+                          end of a play, even if notified multiple times. Perfect for service restarts after config changes.
+                      </p>
+  
+                      <div class="code-block" data-lang="YAML">
+  <pre><span class="comment">---</span>
+  <span class="keyword">- name:</span> Web Server Configuration
+    <span class="keyword">hosts:</span> webservers
+    <span class="keyword">become:</span> yes
+    
+    <span class="keyword">tasks:</span>
+      <span class="keyword">- name:</span> Update Nginx config
+        <span class="keyword">template:</span>
+          <span class="keyword">src:</span> nginx.conf.j2
+          <span class="keyword">dest:</span> /etc/nginx/nginx.conf
+        <span class="keyword">notify:</span>
+          - Validate Nginx config
+          - Restart Nginx
+      
+      <span class="keyword">- name:</span> Update SSL certificate
+        <span class="keyword">copy:</span>
+          <span class="keyword">src:</span> <span class="string">"{{ item }}"</span>
+          <span class="keyword">dest:</span> /etc/nginx/ssl/
+        <span class="keyword">loop:</span>
+          - server.crt
+          - server.key
+        <span class="keyword">notify:</span> Restart Nginx
+    
+    <span class="keyword">handlers:</span>
+      <span class="keyword">- name:</span> Validate Nginx config
+        <span class="keyword">command:</span> nginx -t
+        <span class="keyword">changed_when:</span> false
+      
+      <span class="keyword">- name:</span> Restart Nginx
+        <span class="keyword">service:</span>
+          <span class="keyword">name:</span> nginx
+          <span class="keyword">state:</span> restarted
+        <span class="keyword">listen:</span> <span class="string">"restart web services"</span>
+      
+      <span class="keyword">- name:</span> Reload Nginx
+        <span class="keyword">service:</span>
+          <span class="keyword">name:</span> nginx
+          <span class="keyword">state:</span> reloaded</pre>
+                      </div>
+  
+                      <div class="production-tip">
+                          <strong>⚙️ Handler Best Practices:</strong>
+                          • Use meaningful handler names<br>
+                          • Group related handlers with "listen" directive<br>
+                          • Handlers run in order they're defined, not notified<br>
+                          • Use meta: flush_handlers to run handlers immediately<br>
+                          • Handlers don't run if playbook fails (use force_handlers: true)
+                      </div>
+                  </div>
+              </div>
+  
+              <!-- Vault Section -->
+              <div class="expandable" id="vault">
+                  <div class="expand-header" onclick="toggleExpand(this)">
+                      <span><strong>🔐 Ansible Vault - Secrets Management</strong></span>
+                      <span>▼</span>
+                  </div>
+                  <div class="expand-content">
+                      <p style="color: #b0b0b0; line-height: 1.8; margin-bottom: 20px;">
+                          Ansible Vault encrypts sensitive data like passwords, API keys, and certificates. Files are 
+                          encrypted with AES256. You can encrypt entire files or specific variables.
+                      </p>
+  
+                      <h4 style="color: #ff6b6b; margin: 20px 0;">Vault Commands:</h4>
+                      <div class="code-block" data-lang="BASH">
+  <pre><span class="comment"># Create encrypted file</span>
+  ansible-vault create secrets.yml
+  
+  <span class="comment"># Encrypt existing file</span>
+  ansible-vault encrypt vars/passwords.yml
+  
+  <span class="comment"># Edit encrypted file</span>
+  ansible-vault edit secrets.yml
+  
+  <span class="comment"># Decrypt file</span>
+  ansible-vault decrypt secrets.yml
+  
+  <span class="comment"># View encrypted file</span>
+  ansible-vault view secrets.yml
+  
+  <span class="comment"># Change vault password</span>
+  ansible-vault rekey secrets.yml
+  
+  <span class="comment"># Encrypt string (for inline vars)</span>
+  ansible-vault encrypt_string '<span class="string">mypassword</span>' --name '<span class="string">db_password</span>'</pre>
+                      </div>
+  
+                      <h4 style="color: #ff6b6b; margin: 20px 0;">Using Vault in Playbooks:</h4>
+                      <div class="code-block" data-lang="YAML">
+  <pre><span class="comment"># secrets.yml (encrypted)</span>
+  <span class="keyword">db_password:</span> supersecretpassword
+  <span class="keyword">api_key:</span> <span class="string">"abc123xyz789"</span>
+  <span class="keyword">aws_access_key:</span> AKIAIOSFODNN7EXAMPLE
+  
+  <span class="comment"># playbook.yml</span>
+  <span class="keyword">---</span>
+  <span class="keyword">- name:</span> Deploy with secrets
+    <span class="keyword">hosts:</span> databases
+    <span class="keyword">vars_files:</span>
+      - secrets.yml
+    
+    <span class="keyword">tasks:</span>
+      <span class="keyword">- name:</span> Configure database
+        <span class="keyword">postgresql_user:</span>
+          <span class="keyword">name:</span> appuser
+          <span class="keyword">password:</span> <span class="string">"{{ db_password }}"</span>
+  
+  <span class="comment"># Run with vault password</span>
+  <span class="comment"># ansible-playbook playbook.yml --ask-vault-pass</span>
+  <span class="comment"># ansible-playbook playbook.yml --vault-password-file ~/.vault_pass</span></pre>
+                      </div>
+  
+                      <h4 style="color: #ff6b6b; margin: 20px 0;">Inline Encrypted Variables:</h4>
+                      <div class="code-block" data-lang="YAML">
+  <pre><span class="keyword">db_password:</span> !vault |
+            $ANSIBLE_VAULT;1.1;AES256
+            66386439653162336462636230633566323634396335333335613562373439656365363565373234
+            6664373531376132663032363734323063663563373630323539356235393339656461333264333662</pre>
+                      </div>
+  
+                      <div class="production-tip">
+                          <strong>🔒 Production Secrets Management:</strong>
+                          • Store vault password in secure password manager<br>
+                          • Use different vault passwords for different environments<br>
+                          • Never commit vault passwords to version control<br>
+                          • Consider external secret managers (HashiCorp Vault, AWS Secrets Manager)<br>
+                          • Rotate secrets regularly and track access
+                      </div>
+                  </div>
+              </div>
+          </section>
+  
+          <!-- Production Best Practices -->
+          <section class="section" id="production">
+              <h2 class="section-title">🏭 Production Best Practices</h2>
+  
+              <div class="concept-grid">
+                  <div class="concept-card">
+                      <div class="concept-icon">📁</div>
+                      <h3 class="concept-title">Project Structure</h3>
+                      <div class="code-block" data-lang="TEXT" style="margin-top: 15px;">
+  <pre>ansible-project/
+  ├── ansible.cfg
+  ├── inventories/
+  │   ├── production/
+  │   │   ├── hosts
+  │   │   ├── group_vars/
+  │   │   └── host_vars/
+  │   └── staging/
+  ├── roles/
+  │   ├── common/
+  │   ├── webserver/
+  │   └── database/
+  ├── playbooks/
+  │   ├── site.yml
+  │   ├── webservers.yml
+  │   └── databases.yml
+  ├── group_vars/
+  │   ├── all.yml
+  │   └── webservers.yml
+  ├── host_vars/
+  ├── files/
+  ├── templates/
+  └── vault/
+      └── secrets.yml</pre>
+                      </div>
+                  </div>
+  
+                  <div class="concept-card">
+                      <div class="concept-icon">✅</div>
+                      <h3 class="concept-title">Idempotency</h3>
+                      <p class="concept-desc" style="margin-bottom: 15px;">
+                          Ensure playbooks can run multiple times safely without causing unintended changes.
+                      </p>
+                      <div class="code-block" data-lang="YAML">
+  <pre><span class="comment"># Bad - Not idempotent</span>
+  <span class="keyword">- command:</span> echo <span class="string">"config"</span> >> /etc/app.conf
+  
+  <span class="comment"># Good - Idempotent</span>
+  <span class="keyword">- lineinfile:</span>
+      <span class="keyword">path:</span> /etc/app.conf
+      <span class="keyword">line:</span> <span class="string">"config"</span>
+      <span class="keyword">state:</span> present</pre>
+                      </div>
+                  </div>
+  
+                  <div class="concept-card">
+                      <div class="concept-icon">🎯</div>
+                      <h3 class="concept-title">Tags & Limits</h3>
+                      <div class="code-block" data-lang="YAML" style="margin-top: 15px;">
+  <pre><span class="keyword">tasks:</span>
+    <span class="keyword">- name:</span> Install packages
+      <span class="keyword">yum:</span> <span class="keyword">name:</span> nginx
+      <span class="keyword">tags:</span> <span class="string">[packages, nginx]</span>
+    
+    <span class="keyword">- name:</span> Configure firewall
+      <span class="keyword">firewalld:</span> ...
+      <span class="keyword">tags:</span> <span class="string">[security]</span>
+  
+  <span class="comment"># Run specific tags</span>
+  <span class="comment"># ansible-playbook site.yml --tags "nginx"</span>
+  <span class="comment"># ansible-playbook site.yml --limit "web1"</span></pre>
+                      </div>
+                  </div>
+  
+                  <div class="concept-card">
+                      <div class="concept-icon">🔄</div>
+                      <h3 class="concept-title">Error Handling</h3>
+                      <div class="code-block" data-lang="YAML" style="margin-top: 15px;">
+  <pre><span class="keyword">- name:</span> Handle errors
+    <span class="keyword">block:</span>
+      <span class="keyword">- name:</span> Risky task
+        <span class="keyword">command:</span> /usr/bin/risky
+    <span class="keyword">rescue:</span>
+      <span class="keyword">- name:</span> Handle failure
+        <span class="keyword">debug:</span> <span class="keyword">msg:</span> <span class="string">"Failed!"</span>
+    <span class="keyword">always:</span>
+      <span class="keyword">- name:</span> Always runs
+        <span class="keyword">debug:</span> <span class="keyword">msg:</span> <span class="string">"Cleanup"</span></pre>
+                      </div>
+                  </div>
+  
+                  <div class="concept-card">
+                      <div class="concept-icon">⚡</div>
+                      <h3 class="concept-title">Performance</h3>
+                      <p class="concept-desc" style="margin-bottom: 15px;">
+                          Optimize playbook execution for large infrastructures.
+                      </p>
+                      <div class="code-block" data-lang="INI" style="margin-top: 15px;">
+  <pre><span class="comment"># ansible.cfg</span>
+  <span class="keyword">[defaults]</span>
+  forks = 50
+  gathering = smart
+  fact_caching = jsonfile
+  fact_caching_connection = /tmp/facts
+  pipelining = True</pre>
+                      </div>
+                  </div>
+  
+                  <div class="concept-card">
+                      <div class="concept-icon">📊</div>
+                      <h3 class="concept-title">Testing</h3>
+                      <div class="code-block" data-lang="BASH" style="margin-top: 15px;">
+  <pre><span class="comment"># Syntax check</span>
+  ansible-playbook --syntax-check site.yml
+  
+  <span class="comment"># Dry run</span>
+  ansible-playbook --check site.yml
+  
+  <span class="comment"># Diff mode</span>
+  ansible-playbook --check --diff site.yml
+  
+  <span class="comment"># Molecule testing</span>
+  molecule test</pre>
+                      </div>
+                  </div>
+              </div>
+  
+              <div class="production-tip" style="margin-top: 40px;">
+                  <strong>🎯 Production Deployment Workflow:</strong><br><br>
+                  1. <strong>Development:</strong> Write and test playbooks locally<br>
+                  2. <strong>Version Control:</strong> Commit to Git, create feature branches<br>
+                  3. <strong>Testing:</strong> Run syntax checks, dry runs, Molecule tests<br>
+                  4. <strong>Staging:</strong> Deploy to staging environment first<br>
+                  5. <strong>Validation:</strong> Verify application functionality<br>
+                  6. <strong>Production:</strong> Deploy with proper change management<br>
+                  7. <strong>Monitoring:</strong> Track deployment metrics and logs<br>
+                  8. <strong>Rollback Plan:</strong> Always have rollback playbooks ready
+              </div>
+          </section>
+  
+          <!-- Real-World Examples -->
+          <section class="section" id="examples">
+              <h2 class="section-title">🌍 Real-World Examples</h2>
+  
+              <div class="expandable">
+                  <div class="expand-header" onclick="toggleExpand(this)">
+                      <span><strong>🚀 Example 1: Complete LAMP Stack Deployment</strong></span>
+                      <span>▼</span>
+                  </div>
+                  <div class="expand-content">
+                      <div class="code-block" data-lang="YAML">
+  <pre><span class="comment">---</span>
+  <span class="keyword">- name:</span> Deploy LAMP Stack
+    <span class="keyword">hosts:</span> webservers
+    <span class="keyword">become:</span> yes
+    <span class="keyword">vars:</span>
+      <span class="keyword">mysql_root_password:</span> <span class="string">"{{ vault_mysql_root_password }}"</span>
+      <span class="keyword">app_user:</span> webuser
+      <span class="keyword">app_dir:</span> /var/www/html
+    
+    <span class="keyword">tasks:</span>
+      <span class="keyword">- name:</span> Install Apache
+        <span class="keyword">yum:</span>
+          <span class="keyword">name:</span> httpd
+          <span class="keyword">state:</span> present
+      
+      <span class="keyword">- name:</span> Install PHP
+        <span class="keyword">yum:</span>
+          <span class="keyword">name:</span>
+            - php
+            - php-mysql
+            - php-gd
+          <span class="keyword">state:</span> present
+      
+      <span class="keyword">- name:</span> Install MariaDB
+        <span class="keyword">yum:</span>
+          <span class="keyword">name:</span> mariadb-server
+          <span class="keyword">state:</span> present
+      
+      <span class="keyword">- name:</span> Start services
+        <span class="keyword">service:</span>
+          <span class="keyword">name:</span> <span class="string">"{{ item }}"</span>
+          <span class="keyword">state:</span> started
+          <span class="keyword">enabled:</span> yes
+        <span class="keyword">loop:</span>
+          - httpd
+          - mariadb
+      
+      <span class="keyword">- name:</span> Configure MySQL root password
+        <span class="keyword">mysql_user:</span>
+          <span class="keyword">name:</span> root
+          <span class="keyword">password:</span> <span class="string">"{{ mysql_root_password }}"</span>
+          <span class="keyword">host:</span> localhost
+      
+      <span class="keyword">- name:</span> Deploy application
+        <span class="keyword">copy:</span>
+          <span class="keyword">src:</span> app/
+          <span class="keyword">dest:</span> <span class="string">"{{ app_dir }}"</span>
+        <span class="keyword">notify:</span> Restart Apache</pre>
+                      </div>
+                  </div>
+              </div>
+
+              <div class="expandable">
+                  <div class="expand-header" onclick="toggleExpand(this)">
+                      <span><strong>🐳 Example 2: Docker Container Orchestration</strong></span>
+                      <span>▼</span>
+                  </div>
+                  <div class="expand-content">
+                      <div class="code-block" data-lang="YAML">
+  <pre><span class="comment">---</span>
+  <span class="keyword">- name:</span> Deploy Microservices with Docker
+    <span class="keyword">hosts:</span> docker_hosts
+    <span class="keyword">become:</span> yes
+    
+    <span class="keyword">tasks:</span>
+      <span class="keyword">- name:</span> Install Docker
+        <span class="keyword">yum:</span>
+          <span class="keyword">name:</span> docker
+          <span class="keyword">state:</span> present
+      
+      <span class="keyword">- name:</span> Start Docker service
+        <span class="keyword">service:</span>
+          <span class="keyword">name:</span> docker
+          <span class="keyword">state:</span> started
+          <span class="keyword">enabled:</span> yes
+      
+      <span class="keyword">- name:</span> Pull application images
+        <span class="keyword">docker_image:</span>
+          <span class="keyword">name:</span> <span class="string">"{{ item }}"</span>
+          <span class="keyword">source:</span> pull
+        <span class="keyword">loop:</span>
+          - nginx:latest
+          - postgres:13
+          - redis:alpine
+      
+      <span class="keyword">- name:</span> Create Docker network
+        <span class="keyword">docker_network:</span>
+          <span class="keyword">name:</span> app_network
+          <span class="keyword">state:</span> present
+      
+      <span class="keyword">- name:</span> Deploy PostgreSQL container
+        <span class="keyword">docker_container:</span>
+          <span class="keyword">name:</span> postgres_db
+          <span class="keyword">image:</span> postgres:13
+          <span class="keyword">state:</span> started
+          <span class="keyword">restart_policy:</span> always
+          <span class="keyword">networks:</span>
+            - <span class="keyword">name:</span> app_network
+          <span class="keyword">env:</span>
+            <span class="keyword">POSTGRES_PASSWORD:</span> <span class="string">"{{ db_password }}"</span>
+          <span class="keyword">volumes:</span>
+            - postgres_data:/var/lib/postgresql/data
+      
+      <span class="keyword">- name:</span> Deploy application container
+        <span class="keyword">docker_container:</span>
+          <span class="keyword">name:</span> web_app
+          <span class="keyword">image:</span> myapp:latest
+          <span class="keyword">state:</span> started
+          <span class="keyword">ports:</span>
+            - <span class="string">"80:8080"</span>
+          <span class="keyword">networks:</span>
+            - <span class="keyword">name:</span> app_network
+          <span class="keyword">links:</span>
+            - postgres_db:database</pre>
+                      </div>
+                  </div>
+              </div>
+
+              <div class="expandable">
+                  <div class="expand-header" onclick="toggleExpand(this)">
+                      <span><strong>☁️ Example 3: AWS Infrastructure Provisioning</strong></span>
+                      <span>▼</span>
+                  </div>
+                  <div class="expand-content">
+                      <div class="code-block" data-lang="YAML">
+  <pre><span class="comment">---</span>
+  <span class="keyword">- name:</span> Provision AWS Infrastructure
+    <span class="keyword">hosts:</span> localhost
+    <span class="keyword">gather_facts:</span> no
+    <span class="keyword">vars:</span>
+      <span class="keyword">region:</span> us-east-1
+      <span class="keyword">vpc_cidr:</span> <span class="string">"10.0.0.0/16"</span>
+    
+    <span class="keyword">tasks:</span>
+      <span class="keyword">- name:</span> Create VPC
+        <span class="keyword">amazon.aws.ec2_vpc_net:</span>
+          <span class="keyword">name:</span> production-vpc
+          <span class="keyword">cidr_block:</span> <span class="string">"{{ vpc_cidr }}"</span>
+          <span class="keyword">region:</span> <span class="string">"{{ region }}"</span>
+          <span class="keyword">tags:</span>
+            <span class="keyword">Environment:</span> Production
+        <span class="keyword">register:</span> vpc
+      
+      <span class="keyword">- name:</span> Create subnet
+        <span class="keyword">amazon.aws.ec2_vpc_subnet:</span>
+          <span class="keyword">vpc_id:</span> <span class="string">"{{ vpc.vpc.id }}"</span>
+          <span class="keyword">cidr:</span> <span class="string">"10.0.1.0/24"</span>
+          <span class="keyword">az:</span> <span class="string">"{{ region }}a"</span>
+          <span class="keyword">tags:</span>
+            <span class="keyword">Name:</span> web-subnet
+        <span class="keyword">register:</span> subnet
+      
+      <span class="keyword">- name:</span> Create security group
+        <span class="keyword">amazon.aws.ec2_security_group:</span>
+          <span class="keyword">name:</span> web-sg
+          <span class="keyword">description:</span> Web server security group
+          <span class="keyword">vpc_id:</span> <span class="string">"{{ vpc.vpc.id }}"</span>
+          <span class="keyword">rules:</span>
+            - <span class="keyword">proto:</span> tcp
+              <span class="keyword">ports:</span> 80
+              <span class="keyword">cidr_ip:</span> 0.0.0.0/0
+            - <span class="keyword">proto:</span> tcp
+              <span class="keyword">ports:</span> 443
+              <span class="keyword">cidr_ip:</span> 0.0.0.0/0
+      
+      <span class="keyword">- name:</span> Launch EC2 instances
+        <span class="keyword">amazon.aws.ec2_instance:</span>
+          <span class="keyword">name:</span> <span class="string">"web-{{ item }}"</span>
+          <span class="keyword">instance_type:</span> t2.micro
+          <span class="keyword">image_id:</span> ami-0c55b159cbfafe1f0
+          <span class="keyword">vpc_subnet_id:</span> <span class="string">"{{ subnet.subnet.id }}"</span>
+          <span class="keyword">count:</span> 3
+          <span class="keyword">tags:</span>
+            <span class="keyword">Environment:</span> Production
+            <span class="keyword">Role:</span> WebServer
+        <span class="keyword">loop:</span> <span class="string">"{{ range(1, 4) | list }}"</span></pre>
+                      </div>
+                  </div>
+              </div>
+
+              <div class="expandable">
+                  <div class="expand-header" onclick="toggleExpand(this)">
+                      <span><strong>🔄 Example 4: Zero-Downtime Rolling Deployment</strong></span>
+                      <span>▼</span>
+                  </div>
+                  <div class="expand-content">
+                      <div class="code-block" data-lang="YAML">
+  <pre><span class="comment">---</span>
+  <span class="keyword">- name:</span> Rolling Update with Zero Downtime
+    <span class="keyword">hosts:</span> webservers
+    <span class="keyword">serial:</span> 1  <span class="comment"># Update one server at a time</span>
+    <span class="keyword">max_fail_percentage:</span> 0
+    
+    <span class="keyword">tasks:</span>
+      <span class="keyword">- name:</span> Remove from load balancer
+        <span class="keyword">community.general.haproxy:</span>
+          <span class="keyword">state:</span> disabled
+          <span class="keyword">host:</span> <span class="string">"{{ inventory_hostname }}"</span>
+          <span class="keyword">backend:</span> web_backend
+        <span class="keyword">delegate_to:</span> load_balancer
+      
+      <span class="keyword">- name:</span> Wait for connections to drain
+        <span class="keyword">wait_for:</span>
+          <span class="keyword">timeout:</span> 30
+      
+      <span class="keyword">- name:</span> Stop application
+        <span class="keyword">service:</span>
+          <span class="keyword">name:</span> myapp
+          <span class="keyword">state:</span> stopped
+      
+      <span class="keyword">- name:</span> Backup current version
+        <span class="keyword">archive:</span>
+          <span class="keyword">path:</span> /opt/myapp
+          <span class="keyword">dest:</span> <span class="string">"/backup/myapp-{{ ansible_date_time.iso8601 }}.tar.gz"</span>
+      
+      <span class="keyword">- name:</span> Deploy new version
+        <span class="keyword">unarchive:</span>
+          <span class="keyword">src:</span> releases/myapp-v2.0.tar.gz
+          <span class="keyword">dest:</span> /opt/myapp
+          <span class="keyword">remote_src:</span> no
+      
+      <span class="keyword">- name:</span> Run database migrations
+        <span class="keyword">command:</span> /opt/myapp/bin/migrate
+        <span class="keyword">run_once:</span> yes
+      
+      <span class="keyword">- name:</span> Start application
+        <span class="keyword">service:</span>
+          <span class="keyword">name:</span> myapp
+          <span class="keyword">state:</span> started
+      
+      <span class="keyword">- name:</span> Wait for app to be ready
+        <span class="keyword">uri:</span>
+          <span class="keyword">url:</span> <span class="string">"http://localhost:8080/health"</span>
+          <span class="keyword">status_code:</span> 200
+        <span class="keyword">register:</span> result
+        <span class="keyword">until:</span> result.status == 200
+        <span class="keyword">retries:</span> 10
+        <span class="keyword">delay:</span> 5
+      
+      <span class="keyword">- name:</span> Add back to load balancer
+        <span class="keyword">community.general.haproxy:</span>
+          <span class="keyword">state:</span> enabled
+          <span class="keyword">host:</span> <span class="string">"{{ inventory_hostname }}"</span>
+          <span class="keyword">backend:</span> web_backend
+        <span class="keyword">delegate_to:</span> load_balancer
+      
+      <span class="keyword">- name:</span> Smoke test
+        <span class="keyword">uri:</span>
+          <span class="keyword">url:</span> <span class="string">"http://{{ inventory_hostname }}/api/test"</span>
+          <span class="keyword">return_content:</span> yes
+        <span class="keyword">register:</span> test_result
+        <span class="keyword">failed_when:</span> <span class="string">"'success' not in test_result.content"</span></pre>
+                      </div>
+                  </div>
+              </div>
+          </section>
+
+          <!-- Advanced Topics -->
+          <section class="section" id="advanced">
+              <h2 class="section-title">🎓 Advanced Ansible Concepts</h2>
+
+              <div class="expandable">
+                  <div class="expand-header" onclick="toggleExpand(this)">
+                      <span><strong>🔁 Loops & Conditionals</strong></span>
+                      <span>▼</span>
+                  </div>
+                  <div class="expand-content">
+                      <h4 style="color: #ff6b6b; margin: 20px 0;">Different Loop Types:</h4>
+                      <div class="code-block" data-lang="YAML">
+  <pre><span class="comment"># Simple loop</span>
+  <span class="keyword">- name:</span> Install packages
+    <span class="keyword">yum:</span>
+      <span class="keyword">name:</span> <span class="string">"{{ item }}"</span>
+      <span class="keyword">state:</span> present
+    <span class="keyword">loop:</span>
+      - httpd
+      - nginx
+      - postgresql
+  
+  <span class="comment"># Loop with dictionary</span>
+  <span class="keyword">- name:</span> Create users
+    <span class="keyword">user:</span>
+      <span class="keyword">name:</span> <span class="string">"{{ item.name }}"</span>
+      <span class="keyword">uid:</span> <span class="string">"{{ item.uid }}"</span>
+      <span class="keyword">shell:</span> <span class="string">"{{ item.shell }}"</span>
+    <span class="keyword">loop:</span>
+      - { name: 'alice', uid: 1001, shell: '/bin/bash' }
+      - { name: 'bob', uid: 1002, shell: '/bin/zsh' }
+  
+  <span class="comment"># Loop with index</span>
+  <span class="keyword">- name:</span> Process items with index
+    <span class="keyword">debug:</span>
+      <span class="keyword">msg:</span> <span class="string">"Item {{ item.0 }}: {{ item.1 }}"</span>
+    <span class="keyword">loop:</span> <span class="string">"{{ my_list | zip_longest(['a','b','c']) | list }}"</span>
+  
+  <span class="comment"># Loop until condition</span>
+  <span class="keyword">- name:</span> Wait for service
+    <span class="keyword">shell:</span> systemctl is-active myservice
+    <span class="keyword">register:</span> result
+    <span class="keyword">until:</span> result.rc == 0
+    <span class="keyword">retries:</span> 5
+    <span class="keyword">delay:</span> 10
+  
+  <span class="comment"># Nested loops</span>
+  <span class="keyword">- name:</span> Create directory structure
+    <span class="keyword">file:</span>
+      <span class="keyword">path:</span> <span class="string">"/data/{{ item.0 }}/{{ item.1 }}"</span>
+      <span class="keyword">state:</span> directory
+    <span class="keyword">loop:</span> <span class="string">"{{ users | product(folders) | list }}"</span>
+  
+  <span class="comment"># Conditionals</span>
+  <span class="keyword">- name:</span> Install on RedHat only
+    <span class="keyword">yum:</span>
+      <span class="keyword">name:</span> httpd
+    <span class="keyword">when:</span> ansible_os_family == <span class="string">"RedHat"</span>
+  
+  <span class="keyword">- name:</span> Multiple conditions
+    <span class="keyword">debug:</span>
+      <span class="keyword">msg:</span> <span class="string">"Valid system"</span>
+    <span class="keyword">when:</span>
+      - ansible_distribution == <span class="string">"CentOS"</span>
+      - ansible_distribution_major_version == <span class="string">"7"</span>
+      - ansible_memtotal_mb >= 2048</pre>
+                      </div>
+                  </div>
+              </div>
+
+              <div class="expandable">
+                  <div class="expand-header" onclick="toggleExpand(this)">
+                      <span><strong>🎨 Jinja2 Templates</strong></span>
+                      <span>▼</span>
+                  </div>
+                  <div class="expand-content">
+                      <p style="color: #b0b0b0; line-height: 1.8; margin-bottom: 20px;">
+                          Jinja2 is the templating engine used by Ansible for dynamic file generation.
+                      </p>
+                      <div class="code-block" data-lang="JINJA2">
+  <pre><span class="comment">{# nginx.conf.j2 template #}</span>
+  user {{ nginx_user }};
+  worker_processes {{ nginx_worker_processes | default('auto') }};
+  
+  events {
+      worker_connections {{ nginx_worker_connections | default(1024) }};
+  }
+  
+  http {
+      <span class="comment">{% if enable_gzip %}</span>
+      gzip on;
+      gzip_types text/plain text/css application/json;
+      <span class="comment">{% endif %}</span>
+      
+      <span class="comment">{% for server in web_servers %}</span>
+      upstream backend_{{ server.name }} {
+          <span class="comment">{% for host in server.hosts %}</span>
+          server {{ host.ip }}:{{ host.port }} weight={{ host.weight | default(1) }};
+          <span class="comment">{% endfor %}</span>
+      }
+      <span class="comment">{% endfor %}</span>
+      
+      server {
+          listen {{ http_port }};
+          server_name {{ server_name }};
+          
+          <span class="comment">{% if ssl_enabled %}</span>
+          listen 443 ssl;
+          ssl_certificate {{ ssl_cert_path }};
+          ssl_certificate_key {{ ssl_key_path }};
+          <span class="comment">{% endif %}</span>
+          
+          location / {
+              proxy_pass http://backend_{{ app_name }};
+              proxy_set_header Host $host;
+              proxy_set_header X-Real-IP $remote_addr;
+          }
+      }
+  }</pre>
+                      </div>
+
+                      <h4 style="color: #ff6b6b; margin: 20px 0;">Jinja2 Filters:</h4>
+                      <div class="code-block" data-lang="YAML">
+  <pre><span class="comment"># String filters</span>
+  <span class="string">"{{ variable | upper }}"</span>          <span class="comment"># UPPERCASE</span>
+  <span class="string">"{{ variable | lower }}"</span>          <span class="comment"># lowercase</span>
+  <span class="string">"{{ variable | capitalize }}"</span>     <span class="comment"># Capitalize</span>
+  <span class="string">"{{ variable | replace('old', 'new') }}"</span>
+  
+  <span class="comment"># List filters</span>
+  <span class="string">"{{ list | length }}"</span>             <span class="comment"># Count items</span>
+  <span class="string">"{{ list | first }}"</span>              <span class="comment"># First item</span>
+  <span class="string">"{{ list | last }}"</span>               <span class="comment"># Last item</span>
+  <span class="string">"{{ list | unique }}"</span>             <span class="comment"># Remove duplicates</span>
+  <span class="string">"{{ list | sort }}"</span>               <span class="comment"># Sort list</span>
+  <span class="string">"{{ list | join(', ') }}"</span>         <span class="comment"># Join with delimiter</span>
+  
+  <span class="comment"># Math filters</span>
+  <span class="string">"{{ number | int }}"</span>              <span class="comment"># Convert to integer</span>
+  <span class="string">"{{ number | round }}"</span>            <span class="comment"># Round number</span>
+  <span class="string">"{{ number | abs }}"</span>              <span class="comment"># Absolute value</span>
+  
+  <span class="comment"># Default values</span>
+  <span class="string">"{{ variable | default('N/A') }}"</span>
+  <span class="string">"{{ variable | default(omit) }}"</span>   <span class="comment"># Omit if undefined</span>
+  
+  <span class="comment"># JSON/YAML</span>
+  <span class="string">"{{ variable | to_json }}"</span>
+  <span class="string">"{{ variable | to_yaml }}"</span>
+  <span class="string">"{{ json_string | from_json }}"</span></pre>
+                      </div>
+                  </div>
+              </div>
+
+              <div class="expandable">
+                  <div class="expand-header" onclick="toggleExpand(this)">
+                      <span><strong>🎭 Custom Modules & Plugins</strong></span>
+                      <span>▼</span>
+                  </div>
+                  <div class="expand-content">
+                      <h4 style="color: #ff6b6b; margin: 20px 0;">Creating a Custom Module:</h4>
+                      <div class="code-block" data-lang="PYTHON">
+  <pre><span class="comment">#!/usr/bin/python</span>
+  <span class="comment"># library/my_custom_module.py</span>
+  
+  from ansible.module_utils.basic import AnsibleModule
+  
+  def main():
+      module = AnsibleModule(
+          argument_spec=dict(
+              name=dict(type='str', required=True),
+              state=dict(type='str', default='present', 
+                        choices=['present', 'absent']),
+              value=dict(type='int', default=0)
+          ),
+          supports_check_mode=True
+      )
+      
+      name = module.params['name']
+      state = module.params['state']
+      value = module.params['value']
+      
+      changed = False
+      result = {}
+      
+      <span class="comment"># Your custom logic here</span>
+      if state == 'present':
+          <span class="comment"># Do something</span>
+          changed = True
+          result['message'] = f"Created {name} with value {value}"
+      else:
+          <span class="comment"># Remove something</span>
+          changed = True
+          result['message'] = f"Removed {name}"
+      
+      module.exit_json(changed=changed, **result)
+  
+  if __name__ == '__main__':
+      main()</pre>
+                      </div>
+
+                      <h4 style="color: #ff6b6b; margin: 20px 0;">Custom Lookup Plugin:</h4>
+                      <div class="code-block" data-lang="PYTHON">
+  <pre><span class="comment"># lookup_plugins/my_lookup.py</span>
+  from ansible.plugins.lookup import LookupBase
+  
+  class LookupModule(LookupBase):
+      def run(self, terms, variables=None, **kwargs):
+          ret = []
+          for term in terms:
+              <span class="comment"># Custom lookup logic</span>
+              ret.append(f"processed_{term}")
+          return ret</pre>
+                      </div>
+
+                      <h4 style="color: #ff6b6b; margin: 20px 0;">Usage:</h4>
+                      <div class="code-block" data-lang="YAML">
+  <pre><span class="keyword">- name:</span> Use custom module
+    <span class="keyword">my_custom_module:</span>
+      <span class="keyword">name:</span> myresource
+      <span class="keyword">state:</span> present
+      <span class="keyword">value:</span> 42
+  
+  <span class="keyword">- name:</span> Use custom lookup
+    <span class="keyword">debug:</span>
+      <span class="keyword">msg:</span> <span class="string">"{{ lookup('my_lookup', 'value1', 'value2') }}"</span></pre>
+                      </div>
+                  </div>
+              </div>
+
+              <div class="expandable">
+                  <div class="expand-header" onclick="toggleExpand(this)">
+                      <span><strong>🔌 Callback Plugins & Ansible Tower</strong></span>
+                      <span>▼</span>
+                  </div>
+                  <div class="expand-content">
+                      <p style="color: #b0b0b0; line-height: 1.8; margin-bottom: 20px;">
+                          Callback plugins allow you to hook into Ansible events and customize output or integrate with external systems.
+                      </p>
+                      <div class="code-block" data-lang="PYTHON">
+  <pre><span class="comment"># callback_plugins/custom_logger.py</span>
+  from ansible.plugins.callback import CallbackBase
+  import json
+  import logging
+  
+  class CallbackModule(CallbackBase):
+      CALLBACK_VERSION = 2.0
+      CALLBACK_TYPE = 'notification'
+      CALLBACK_NAME = 'custom_logger'
+      
+      def __init__(self):
+          super(CallbackModule, self).__init__()
+          logging.basicConfig(filename='ansible.log', level=logging.INFO)
+      
+      def v2_runner_on_ok(self, result):
+          host = result._host.name
+          logging.info(f"SUCCESS: {host} - {result._task.name}")
+      
+      def v2_runner_on_failed(self, result, ignore_errors=False):
+          host = result._host.name
+          logging.error(f"FAILED: {host} - {result._task.name}")
+          logging.error(f"Error: {result._result}")</pre>
+                      </div>
+
+                      <h4 style="color: #ff6b6b; margin: 20px 0;">Ansible Tower/AWX Features:</h4>
+                      <ul style="color: #b0b0b0; line-height: 2; padding-left: 20px;">
+                          <li><strong>RBAC:</strong> Role-based access control for teams</li>
+                          <li><strong>Job Scheduling:</strong> Cron-like scheduling for playbooks</li>
+                          <li><strong>Workflow:</strong> Chain multiple playbooks together</li>
+                          <li><strong>Credentials:</strong> Centralized credential management</li>
+                          <li><strong>REST API:</strong> Trigger jobs programmatically</li>
+                          <li><strong>Audit Trail:</strong> Complete history of all automation</li>
+                          <li><strong>Notifications:</strong> Slack, email, webhooks integration</li>
+                          <li><strong>Survey:</strong> Dynamic user inputs before job execution</li>
+                      </ul>
+                  </div>
+              </div>
+
+              <div class="expandable">
+                  <div class="expand-header" onclick="toggleExpand(this)">
+                      <span><strong>🧪 Testing with Molecule</strong></span>
+                      <span>▼</span>
+                  </div>
+                  <div class="expand-content">
+                      <p style="color: #b0b0b0; line-height: 1.8; margin-bottom: 20px;">
+                          Molecule is a testing framework for Ansible roles, supporting multiple providers (Docker, Vagrant, EC2).
+                      </p>
+                      <div class="code-block" data-lang="YAML">
+  <pre><span class="comment"># molecule/default/molecule.yml</span>
+  <span class="keyword">---</span>
+  <span class="keyword">dependency:</span>
+    <span class="keyword">name:</span> galaxy
+  <span class="keyword">driver:</span>
+    <span class="keyword">name:</span> docker
+  <span class="keyword">platforms:</span>
+    - <span class="keyword">name:</span> centos7
+      <span class="keyword">image:</span> centos:7
+      <span class="keyword">pre_build_image:</span> true
+    - <span class="keyword">name:</span> ubuntu2004
+      <span class="keyword">image:</span> ubuntu:20.04
+      <span class="keyword">pre_build_image:</span> true
+  <span class="keyword">provisioner:</span>
+    <span class="keyword">name:</span> ansible
+    <span class="keyword">lint:</span>
+      <span class="keyword">name:</span> ansible-lint
+  <span class="keyword">verifier:</span>
+    <span class="keyword">name:</span> testinfra</pre>
+                      </div>
+
+                      <div class="code-block" data-lang="PYTHON">
+  <pre><span class="comment"># molecule/default/tests/test_default.py</span>
+  import pytest
+  
+  def test_nginx_installed(host):
+      nginx = host.package("nginx")
+      assert nginx.is_installed
+  
+  def test_nginx_running(host):
+      nginx = host.service("nginx")
+      assert nginx.is_running
+      assert nginx.is_enabled
+  
+  def test_nginx_listening(host):
+      assert host.socket("tcp://0.0.0.0:80").is_listening</pre>
+                      </div>
+
+                      <div class="code-block" data-lang="BASH">
+                        <pre><span class="comment"># Molecule commands</span>
+                        molecule init role my_role
+                        molecule create        <span class="comment"># Create test instances</span>
+                        molecule converge      <span class="comment"># Run the role</span>
+                        molecule verify        <span class="comment"># Run tests</span>
+                        molecule test          <span class="comment"># Full test cycle</span>
+                        molecule destroy       <span class="comment"># Cleanup</span></pre>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </section>
+                      
+                                <!-- Performance & Optimization -->
+                                <section class="section" id="performance">
+                                    <h2 class="section-title">⚡ Performance Optimization</h2>
+                      
+                                    <div class="expandable">
+                                        <div class="expand-header" onclick="toggleExpand(this)">
+                                            <span><strong>🚀 Optimization Techniques</strong></span>
+                                            <span>▼</span>
+                                        </div>
+                                        <div class="expand-content">
+                                            <h4 style="color: #ff6b6b; margin: 20px 0;">Ansible Configuration for Performance:</h4>
+                                            <div class="code-block" data-lang="INI">
+                        <pre><span class="comment"># ansible.cfg - Performance tuning</span>
+                        <span class="keyword">[defaults]</span>
+                        forks = 50                          <span class="comment"># Parallel execution (default: 5)</span>
+                        gathering = smart                   <span class="comment"># Cache facts</span>
+                        fact_caching = jsonfile
+                        fact_caching_connection = /tmp/ansible_facts
+                        fact_caching_timeout = 86400        <span class="comment"># 24 hours</span>
+                        
+                        pipelining = True                   <span class="comment"># Reduce SSH operations</span>
+                        
+                        <span class="keyword">[ssh_connection]</span>
+                        ssh_args = -o ControlMaster=auto -o ControlPersist=60s
+                        control_path = /tmp/ansible-ssh-%%h-%%p-%%r
+                        pipelining = True</pre>
+                                            </div>
+                      
+                                            <h4 style="color: #ff6b6b; margin: 20px 0;">Playbook Optimization Strategies:</h4>
+                                            <div class="code-block" data-lang="YAML">
+                        <pre><span class="comment"># Disable fact gathering when not needed</span>
+                        <span class="keyword">- name:</span> Quick task without facts
+                          <span class="keyword">hosts:</span> all
+                          <span class="keyword">gather_facts:</span> no
+                          <span class="keyword">tasks:</span>
+                            - <span class="keyword">debug:</span> <span class="keyword">msg:</span> <span class="string">"Fast execution"</span>
+                      
+                        <span class="comment"># Gather subset of facts only</span>
+                        <span class="keyword">- name:</span> Minimal facts
+                          <span class="keyword">hosts:</span> all
+                          <span class="keyword">gather_facts:</span> yes
+                          <span class="keyword">gather_subset:</span>
+                            - <span class="string">'!all'</span>
+                            - <span class="string">'!min'</span>
+                            - network
+                            - virtual
+                      
+                        <span class="comment"># Use async for long-running tasks</span>
+                        <span class="keyword">- name:</span> Long running task
+                          <span class="keyword">command:</span> /usr/bin/long_script.sh
+                          <span class="keyword">async:</span> 3600
+                          <span class="keyword">poll:</span> 0
+                          <span class="keyword">register:</span> long_task
+                      
+                        <span class="keyword">- name:</span> Check async task status
+                          <span class="keyword">async_status:</span>
+                            <span class="keyword">jid:</span> <span class="string">"{{ long_task.ansible_job_id }}"</span>
+                          <span class="keyword">register:</span> job_result
+                          <span class="keyword">until:</span> job_result.finished
+                          <span class="keyword">retries:</span> 30
+                      
+                        <span class="comment"># Batch operations instead of loops</span>
+                        <span class="keyword">- name:</span> Install multiple packages (efficient)
+                          <span class="keyword">yum:</span>
+                            <span class="keyword">name:</span>
+                              - httpd
+                              - nginx
+                              - postgresql
+                            <span class="keyword">state:</span> present
+                      
+                        <span class="comment"># Use strategy plugins</span>
+                        <span class="keyword">- name:</span> Free strategy (don't wait for all hosts)
+                          <span class="keyword">hosts:</span> all
+                          <span class="keyword">strategy:</span> free
+                          <span class="keyword">tasks:</span>
+                            - <span class="keyword">name:</span> Independent tasks
+                              <span class="keyword">shell:</span> process_data.sh</pre>
+                                            </div>
+                      
+                                            <div class="production-tip">
+                                                <strong>💡 Performance Best Practices:</strong><br>
+                                                • Use fact caching to avoid re-gathering<br>
+                                                • Enable pipelining to reduce SSH overhead<br>
+                                                • Increase forks for large inventories<br>
+                                                • Use async for long-running operations<br>
+                                                • Batch package installations<br>
+                                                • Use strategy plugins appropriately<br>
+                                                • Profile playbooks with callback plugins
+                                            </div>
+                                        </div>
+                                    </div>
+                      
+                                    <div class="expandable">
+                                        <div class="expand-header" onclick="toggleExpand(this)">
+                                            <span><strong>📊 Monitoring & Debugging</strong></span>
+                                            <span>▼</span>
+                                        </div>
+                                        <div class="expand-content">
+                                            <h4 style="color: #ff6b6b; margin: 20px 0;">Debugging Techniques:</h4>
+                                            <div class="code-block" data-lang="YAML">
+                        <pre><span class="comment"># Debug module for inspection</span>
+                        <span class="keyword">- name:</span> Debug variables
+                          <span class="keyword">debug:</span>
+                            <span class="keyword">var:</span> ansible_facts
+                            <span class="keyword">verbosity:</span> 2
+                      
+                        <span class="keyword">- name:</span> Debug with message
+                          <span class="keyword">debug:</span>
+                            <span class="keyword">msg:</span> <span class="string">"Host {{ inventory_hostname }} has {{ ansible_memtotal_mb }}MB RAM"</span>
+                      
+                        <span class="comment"># Assert for validation</span>
+                        <span class="keyword">- name:</span> Validate requirements
+                          <span class="keyword">assert:</span>
+                            <span class="keyword">that:</span>
+                              - ansible_memtotal_mb >= 4096
+                              - ansible_processor_vcpus >= 2
+                            <span class="keyword">fail_msg:</span> <span class="string">"Insufficient resources"</span>
+                            <span class="keyword">success_msg:</span> <span class="string">"Requirements met"</span>
+                      
+                        <span class="comment"># Failed_when for custom failure conditions</span>
+                        <span class="keyword">- name:</span> Check disk space
+                          <span class="keyword">shell:</span> df -h / | tail -1 | awk '{print $5}' | sed 's/%//'
+                          <span class="keyword">register:</span> disk_usage
+                          <span class="keyword">failed_when:</span> disk_usage.stdout|int > 90
+                      
+                        <span class="comment"># Pause for manual inspection</span>
+                        <span class="keyword">- name:</span> Pause for verification
+                          <span class="keyword">pause:</span>
+                            <span class="keyword">prompt:</span> <span class="string">"Verify the changes before continuing"</span>
+                            <span class="keyword">minutes:</span> 1</pre>
+                                            </div>
+                      
+                                            <h4 style="color: #ff6b6b; margin: 20px 0;">Verbose Modes:</h4>
+                                            <div class="code-block" data-lang="BASH">
+                        <pre><span class="comment"># Different verbosity levels</span>
+                        ansible-playbook playbook.yml -v      <span class="comment"># Basic output</span>
+                        ansible-playbook playbook.yml -vv     <span class="comment"># Show task results</span>
+                        ansible-playbook playbook.yml -vvv    <span class="comment"># Show command execution</span>
+                        ansible-playbook playbook.yml -vvvv   <span class="comment"># Connection debugging</span>
+                      
+                        <span class="comment"># Step-by-step execution</span>
+                        ansible-playbook playbook.yml --step
+                      
+                        <span class="comment"># Start at specific task</span>
+                        ansible-playbook playbook.yml --start-at-task="Install nginx"
+                      
+                        <span class="comment"># Debugging with custom callback</span>
+                        ANSIBLE_STDOUT_CALLBACK=debug ansible-playbook playbook.yml</pre>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </section>
+                      
+                                <!-- Security Section -->
+                                <section class="section" id="security">
+                                    <h2 class="section-title">🔒 Security Best Practices</h2>
+                      
+                                    <div class="concept-grid">
+                                        <div class="concept-card">
+                                            <div class="concept-icon">🔐</div>
+                                            <h3 class="concept-title">SSH Key Management</h3>
+                                            <div class="code-block" data-lang="BASH" style="margin-top: 15px;">
+                        <pre><span class="comment"># Generate SSH key</span>
+                        ssh-keygen -t ed25519 -C "ansible@control"
+                      
+                        <span class="comment"># Copy to managed nodes</span>
+                        ssh-copy-id -i ~/.ssh/id_ed25519.pub user@host
+                      
+                        <span class="comment"># Use ssh-agent</span>
+                        eval $(ssh-agent)
+                        ssh-add ~/.ssh/id_ed25519</pre>
+                                            </div>
+                                        </div>
+                      
+                                        <div class="concept-card">
+                                            <div class="concept-icon">🛡️</div>
+                                            <h3 class="concept-title">Privilege Escalation</h3>
+                                            <div class="code-block" data-lang="YAML" style="margin-top: 15px;">
+                        <pre><span class="comment"># Become configuration</span>
+                        <span class="keyword">- name:</span> Run as root
+                          <span class="keyword">hosts:</span> all
+                          <span class="keyword">become:</span> yes
+                          <span class="keyword">become_method:</span> sudo
+                          <span class="keyword">become_user:</span> root
+                          <span class="keyword">become_flags:</span> <span class="string">'-H -S'</span>
+                          
+                          <span class="keyword">tasks:</span>
+                            - <span class="keyword">name:</span> System task
+                              <span class="keyword">yum:</span> <span class="keyword">name:</span> httpd</pre>
+                                            </div>
+                                        </div>
+                      
+                                        <div class="concept-card">
+                                            <div class="concept-icon">🔑</div>
+                                            <h3 class="concept-title">Secrets Management</h3>
+                                            <p class="concept-desc" style="margin-bottom: 15px;">
+                                                Never store plaintext secrets. Use Ansible Vault or external secret managers.
+                                            </p>
+                                            <div style="display: flex; flex-wrap: wrap; gap: 10px;">
+                                                <span class="badge">Ansible Vault</span>
+                                                <span class="badge">HashiCorp Vault</span>
+                                                <span class="badge">AWS Secrets Manager</span>
+                                                <span class="badge">Azure Key Vault</span>
+                                            </div>
+                                        </div>
+                      
+                                        <div class="concept-card">
+                                            <div class="concept-icon">📝</div>
+                                            <h3 class="concept-title">Audit Logging</h3>
+                                            <div class="code-block" data-lang="INI" style="margin-top: 15px;">
+                        <pre><span class="comment"># ansible.cfg</span>
+                        <span class="keyword">[defaults]</span>
+                        log_path = /var/log/ansible/ansible.log
+                        
+                        <span class="comment"># Enable syslog</span>
+                        no_log = False
+                        no_target_syslog = False</pre>
+                                            </div>
+                                        </div>
+                                    </div>
+                      
+                                    <div class="production-tip" style="margin-top: 40px;">
+                                        <strong>🔒 Security Checklist:</strong><br><br>
+                                        ✅ Use SSH keys, never passwords<br>
+                                        ✅ Encrypt all sensitive data with Vault<br>
+                                        ✅ Implement least privilege access<br>
+                                        ✅ Enable audit logging<br>
+                                        ✅ Use no_log for sensitive tasks<br>
+                                        ✅ Regularly rotate credentials<br>
+                                        ✅ Keep Ansible and dependencies updated<br>
+                                        ✅ Review playbooks for security issues<br>
+                                        ✅ Use ansible-lint for security checks
+                                    </div>
+                                </section>
+                      
+                                <!-- CI/CD Integration -->
+                                <section class="section" id="cicd">
+                                    <h2 class="section-title">🔄 CI/CD Integration</h2>
+                      
+                                    <div class="expandable">
+                                        <div class="expand-header" onclick="toggleExpand(this)">
+                                            <span><strong>🔧 GitLab CI Integration</strong></span>
+                                            <span>▼</span>
+                                        </div>
+                                        <div class="expand-content">
+                                            <div class="code-block" data-lang="YAML">
+                        <pre><span class="comment"># .gitlab-ci.yml</span>
+                        <span class="keyword">stages:</span>
+                          - lint
+                          - test
+                          - deploy
+                      
+                        <span class="keyword">variables:</span>
+                          <span class="keyword">ANSIBLE_FORCE_COLOR:</span> <span class="string">"true"</span>
+                      
+                        <span class="keyword">lint:</span>
+                          <span class="keyword">stage:</span> lint
+                          <span class="keyword">image:</span> cytopia/ansible:latest
+                          <span class="keyword">script:</span>
+                            - ansible-lint playbooks/
+                            - yamllint .
+                      
+                        <span class="keyword">test:</span>
+                          <span class="keyword">stage:</span> test
+                          <span class="keyword">image:</span> cytopia/ansible:latest
+                          <span class="keyword">script:</span>
+                            - ansible-playbook --syntax-check playbooks/site.yml
+                            - ansible-playbook --check playbooks/site.yml -i inventories/staging
+                      
+                        <span class="keyword">deploy_staging:</span>
+                          <span class="keyword">stage:</span> deploy
+                          <span class="keyword">image:</span> cytopia/ansible:latest
+                          <span class="keyword">script:</span>
+                            - ansible-playbook playbooks/site.yml -i inventories/staging
+                          <span class="keyword">only:</span>
+                            - develop
+                          <span class="keyword">when:</span> manual
+                      
+                        <span class="keyword">deploy_production:</span>
+                          <span class="keyword">stage:</span> deploy
+                          <span class="keyword">image:</span> cytopia/ansible:latest
+                          <span class="keyword">script:</span>
+                            - ansible-playbook playbooks/site.yml -i inventories/production
+                          <span class="keyword">only:</span>
+                            - main
+                          <span class="keyword">when:</span> manual
+                          <span class="keyword">environment:</span>
+                            <span class="keyword">name:</span> production</pre>
+                                            </div>
+                                        </div>
+                                    </div>
+                      
+                                    <div class="expandable">
+                                        <div class="expand-header" onclick="toggleExpand(this)">
+                                            <span><strong>🔧 Jenkins Integration</strong></span>
+                                            <span>▼</span>
+                                        </div>
+                                        <div class="expand-content">
+                                            <div class="code-block" data-lang="GROOVY">
+                        <pre><span class="comment">// Jenkinsfile</span>
+                        pipeline {
+                            agent any
+                            
+                            environment {
+                                ANSIBLE_HOST_KEY_CHECKING = 'False'
+                            }
+                            
+                            stages {
+                                stage('Checkout') {
+                                    steps {
+                                        checkout scm
+                                    }
+                                }
+                                
+                                stage('Lint') {
+                                    steps {
+                                        sh 'ansible-lint playbooks/'
+                                    }
+                                }
+                                
+                                stage('Syntax Check') {
+                                    steps {
+                                        sh 'ansible-playbook --syntax-check playbooks/site.yml'
+                                    }
+                                }
+                                
+                                stage('Deploy to Staging') {
+                                    when {
+                                        branch 'develop'
+                                    }
+                                    steps {
+                                        sh <span class="string">'''
+                                            ansible-playbook playbooks/site.yml \
+                                            -i inventories/staging/hosts \
+                                            --vault-password-file ~/.vault_pass
+                                        '''</span>
+                                    }
+                                }
+                                
+                                stage('Approval') {
+                                    when {
+                                        branch 'main'
+                                    }
+                                    steps {
+                                        input 'Deploy to Production?'
+                                    }
+                                }
+                                
+                                stage('Deploy to Production') {
+                                    when {
+                                        branch 'main'
+                                    }
+                                    steps {
+                                        sh <span class="string">'''
+                                            ansible-playbook playbooks/site.yml \
+                                            -i inventories/production/hosts \
+                                            --vault-password-file ~/.vault_pass
+                                        '''</span>
+                                    }
+                                }
+                            }
+                            
+                            post {
+                                always {
+                                    cleanWs()
+                                }
+                                success {
+                                    slackSend(
+                                        color: 'good',
+                                        message: "Deployment successful: ${env.JOB_NAME} ${env.BUILD_NUMBER}"
+                                    )
+                                }
+                                failure {
+                                    slackSend(
+                                        color: 'danger',
+                                        message: "Deployment failed: ${env.JOB_NAME} ${env.BUILD_NUMBER}"
+                                    )
+                                }
+                            }
+                        }</pre>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </section>
+                      
+                                <!-- Troubleshooting -->
+                                <section class="section" id="troubleshooting">
+                                    <h2 class="section-title">🔧 Troubleshooting Guide</h2>
+                      
+                                    <div class="concept-grid">
+                                        <div class="concept-card">
+                                            <h3 class="concept-title">Common Issues</h3>
+                                            <div style="color: #b0b0b0; line-height: 2;">
+                                                <strong style="color: #ff6b6b;">SSH Connection Failed:</strong><br>
+                                                • Check SSH keys and permissions<br>
+                                                • Verify host in known_hosts<br>
+                                                • Test: ssh user@host<br><br>
+                                                
+                                                <strong style="color: #ff6b6b;">Module Not Found:</strong><br>
+                                                • Install collection: ansible-galaxy collection install<br>
+                                                • Check ANSIBLE_LIBRARY path<br><br>
+                                                
+                                                <strong style="color: #ff6b6b;">Permission Denied:</strong><br>
+                                                • Use become: yes<br>
+                                                • Check sudo configuration<br>
+                                                • Verify user permissions
+                                            </div>
+                                        </div>
+                      
+                                        <div class="concept-card">
+                                            <h3 class="concept-title">Performance Issues</h3>
+                                            <div style="color: #b0b0b0; line-height: 2;">
+                                                <strong style="color: #ff6b6b;">Slow Execution:</strong><br>
+                                                • Increase forks in ansible.cfg<br>
+                                                • Enable fact caching<br>
+                                                • Use pipelining<br>
+                                                • Disable fact gathering if not needed<br><br>
+                                                
+                                                <strong style="color: #ff6b6b;">Timeout Errors:</strong><br>
+                                                • Increase timeout in ansible.cfg<br>
+                                                • Use async for long tasks<br>
+                                                • Check network connectivity
+                                            </div>
+                                        </div>
+                      
+                                        <div class="concept-card">
+                                            <h3 class="concept-title">Debugging Commands</h3>
+                                            <div class="code-block" data-lang="BASH" style="margin-top: 15px;">
+                        <pre><span class="comment"># Test connectivity</span>
+                        ansible all -m ping
+                      
+                        <span class="comment"># Check facts</span>
+                        ansible host -m setup
+                      
+                        <span class="comment"># Dry run</span>
+                        ansible-playbook --check playbook.yml
+                      
+                        <span class="comment"># Show diff</span>
+                        ansible-playbook --check --diff playbook.yml
+                      
+                        <span class="comment"># Verbose output</span>
+                        ansible-playbook -vvv playbook.yml</pre>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </section>
+                      
+                                <!-- Quick Reference -->
+                                <section class="section" id="reference">
+                                    <h2 class="section-title">📚 Quick Reference</h2>
+                      
+                                    <div class="expandable">
+                                        <div class="expand-header" onclick="toggleExpand(this)">
+                                            <span><strong>⌨️ Essential Commands</strong></span>
+                                            <span>▼</span>
+                                        </div>
+                                        <div class="expand-content">
+                                            <div class="code-block" data-lang="BASH">
+                        <pre><span class="comment"># Ad-hoc commands</span>
+                        ansible all -m ping
+                        ansible webservers -m shell -a 'uptime'
+                        ansible all -m copy -a 'src=/etc/hosts dest=/tmp/hosts'
+                        ansible all -m yum -a 'name=httpd state=latest'
+                        ansible all -m service -a 'name=httpd state=restarted'
+                      
+                        <span class="comment"># Playbook execution</span>
+                        ansible-playbook playbook.yml
+                        ansible-playbook playbook.yml -i inventory.ini
+                        ansible-playbook playbook.yml --tags "web,db"
+                        ansible-playbook playbook.yml --skip-tags "slow"
+                        ansible-playbook playbook.yml --limit "web1,web2"
+                        ansible-playbook playbook.yml -e "version=1.2.3"
+                        ansible-playbook playbook.yml --ask-become-pass
+                      
+                        <span class="comment"># Inventory commands</span>
+                        ansible-inventory --list
+                        ansible-inventory --graph
+                        ansible-inventory --host web1
+                      
+                        <span class="comment"># Vault commands</span>
+                        ansible-vault create secrets.yml
+                        ansible-vault edit secrets.yml
+                        ansible-vault encrypt file.yml
+                        ansible-vault decrypt file.yml
+                        ansible-vault view secrets.yml
+                        ansible-vault rekey secrets.yml
+                      
+                        <span class="comment"># Galaxy commands</span>
+                        ansible-galaxy install author.role
+                        ansible-galaxy collection install community.general
+                        ansible-galaxy init my_role
+                        ansible-galaxy list
+                      
+                        <span class="comment"># Config and documentation</span>
+                        ansible-config dump
+                        ansible-doc yum
+                        ansible-doc -l | grep docker</pre>
+                                            </div>
+                                        </div>
+                                    </div>
+                      
+                                    <div class="expandable">
+                                        <div class="expand-header" onclick="toggleExpand(this)">
+                                            <span><strong>📋 Module Quick Reference</strong></span>
+                                            <span>▼</span>
+                                        </div>
+                                        <div class="expand-content">
+                                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px;">
+                                                <div>
+                                                    <h4 style="color: #ff6b6b; margin-bottom: 10px;">System</h4>
+                                                    <ul style="color: #b0b0b0; line-height: 2; list-style: none;">
+                                                        <li>• user - Manage users</li>
+                                                        <li>• group - Manage groups</li>
+                                                        <li>• hostname - Set hostname</li>
+                                                        <li>• cron - Manage cron jobs</li>
+                                                        <li>• systemd - Manage services</li>
+                                                    </ul>
+                                                </div>
+                                                <div>
+                                                    <h4 style="color: #ff6b6b; margin-bottom: 10px;">Files</h4>
+                                                    <ul style="color: #b0b0b0; line-height: 2; list-style: none;">
+                                                        <li>• copy - Copy files</li>
+                                                        <li>• template - Jinja2 templates</li>
+                                                        <li>• file - Manage files/dirs</li>
+                                                        <li>• lineinfile - Edit lines</li>
+                                                        <li>• blockinfile - Insert blocks</li>
+                                                    </ul>
+                                                </div>
+                                                <div>
+                                                    <h4 style="color: #ff6b6b; margin-bottom: 10px;">Packages</h4>
+                                                    <ul style="color: #b0b0b0; line-height: 2; list-style: none;">
+                                                        <li>• yum/dnf - RedHat packages</li>
+                                                        <li>• apt - Debian packages</li>
+                                                        <li>• package - Generic package</li>
+                                                        <li>• pip - Python packages</li>
+                                                        <li>• npm - Node packages</li>
+                                                    </ul>
+                                                </div>
+                                                <div>
+                                                    <h4 style="color: #ff6b6b; margin-bottom: 10px;">Cloud</h4>
+                                                    <ul style="color: #b0b0b0; line-height: 2; list-style: none;">
+                                                        <li>• ec2 - AWS EC2</li>
+                                                        <li>• azure_rm - Azure resources</li>
+                                                        <li>• gcp_compute - GCP compute</li>
+                                                        <li>• docker_container - Docker</li>
+                                                        <li>• k8s - Kubernetes</li>
+                                                    </ul>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </section>
+                      
+                            </div>
+                      
+                            <script>
+                                // Particle animation
+                                function createParticles() {
+                                    const container = document.getElementById('particles');
+                                    for (let i = 0; i < 50; i++) {
+                                        const particle = document.createElement('div');
+                                        particle.className = 'particle';
+                                        particle.style.left = Math.random() * 100 + '%';
+                                        particle.style.animationDelay = Math.random() * 20 + 's';
+                                        particle.style.animationDuration = (Math.random() * 10 + 15) + 's';
+                                        container.appendChild(particle);
+                                    }
+                                }
+                      
+                                // Scroll progress indicator
+                                function updateScrollProgress() {
+                                    const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+                                    const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+                                    const scrolled = (winScroll / height) * 100;
+                                    document.getElementById('scrollProgress').style.width = scrolled + '%';
+                                }
+                      
+                                // Smooth scroll to section
+                                function scrollToSection(id) {
+                                    const element = document.getElementById(id);
+                                    if (element) {
+                                        element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                                    }
+                                }
+                      
+                                // Start learning button
+                                function startLearning() {
+                                    document.getElementById('content').style.display = 'block';
+                                    document.getElementById('hero').style.display = 'none';
+                                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                                }
+                      
+                                // Toggle expandable sections
+                                function toggleExpand(header) {
+                                    const content = header.nextElementSibling;
+                                    const arrow = header.querySelector('span:last-child');
+                                    
+                                    if (content.classList.contains('active')) {
+                                        content.classList.remove('active');
+                                        arrow.textContent = '▼';
+                                    } else {
+                                        content.classList.add('active');
+                                        arrow.textContent = '▲';
+                                    }
+                                }
+                      
+                                // Initialize
+                                window.addEventListener('load', () => {
+                                    createParticles();
+                                    window.addEventListener('scroll', updateScrollProgress);
+                                });
+                      
+                                // Add intersection observer for section animations
+                                const observerOptions = {
+                                    threshold: 0.1,
+                                    rootMargin: '0px 0px -100px 0px'
+                                };
+                      
+                                const observer = new IntersectionObserver((entries) => {
+                                    entries.forEach(entry => {
+                                        if (entry.isIntersecting) {
+                                            entry.target.style.opacity = '1';
+                                            entry.target.style.transform = 'translateY(0)';
+                                        }
+                                    });
+                                }, observerOptions);
+                      
+                                // Observe all sections
+                                document.addEventListener('DOMContentLoaded', () => {
+                                    const sections = document.querySelectorAll('.section');
+                                    sections.forEach(section => {
+                                        section.style.opacity = '0';
+                                        section.style.transform = 'translateY(30px)';
+                                        section.style.transition = 'all 0.6s ease-out';
+                                        observer.observe(section);
+                                    });
+                                });
+                      
+                                // Add keyboard shortcuts
+                                document.addEventListener('keydown', (e) => {
+                                    if (e.ctrlKey || e.metaKey) {
+                                        if (e.key === 'h') {
+                                            e.preventDefault();
+                                            document.getElementById('hero').style.display = 'flex';
+                                            document.getElementById('content').style.display = 'none';
+                                        }
+                                    }
+                                });
+                      
+                                // Enhanced code block interactions
+                                document.querySelectorAll('.code-block').forEach(block => {
+                                    block.addEventListener('click', function() {
+                                        this.style.transform = 'scale(1.01)';
+                                        setTimeout(() => {
+                                            this.style.transform = 'scale(1)';
+                                        }, 200);
+                                    });
+                                });
+                            </script>
+                        </body>
+                        </html>

@@ -1,0 +1,1014 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PostgreSQL RBAC - Interactive Deep Dive</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+
+        .nav {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-bottom: 2px solid #dee2e6;
+        }
+
+        .nav-btn {
+            padding: 12px 24px;
+            background: white;
+            border: 2px solid #667eea;
+            color: #667eea;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .nav-btn:hover {
+            background: #667eea;
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+
+        .nav-btn.active {
+            background: #667eea;
+            color: white;
+        }
+
+        .content {
+            padding: 40px;
+        }
+
+        .section {
+            display: none;
+            animation: fadeIn 0.5s;
+        }
+
+        .section.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .concept-box {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+        }
+
+        .concept-box h2 {
+            font-size: 2em;
+            margin-bottom: 15px;
+        }
+
+        .concept-box p {
+            font-size: 1.1em;
+            line-height: 1.6;
+        }
+
+        .animation-container {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 30px;
+            margin: 30px 0;
+            border: 3px solid #dee2e6;
+        }
+
+        .hierarchy-viz {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+            margin: 30px 0;
+        }
+
+        .role-box {
+            background: white;
+            padding: 20px 40px;
+            border-radius: 12px;
+            border: 3px solid #667eea;
+            font-weight: 600;
+            font-size: 1.1em;
+            color: #2c3e50;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            animation: slideIn 0.6s ease-out;
+            position: relative;
+            min-width: 250px;
+            text-align: center;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .role-box.superuser {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            border-color: #f5576c;
+        }
+
+        .role-box.admin {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-color: #764ba2;
+        }
+
+        .role-box.readwrite {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            border-color: #00f2fe;
+        }
+
+        .role-box.readonly {
+            background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+            color: white;
+            border-color: #38f9d7;
+        }
+
+        .arrow {
+            width: 3px;
+            height: 40px;
+            background: #667eea;
+            position: relative;
+            animation: arrowGrow 0.8s ease-out;
+        }
+
+        .arrow::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 8px solid transparent;
+            border-right: 8px solid transparent;
+            border-top: 12px solid #667eea;
+        }
+
+        @keyframes arrowGrow {
+            from { height: 0; }
+            to { height: 40px; }
+        }
+
+        .privilege-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin: 30px 0;
+        }
+
+        .privilege-card {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            border-left: 5px solid #667eea;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            transition: all 0.3s;
+            animation: popIn 0.5s ease-out;
+        }
+
+        @keyframes popIn {
+            0% {
+                opacity: 0;
+                transform: scale(0.8);
+            }
+            100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        .privilege-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+        }
+
+        .privilege-card h3 {
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 1.3em;
+        }
+
+        .privilege-card p {
+            color: #666;
+            line-height: 1.6;
+        }
+
+        .code-block {
+            background: #2c3e50;
+            color: #ecf0f1;
+            padding: 20px;
+            border-radius: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.95em;
+            overflow-x: auto;
+            margin: 20px 0;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+
+        .code-block .comment {
+            color: #95a5a6;
+        }
+
+        .code-block .keyword {
+            color: #3498db;
+            font-weight: 600;
+        }
+
+        .code-block .string {
+            color: #2ecc71;
+        }
+
+        .interactive-demo {
+            background: white;
+            border: 3px solid #667eea;
+            border-radius: 15px;
+            padding: 30px;
+            margin: 30px 0;
+        }
+
+        .demo-controls {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 25px;
+            flex-wrap: wrap;
+        }
+
+        .demo-btn {
+            padding: 12px 24px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .demo-btn:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+
+        .demo-output {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            min-height: 150px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            border: 2px solid #dee2e6;
+        }
+
+        .table-viz {
+            margin: 30px 0;
+        }
+
+        .table-viz table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .table-viz th {
+            background: #667eea;
+            color: white;
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+        }
+
+        .table-viz td {
+            padding: 15px;
+            border-bottom: 1px solid #dee2e6;
+        }
+
+        .table-viz tr:hover {
+            background: #f8f9fa;
+        }
+
+        .flow-diagram {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+            margin: 30px 0;
+            flex-wrap: wrap;
+        }
+
+        .flow-box {
+            padding: 20px 30px;
+            background: white;
+            border: 3px solid #667eea;
+            border-radius: 12px;
+            font-weight: 600;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .flow-arrow {
+            font-size: 2em;
+            color: #667eea;
+            font-weight: bold;
+        }
+
+        .highlight {
+            background: #fff3cd;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: 600;
+        }
+
+        .info-box {
+            background: #d1ecf1;
+            border-left: 5px solid #0c5460;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+
+        .warning-box {
+            background: #fff3cd;
+            border-left: 5px solid #856404;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+
+        .success-box {
+            background: #d4edda;
+            border-left: 5px solid #155724;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 1.8em;
+            }
+            
+            .content {
+                padding: 20px;
+            }
+            
+            .privilege-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🛡️ PostgreSQL RBAC</h1>
+            <p>Role-Based Access Control - Complete Interactive Guide</p>
+        </div>
+
+        <div class="nav">
+            <button class="nav-btn active" onclick="showSection(0)">🎯 What is RBAC?</button>
+            <button class="nav-btn" onclick="showSection(1)">🏗️ Architecture</button>
+            <button class="nav-btn" onclick="showSection(2)">👥 Role Hierarchy</button>
+            <button class="nav-btn" onclick="showSection(3)">🔐 Privileges</button>
+            <button class="nav-btn" onclick="showSection(4)">🧪 Interactive Demo</button>
+            <button class="nav-btn" onclick="showSection(5)">🎓 Best Practices</button>
+            <button class="nav-btn" onclick="showSection(6)">🧠 Advanced Concepts</button>
+            <button class="nav-btn" onclick="showSection(7)">🎮 RBAC Simulation</button>
+            <button class="nav-btn" onclick="showSection(8)">🏢 Lifecycle</button>
+        </div>
+
+        <div class="content">
+            <!-- Section 1: What is RBAC -->
+            <div class="section active">
+                <div class="concept-box">
+                    <h2>What is RBAC?</h2>
+                    <p>Role-Based Access Control (RBAC) is a security paradigm where access permissions are assigned to <strong>roles</strong> rather than individual users.</p>
+                </div>
+
+                <h3 style="color: #2c3e50; margin: 30px 0 20px;">🎭 The Core Concept</h3>
+                
+                <div class="flow-diagram">
+                    <div class="flow-box">User</div>
+                    <div class="flow-arrow">→</div>
+                    <div class="flow-box" style="background: #667eea; color: white;">Role</div>
+                    <div class="flow-arrow">→</div>
+                    <div class="flow-box">Privileges</div>
+                </div>
+
+                <div class="info-box">
+                    <strong>💡 Key Insight:</strong> Instead of saying "John can read the employees table", we say "Analysts can read the employees table, and John is an Analyst."
+                </div>
+
+                <h3 style="color: #2c3e50; margin: 30px 0 20px;">Why RBAC?</h3>
+                
+                <div class="privilege-grid">
+                    <div class="privilege-card">
+                        <h3>📦 Scalability</h3>
+                        <p>Manage 1000 users by controlling 10 roles instead of 1000 individual permission sets</p>
+                    </div>
+                    <div class="privilege-card">
+                        <h3>🔄 Maintainability</h3>
+                        <p>Change one role's permissions to update all users in that role instantly</p>
+                    </div>
+                    <div class="privilege-card">
+                        <h3>🎯 Clarity</h3>
+                        <p>Job functions are clearly mapped to database access patterns</p>
+                    </div>
+                    <div class="privilege-card">
+                        <h3>🛡️ Security</h3>
+                        <p>Enforce least-privilege principle systematically across your organization</p>
+                    </div>
+                </div>
+
+                <div class="animation-container">
+                    <h3 style="color: #2c3e50; margin-bottom: 20px;">Traditional vs RBAC Approach</h3>
+                    <table style="width: 100%; border-collapse: collapse;">
+                        <tr>
+                            <th style="background: #e74c3c; color: white; padding: 15px;">❌ Traditional (Direct Assignment)</th>
+                            <th style="background: #27ae60; color: white; padding: 15px;">✅ RBAC (Role-Based)</th>
+                        </tr>
+                        <tr>
+                            <td style="padding: 15px; border: 1px solid #ddd;">
+                                • GRANT SELECT ON table TO john<br>
+                                • GRANT SELECT ON table TO sarah<br>
+                                • GRANT SELECT ON table TO mike<br>
+                                <strong style="color: #e74c3c;">Problem:</strong> 100 users = 100 GRANTs
+                            </td>
+                            <td style="padding: 15px; border: 1px solid #ddd;">
+                                • GRANT SELECT ON table TO analyst_role<br>
+                                • GRANT analyst_role TO john<br>
+                                • GRANT analyst_role TO sarah<br>
+                                <strong style="color: #27ae60;">Benefit:</strong> 1 privilege + N assignments
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Section 2: Architecture -->
+            <div class="section">
+                <div class="concept-box">
+                    <h2>PostgreSQL RBAC Architecture</h2>
+                    <p>PostgreSQL implements RBAC through a multi-layered privilege system with cluster-wide roles and object-level permissions.</p>
+                </div>
+
+                <h3 style="color: #2c3e50; margin: 30px 0 20px;">🏛️ The Three-Tier Pyramid</h3>
+
+                <div class="hierarchy-viz">
+                    <div class="role-box" style="background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%); border-color: #ff9a9e;">
+                        Tier 3: Object Privileges
+                        <div style="font-size: 0.85em; margin-top: 8px; opacity: 0.9;">Tables, Views, Functions, Sequences</div>
+                    </div>
+                    <div class="arrow"></div>
+                    <div class="role-box" style="background: linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%); border-color: #a18cd1;">
+                        Tier 2: Role Hierarchy
+                        <div style="font-size: 0.85em; margin-top: 8px; opacity: 0.9;">Group Roles (readonly, admin, etc.)</div>
+                    </div>
+                    <div class="arrow"></div>
+                    <div class="role-box" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-color: #667eea;">
+                        Tier 1: User Accounts
+                        <div style="font-size: 0.85em; margin-top: 8px; opacity: 0.9;">Login Roles (Humans & Applications)</div>
+                    </div>
+                </div>
+
+                <div class="success-box">
+                    <strong>✅ Design Pattern:</strong> Assign privileges bottom-up (Objects → Roles → Users). Each layer abstracts the complexity of the one below it.
+                </div>
+
+                <h3 style="color: #2c3e50; margin: 30px 0 20px;">📊 Privilege Control Layers</h3>
+
+                <div class="table-viz">
+                    <table>
+                        <tr>
+                            <th>Layer</th>
+                            <th>Controls</th>
+                            <th>Examples</th>
+                        </tr>
+                        <tr>
+                            <td><strong>Cluster</strong></td>
+                            <td>Login, create databases, manage roles</td>
+                            <td>LOGIN, CREATEDB, CREATEROLE</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Database</strong></td>
+                            <td>Connect, create schemas</td>
+                            <td>CONNECT, CREATE</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Schema</strong></td>
+                            <td>Use schema, create objects</td>
+                            <td>USAGE, CREATE</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Table</strong></td>
+                            <td>CRUD operations</td>
+                            <td>SELECT, INSERT, UPDATE, DELETE</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Function</strong></td>
+                            <td>Execute procedures</td>
+                            <td>EXECUTE</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Row/Column</strong></td>
+                            <td>Fine-grained data access</td>
+                            <td>RLS Policies, Column-level GRANTs</td>
+                        </tr>
+                    </table>
+                </div>
+
+                <div class="code-block">
+<span class="comment">-- Example: Multi-layer privilege structure</span>
+
+<span class="comment">-- Layer 1: Cluster-level</span>
+<span class="keyword">CREATE ROLE</span> developer <span class="keyword">LOGIN</span> PASSWORD <span class="string">'dev123'</span>;
+
+<span class="comment">-- Layer 2: Database-level</span>
+<span class="keyword">GRANT CONNECT ON DATABASE</span> myapp <span class="keyword">TO</span> developer;
+
+<span class="comment">-- Layer 3: Schema-level</span>
+<span class="keyword">GRANT USAGE ON SCHEMA</span> public <span class="keyword">TO</span> developer;
+
+<span class="comment">-- Layer 4: Table-level</span>
+<span class="keyword">GRANT SELECT, INSERT ON</span> employees <span class="keyword">TO</span> developer;
+                </div>
+            </div>
+
+            <!-- Section 3: Role Hierarchy -->
+            <div class="section">
+                <div class="concept-box">
+                    <h2>Role Hierarchy in Action</h2>
+                    <p>PostgreSQL roles can inherit privileges from other roles, creating a powerful inheritance tree that mirrors your organizational structure.</p>
+                </div>
+
+                <h3 style="color: #2c3e50; margin: 30px 0 20px;">🌳 Enterprise Role Tree</h3>
+
+                <div class="hierarchy-viz">
+                    <div class="role-box superuser">
+                        🔴 SUPERUSER (postgres)
+                        <div style="font-size: 0.85em; margin-top: 8px;">Full control - bypasses all checks</div>
+                    </div>
+                    <div class="arrow"></div>
+                    <div class="role-box admin">
+                        🟣 app_admin
+                        <div style="font-size: 0.85em; margin-top: 8px;">Schema management, grant permissions</div>
+                    </div>
+                    <div class="arrow"></div>
+                    <div class="role-box readwrite">
+                        🔵 readwrite_user
+                        <div style="font-size: 0.85em; margin-top: 8px;">SELECT, INSERT, UPDATE, DELETE</div>
+                    </div>
+                    <div class="arrow"></div>
+                    <div class="role-box readonly">
+                        🟢 readonly_user
+                        <div style="font-size: 0.85em; margin-top: 8px;">SELECT only</div>
+                    </div>
+                </div>
+
+                <div class="warning-box">
+                    <strong>⚠️ Critical:</strong> Roles with <span class="highlight">INHERIT</span> attribute (default) automatically gain privileges from parent roles. Roles with <span class="highlight">NOINHERIT</span> must explicitly use <code>SET ROLE</code> to access parent privileges.
+                </div>
+
+                <div class="code-block">
+<span class="comment">-- Step 1: Create group roles (no login)</span>
+<span class="keyword">CREATE ROLE</span> readonly <span class="keyword">NOLOGIN</span>;
+<span class="keyword">CREATE ROLE</span> readwrite <span class="keyword">NOLOGIN</span>;
+<span class="keyword">CREATE ROLE</span> app_admin <span class="keyword">NOLOGIN</span>;
+
+<span class="comment">-- Step 2: Build inheritance chain</span>
+<span class="keyword">GRANT</span> readonly <span class="keyword">TO</span> readwrite;
+<span class="keyword">GRANT</span> readwrite <span class="keyword">TO</span> app_admin;
+
+<span class="comment">-- Step 3: Grant object privileges to base role</span>
+<span class="keyword">GRANT SELECT ON ALL TABLES IN SCHEMA</span> public <span class="keyword">TO</span> readonly;
+<span class="keyword">GRANT INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA</span> public <span class="keyword">TO</span> readwrite;
+
+<span class="comment">-- Step 4: Create user accounts and assign roles</span>
+<span class="keyword">CREATE USER</span> alice <span class="keyword">PASSWORD</span> <span class="string">'Alice@123'</span>;
+<span class="keyword">CREATE USER</span> bob <span class="keyword">PASSWORD</span> <span class="string">'Bob@123'</span>;
+
+<span class="keyword">GRANT</span> readonly <span class="keyword">TO</span> alice;
+<span class="keyword">GRANT</span> readwrite <span class="keyword">TO</span> bob;
+
+<span class="comment">-- Result: Alice can SELECT, Bob can SELECT + INSERT/UPDATE/DELETE</span>
+                </div>
+
+                <div class="info-box">
+                    <strong>💡 Pro Tip:</strong> Always use <code>NOLOGIN</code> for group roles and <code>LOGIN</code> for actual user accounts. This separation makes your security model crystal clear.
+                </div>
+
+                <h3 style="color: #2c3e50; margin: 30px 0 20px;">🔍 Viewing Role Memberships</h3>
+
+                <div class="code-block">
+<span class="comment">-- List all roles</span>
+\du
+
+<span class="comment">-- Query role memberships</span>
+<span class="keyword">SELECT</span> 
+    roleid::regrole <span class="keyword">AS</span> role,
+    member::regrole <span class="keyword">AS</span> member
+<span class="keyword">FROM</span> pg_auth_members;
+
+<span class="comment">-- Check what roles a user belongs to</span>
+<span class="keyword">SELECT</span> rolname 
+<span class="keyword">FROM</span> pg_roles 
+<span class="keyword">WHERE</span> pg_has_role(<span class="string">'alice'</span>, oid, <span class="string">'member'</span>);
+                </div>
+            </div>
+<!-- Section 4: Privileges -->
+<div class="section">
+    <div class="concept-box">
+        <h2>Privilege Types & Scopes</h2>
+        <p>PostgreSQL offers granular control from cluster-wide attributes down to individual columns in tables. 
+        This enables enterprises to align database security with corporate access policies, ensuring every role 
+        has only the rights it needs.</p>
+    </div>
+
+    <h3 style="color:#2c3e50;margin:30px 0 20px;">🎛️ Role Attributes (Cluster-Level)</h3>
+
+    <div class="privilege-grid">
+        <div class="privilege-card"><h3>LOGIN</h3><p>Allows the role to connect to PostgreSQL. Required for any user or application account.</p></div>
+        <div class="privilege-card"><h3>SUPERUSER</h3><p>Bypasses ALL permission checks. Use extremely sparingly - only for DBAs.</p></div>
+        <div class="privilege-card"><h3>CREATEDB</h3><p>Can create new databases. Useful for dev leads or testing environments.</p></div>
+        <div class="privilege-card"><h3>CREATEROLE</h3><p>Can create, alter, and drop other roles. Delegated admin capability.</p></div>
+        <div class="privilege-card"><h3>REPLICATION</h3><p>Can initiate streaming replication. Required for replica servers.</p></div>
+        <div class="privilege-card"><h3>BYPASSRLS</h3><p>Bypasses Row-Level Security policies. Dangerous - use carefully.</p></div>
+    </div>
+
+    <h3 style="color:#2c3e50;margin:30px 0 20px;">📋 Object-Level Privileges</h3>
+
+    <div class="table-viz">
+        <table>
+            <tr><th>Object Type</th><th>Available Privileges</th><th>Use Case</th></tr>
+            <tr><td><strong>TABLE</strong></td><td>SELECT, INSERT, UPDATE, DELETE, TRUNCATE, REFERENCES, TRIGGER</td><td>Standard CRUD operations</td></tr>
+            <tr><td><strong>SEQUENCE</strong></td><td>USAGE, SELECT, UPDATE</td><td>Auto-increment ID management</td></tr>
+            <tr><td><strong>FUNCTION</strong></td><td>EXECUTE</td><td>Stored procedure access</td></tr>
+            <tr><td><strong>SCHEMA</strong></td><td>CREATE, USAGE</td><td>Namespace control</td></tr>
+            <tr><td><strong>DATABASE</strong></td><td>CREATE, CONNECT, TEMPORARY</td><td>Database-level access</td></tr>
+        </table>
+    </div>
+
+    <h3 style="color:#2c3e50;margin:30px 0 20px;">🧩 Practical SQL Examples</h3>
+
+    <div class="code-block">
+<span class="comment">-- Database privileges</span>
+<span class="keyword">GRANT CONNECT ON DATABASE</span> analytics <span class="keyword">TO</span> analyst;
+<span class="keyword">GRANT CREATE ON DATABASE</span> analytics <span class="keyword">TO</span> dev_team;
+
+<span class="comment">-- Schema privileges</span>
+<span class="keyword">GRANT USAGE ON SCHEMA</span> finance <span class="keyword">TO</span> readonly;
+<span class="keyword">GRANT CREATE ON SCHEMA</span> finance <span class="keyword">TO</span> finance_admin;
+
+<span class="comment">-- Table privileges</span>
+<span class="keyword">GRANT SELECT, INSERT, UPDATE ON</span> employees <span class="keyword">TO</span> dev_team;
+<span class="keyword">REVOKE DELETE ON</span> employees <span class="keyword">FROM</span> dev_team;
+
+<span class="comment">-- Column-level privileges (GDPR/HIPAA compliance)</span>
+<span class="keyword">GRANT SELECT</span> (name, email) <span class="keyword">ON</span> employees <span class="keyword">TO</span> customer_service;
+<span class="keyword">REVOKE SELECT</span> (salary, ssn) <span class="keyword">ON</span> employees <span class="keyword">FROM</span> customer_service;
+
+<span class="comment">-- Function privileges</span>
+<span class="keyword">GRANT EXECUTE ON FUNCTION</span> calculate_bonus(int) <span class="keyword">TO</span> finance_user;
+
+<span class="comment">-- Grant on ALL existing objects</span>
+<span class="keyword">GRANT SELECT ON ALL TABLES IN SCHEMA</span> public <span class="keyword">TO</span> readonly;
+
+<span class="comment">-- Grant on ALL future objects (critical!)</span>
+<span class="keyword">ALTER DEFAULT PRIVILEGES IN SCHEMA</span> public
+<span class="keyword">GRANT SELECT ON TABLES TO</span> readonly;
+    </div>
+
+    <h3 style="color:#2c3e50;margin:30px 0 20px;">🔄 Privilege Inheritance Flow</h3>
+    <div class="hierarchy-viz">
+        <div class="role-box admin">Admin Role<br><span style="font-size:0.8em;">GRANT CREATE, GRANT privileges</span></div>
+        <div class="arrow"></div>
+        <div class="role-box readwrite">Read/Write Role<br><span style="font-size:0.8em;">SELECT, INSERT, UPDATE, DELETE</span></div>
+        <div class="arrow"></div>
+        <div class="role-box readonly">Read-Only Role<br><span style="font-size:0.8em;">SELECT</span></div>
+    </div>
+
+    <div class="info-box">
+        <strong>💡 Concept:</strong> Privileges flow <strong>downward</strong> through inheritance chains. 
+        When a higher role (like <code>readwrite</code>) includes another (<code>readonly</code>), 
+        all permissions are accumulated — simplifying management for corporate teams.
+    </div>
+
+    <h3 style="color:#2c3e50;margin:30px 0 20px;">🧠 Deep Dive: Default Privileges & Ownership</h3>
+    <ul style="margin-left:20px;line-height:1.8;">
+        <li><strong>Ownership:</strong> The creator (owner) of an object automatically receives all privileges on it.</li>
+        <li><strong>Grant Chain:</strong> Only the grantor or a superuser can revoke privileges.</li>
+        <li><strong>Default Privileges:</strong> Future objects inherit the privileges you define via <code>ALTER DEFAULT PRIVILEGES</code>.</li>
+        <li><strong>Auditing:</strong> Use <code>pg_roles</code>, <code>pg_shdepend</code>, and <code>pg_auth_members</code> to monitor assignments.</li>
+    </ul>
+
+    <div class="animation-container">
+        <h3 style="color:#2c3e50;">🔁 Privilege Propagation Animation</h3>
+        <div id="privilege-flow" class="flow-diagram">
+            <div class="flow-box" id="userBox">👤 User</div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-box" id="roleBox">🧩 Role</div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-box" id="objectBox">📦 Object</div>
+        </div>
+        <p style="text-align:center;color:#2c3e50;">Click below to visualize how privileges flow from roles to objects.</p>
+        <div style="text-align:center;margin-top:20px;">
+            <button class="demo-btn" onclick="animatePrivileges()">▶ Start Animation</button>
+        </div>
+    </div>
+
+    <script>
+    function animatePrivileges() {
+        const user = document.getElementById('userBox');
+        const role = document.getElementById('roleBox');
+        const object = document.getElementById('objectBox');
+        user.style.background = '#43e97b';
+        role.style.background = '#4facfe';
+        object.style.background = '#f093fb';
+        user.textContent = "👤 User → Requests Access";
+        setTimeout(() => {role.textContent = "🧩 Role → Evaluates Privileges";}, 1200);
+        setTimeout(() => {object.textContent = "📦 Object → Permission Granted ✔";}, 2400);
+        setTimeout(() => {
+            user.style.background = role.style.background = object.style.background = 'white';
+            user.textContent = "👤 User";
+            role.textContent = "🧩 Role";
+            object.textContent = "📦 Object";
+        }, 6000);
+    }
+    </script>
+
+    <div class="success-box">
+        <strong>✅ Corporate Best Practice:</strong> 
+        Implement privilege auditing scripts and align roles with HR-defined job titles (e.g., <em>Finance Analyst</em>, <em>Data Engineer</em>). 
+        Always prefer <code>GRANT ... TO ROLE</code> over user-level grants for scalability.
+    </div>
+</div>
+           
+         <!-- Section 5: Advanced RBAC Concepts -->
+<div class="section">
+    <div class="concept-box">
+        <h2>🧠 Advanced RBAC Concepts</h2>
+        <p>PostgreSQL goes beyond standard role inheritance. It introduces powerful tools for fine-grained data security, automation, and compliance alignment.</p>
+    </div>
+
+    <h3 style="color:#2c3e50;margin:30px 0 20px;">🏗️ Ownership & Privilege Flow</h3>
+    <div class="flow-diagram">
+        <div class="flow-box">Owner</div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-box">Object (Table, View, Function)</div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-box">Privileges</div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-box">Roles / Users</div>
+    </div>
+
+    <div class="info-box">
+        <strong>🔍 Ownership Rule:</strong> The <strong>owner</strong> of a database object automatically has all privileges on it.  
+        Privileges granted by others can only be revoked by the grantor or superuser.
+    </div>
+
+    <h3 style="color:#2c3e50;margin:30px 0 20px;">🔒 Row-Level Security (RLS)</h3>
+    <p>RLS enables <strong>per-row data filtering</strong> based on user identity, ensuring corporate compliance (GDPR, HIPAA, SOC2).</p>
+
+    <div class="code-block">
+<span class="comment">-- Enable Row-Level Security</span>
+<span class="keyword">ALTER TABLE</span> employees <span class="keyword">ENABLE ROW LEVEL SECURITY</span>;
+
+<span class="comment">-- Define Policy (only view own data)</span>
+<span class="keyword">CREATE POLICY</span> employee_isolation 
+<span class="keyword">ON</span> employees
+<span class="keyword">USING</span> (username = current_user);
+
+<span class="comment">-- Apply Policy</span>
+<span class="keyword">ALTER TABLE</span> employees <span class="keyword">FORCE ROW LEVEL SECURITY</span>;
+    </div>
+
+    <div class="warning-box">
+        <strong>⚠️ Compliance Tip:</strong> RLS is a must-have for corporate environments handling PII or multi-tenant data.
+    </div>
+
+    <h3 style="color:#2c3e50;margin:30px 0 20px;">⚙️ Default Privileges (Automating Grants)</h3>
+    <div class="code-block">
+<span class="comment">-- Auto-grant SELECT on future tables</span>
+<span class="keyword">ALTER DEFAULT PRIVILEGES IN SCHEMA</span> analytics
+<span class="keyword">GRANT SELECT ON TABLES TO</span> readonly;
+
+<span class="comment">-- Auto-grant EXECUTE on new functions</span>
+<span class="keyword">ALTER DEFAULT PRIVILEGES IN SCHEMA</span> finance
+<span class="keyword">GRANT EXECUTE ON FUNCTIONS TO</span> finance_team;
+    </div>
+
+    <div class="success-box">
+        <strong>✅ Corporate Use:</strong> Reduces human error by automating permission consistency across large teams.
+    </div>
+</div>
+
+
+<!-- Section 6: Interactive RBAC Simulation -->
+<div class="section">
+    <div class="concept-box">
+        <h2>🎮 Interactive RBAC Simulation</h2>
+        <p>Experiment with PostgreSQL RBAC! Click buttons to simulate how roles, privileges, and inheritance behave in real time.</p>
+    </div>
+
+    <div class="interactive-demo">
+        <div class="demo-controls">
+            <button class="demo-btn" onclick="simulateGrant()">GRANT readwrite TO developer</button>
+            <button class="demo-btn" onclick="simulateRevoke()">REVOKE readwrite FROM developer</button>
+            <button class="demo-btn" onclick="simulateInherit()">SET ROLE admin → inherits privileges</button>
+        </div>
+        <div id="demo-output" class="demo-output">▶ Ready to simulate RBAC actions...</div>
+    </div>
+</div>
+
+<script>
+function simulateGrant() {
+    document.getElementById("demo-output").textContent = 
+        "✅ GRANT readwrite TO developer;\n" +
+        "Developer now inherits SELECT, INSERT, UPDATE, DELETE privileges.\n" +
+        "Effective Privileges: [CONNECT, USAGE, SELECT, INSERT, UPDATE, DELETE]";
+}
+
+function simulateRevoke() {
+    document.getElementById("demo-output").textContent = 
+        "❌ REVOKE readwrite FROM developer;\n" +
+        "Developer loses DML privileges, retains CONNECT and USAGE.";
+}
+
+function simulateInherit() {
+    document.getElementById("demo-output").textContent = 
+        "🔄 SET ROLE admin;\n" +
+        "Admin inherits privileges from readwrite and readonly roles.\n" +
+        "Effective Privileges: [CREATE, SELECT, INSERT, UPDATE, DELETE, GRANT]";
+}
+</script>
+
+<!-- Section 7: RBAC Lifecycle (Corporate Governance View) -->
+<div class="section">
+    <div class="concept-box">
+        <h2>🏢 Corporate RBAC Lifecycle</h2>
+        <p>A well-governed enterprise database enforces RBAC as part of its security lifecycle.</p>
+    </div>
+
+    <div class="flow-diagram">
+        <div class="flow-box">Define Roles</div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-box">Assign Privileges</div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-box">Audit Access</div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-box">Review & Rotate</div>
+    </div>
+
+    <div class="info-box">
+        <strong>💼 Corporate Tip:</strong> Combine RBAC with audit tools like <code>pg_audit</code> or <code>pgaudit.log</code> for traceability and compliance reporting.
+    </div>
+</div>
+
+</div>
+
+<script>
+    const sections = document.querySelectorAll('.section');
+    const navButtons = document.querySelectorAll('.nav-btn');
+    
+    function showSection(index) {
+        // Hide all
+        sections.forEach(sec => sec.classList.remove('active'));
+        navButtons.forEach(btn => btn.classList.remove('active'));
+    
+        // Show selected
+        if (sections[index]) {
+            sections[index].classList.add('active');
+            navButtons[index].classList.add('active');
+        }
+    
+        // Scroll to top of container for smoother UX
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+    </script>
+
+
+<script>
+    // Section control
+    const sections = document.querySelectorAll('.section');
+    const navButtons = document.querySelectorAll('.nav-btn');
+    
+    function showSection(index) {
+        sections.forEach(sec => sec.classList.remove('active'));
+        navButtons.forEach(btn => btn.classList.remove('active'));
+        if (sections[index]) {
+            sections[index].classList.add('active');
+            navButtons[index].classList.add('active');
+        }
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+    
+    // Privilege animation
+    function animatePrivileges() {
+        const user = document.getElementById('userBox');
+        const role = document.getElementById('roleBox');
+        const object = document.getElementById('objectBox');
+        user.style.background = '#43e97b';
+        role.style.background = '#4facfe';
+        object.style.background = '#f093fb';
+        user.textContent = "👤 User → Requests Access";
+        setTimeout(() => {role.textContent = "🧩 Role → Evaluates Privileges";}, 1200);
+        setTimeout(() => {object.textContent = "📦 Object → Permission Granted ✔";}, 2400);
+        setTimeout(() => {
+            user.style.background = role.style.background = object.style.background = 'white';
+            user.textContent = "👤 User";
+            role.textContent = "🧩 Role";
+            object.textContent = "📦 Object";
+        }, 6000);
+    }
+    
+    // RBAC Simulation
+    function simulateGrant() {
+        document.getElementById("demo-output").textContent = 
+            "✅ GRANT readwrite TO developer;\n" +
+            "Developer now inherits SELECT, INSERT, UPDATE, DELETE privileges.\n" +
+            "Effective Privileges: [CONNECT, USAGE, SELECT, INSERT, UPDATE, DELETE]";
+    }
+    
+    function simulateRevoke() {
+        document.getElementById("demo-output").textContent = 
+            "❌ REVOKE readwrite FROM developer;\n" +
+            "Developer loses DML privileges, retains CONNECT and USAGE.";
+    }
+    
+    function simulateInherit() {
+        document.getElementById("demo-output").textContent = 
+            "🔄 SET ROLE admin;\n" +
+            "Admin inherits privileges from readwrite and readonly roles.\n" +
+            "Effective Privileges: [CREATE, SELECT, INSERT, UPDATE, DELETE, GRANT]";
+    }
+    </script>
+    
+
+
+ </body>
