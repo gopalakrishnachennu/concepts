@@ -47,10 +47,16 @@
                 <div class="status-indicator"></div>
                 <span id="currentTime">Loading...</span>
             </div>
-            <div class="status-item weather-widget" id="weatherWidget">
+            <!-- <div class="status-item weather-widget" id="weatherWidget">
                 <span>🌤️</span>
                 <span id="weatherInfo">Loading weather...</span>
+            </div> -->
+            <div class="status-item weather-widget" id="weatherWidget">
+                <span>🌤️</span>
+                <span id="weatherInfo">Loading...</span>
+                <span id="weatherLocation" style="margin-left: 10px; opacity: 0.8;"></span>
             </div>
+            
             <div class="status-item">
                 <span>📊 Analytics Active</span>
             </div>
@@ -122,6 +128,12 @@
 
     <div class="fab-container">
         <div class="fab-menu" id="fabMenu">
+            <!-- Inside your floating action button menu -->
+            <div class="fab-menu-item" onclick="downloadResume()">
+                <span>📄</span>
+                <span>Download Resume</span>
+            </div>
+
             <div class="fab-menu-item" onclick="refreshFromGitHub()">
                 <span>🔄</span>
                 <span>Refresh Data</span>
@@ -141,7 +153,20 @@
         </div>
         <button class="add-link-btn" id="fabBtn">⚙️</button>
     </div>
-
+    <section id="aboutSection" class="about-section">
+        <div class="about-content">
+          <img id="profilePhoto" alt="Profile Photo" class="about-photo" onerror="this.src='assets/default-profile.png'">
+          <div class="about-text">
+            <h2 id="aboutName"></h2>
+            <h3 id="aboutTitle"></h3>
+            <p id="aboutBio"></p>
+            <div id="aboutLinks" class="about-links"></div>
+          </div>
+        </div>
+      </section>
+      
+      
+    
     <script src="assets/main.js"></script>
     <script>
         // Initialize main dashboard

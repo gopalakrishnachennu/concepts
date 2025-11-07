@@ -1,0 +1,12 @@
+{
+    "name": "Gopala Krishna Chennu",
+    "title": "DBA | Devops |Data Engineer | Cloud Enthusiast",
+    "bio": " ",
+    "photo": "assets/profile.jpg",
+    "links": [
+      { "icon": "🐙", "label": "GitHub", "url": "https://github.com/gopalakrishnachennu" },
+      { "icon": "💼", "label": "LinkedIn", "url": "https://www.linkedin.com/in/gopalakrishnachennu" },
+      { "icon": "📧", "label": "Email Me", "url": "mailto:gopalakrishnachennu@gmail.com" }
+    ]
+  }
+  

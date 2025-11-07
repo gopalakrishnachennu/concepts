@@ -6,7 +6,8 @@ const CONFIG = {
     repoName: 'concepts',              // Change this to your repo name
     branch: 'main',                          // or 'master' depending on your default branch
     excludeFolders: ['assets', '.github', 'node_modules', '.git'], // Folders to ignore
-    excludeFiles: ['index.html', 'viewer.html', 'README.md', 'LICENSE']  // Files to ignore
+    // excludeFiles: ['index.html', 'viewer.html', 'README.md', 'LICENSE']  // Files to ignore
+    excludeFiles: ['index.html', 'viewer.html', 'README.md', 'LICENSE', '.DS_Store']
 };
 
 // ============================================
@@ -114,16 +115,37 @@ function formatFileSize(bytes) {
 // GITHUB API FUNCTIONS
 // ============================================
 
-// Fetch repository contents
+// ✅ Improved: Fetch repository contents safely (fixes 403 + subfolder access)
 async function fetchGitHubContents(path = '') {
     const url = `https://api.github.com/repos/${CONFIG.githubUsername}/${CONFIG.repoName}/contents/${path}?ref=${CONFIG.branch}`;
-    
+
     try {
-        const response = await fetch(url);
-        if (!response.ok) {
-            throw new Error(`GitHub API Error: ${response.status}`);
+        const response = await fetch(url, {
+            headers: {
+                'Accept': 'application/vnd.github.v3+json'
+            }
+        });
+
+        // Handle 403 or rate limits
+        if (response.status === 403) {
+            console.error('❌ GitHub API 403 — Rate limit or forbidden.');
+            showNotification('⚠️ GitHub API limit reached. Try again later.', 'error');
+            return [];
         }
-        return await response.json();
+
+        if (!response.ok) {
+            throw new Error(`GitHub API Error: ${response.status} ${response.statusText}`);
+        }
+
+        const data = await response.json();
+
+        // Handle case where folder is empty or protected
+        if (!Array.isArray(data)) {
+            console.warn('⚠️ GitHub API returned unexpected data:', data);
+            return [];
+        }
+
+        return data;
     } catch (error) {
         console.error('Error fetching from GitHub:', error);
         showNotification('❌ Error loading from GitHub: ' + error.message, 'error');
@@ -131,23 +153,82 @@ async function fetchGitHubContents(path = '') {
     }
 }
 
+
 // Get all folders from repository
-async function getAllFolders() {
-    showLoading(true);
-    document.getElementById('repoStatus')?.textContent = '🔄 Loading folders...';
+// async function getAllFolders() {
+//     showLoading(true);
+//     document.getElementById('repoStatus')?.textContent = '🔄 Loading folders...';
     
+//     try {
+//         const contents = await fetchGitHubContents();
+//         const folders = contents.filter(item => 
+//             item.type === 'dir' && 
+//             !CONFIG.excludeFolders.includes(item.name)
+//         );
+        
+//         // Add metadata to folders
+//         const foldersWithMeta = await Promise.all(folders.map(async folder => {
+//             const files = await fetchGitHubContents(folder.name);
+//             const htmlFiles = files.filter(f => f.name.endsWith('.html'));
+            
+//             return {
+//                 name: folder.name,
+//                 path: folder.path,
+//                 emoji: getFolderEmoji(folder.name),
+//                 fileCount: files.length,
+//                 htmlCount: htmlFiles.length,
+//                 url: `viewer.html?folder=${encodeURIComponent(folder.name)}`,
+//                 category: getCategoryFromName(folder.name),
+//                 clicks: analytics.clicks[folder.name] || 0,
+//                 lastViewed: localStorage.getItem(`folder_${folder.name}_viewed`) || new Date().toISOString()
+//             };
+//         }));
+        
+//         allFolders = foldersWithMeta;
+//         document.getElementById('repoStatus')?.textContent = '✅ Loaded from GitHub';
+//         showLoading(false);
+//         return foldersWithMeta;
+//     } catch (error) {
+//         console.error('Error getting folders:', error);
+//         showLoading(false);
+//         return [];
+//     }
+// }
+
+async function getAllFolders() {
+    // Show loading spinner
+    showLoading(true);
+    const statusEl = document.getElementById('repoStatus');
+    if (statusEl) statusEl.textContent = '🔄 Loading folders...';
+
     try {
+        console.log('📡 Fetching root contents from GitHub...');
         const contents = await fetchGitHubContents();
-        const folders = contents.filter(item => 
-            item.type === 'dir' && 
+
+        // Filter only directories and exclude unwanted folders
+        const folders = contents.filter(item =>
+            item.type === 'dir' &&
             !CONFIG.excludeFolders.includes(item.name)
         );
-        
-        // Add metadata to folders
-        const foldersWithMeta = await Promise.all(folders.map(async folder => {
-            const files = await fetchGitHubContents(folder.name);
-            const htmlFiles = files.filter(f => f.name.endsWith('.html'));
-            
+
+        console.log(`📁 Found ${folders.length} folders:`, folders.map(f => f.name));
+
+        // Fetch metadata for each folder
+        const foldersWithMeta = await Promise.all(folders.map(async (folder) => {
+            const encodedName = encodeURIComponent(folder.name);
+            let files = [];
+
+            try {
+                console.log(`➡️ Fetching files for folder: ${folder.name}`);
+                files = await fetchGitHubContents(encodedName);
+            } catch (err) {
+                console.error(`❌ Failed to fetch contents of folder: ${folder.name}`, err);
+                files = [];
+            }
+
+            // Count HTML files for quick stats
+            const htmlFiles = files.filter(f => f.name && f.name.endsWith('.html'));
+
             return {
                 name: folder.name,
                 path: folder.path,
@@ -160,17 +241,25 @@ async function getAllFolders() {
                 lastViewed: localStorage.getItem(`folder_${folder.name}_viewed`) || new Date().toISOString()
             };
         }));
-        
+
+        // Store and render
         allFolders = foldersWithMeta;
-        document.getElementById('repoStatus')?.textContent = '✅ Loaded from GitHub';
+        console.log('✅ Loaded all folder metadata:', allFolders);
+
+        if (statusEl) statusEl.textContent = '✅ Loaded from GitHub';
         showLoading(false);
+
         return foldersWithMeta;
+
     } catch (error) {
-        console.error('Error getting folders:', error);
+        console.error('💥 Error getting folders:', error);
         showLoading(false);
+        if (statusEl) statusEl.textContent = '❌ Error loading folders';
+        showNotification('❌ Failed to load folders from GitHub', 'error');
         return [];
     }
 }
+
 
 // Get files in a specific folder
 async function getFilesInFolder(folderName) {
@@ -433,26 +522,201 @@ function updateClock() {
 }
 
 // Update weather widget (simulated)
-function updateWeather() {
+// function updateWeather() {
+//     const weatherEl = document.getElementById('weatherInfo');
+//     if (!weatherEl) return;
+    
+//     const weather = [
+//         { icon: '☀️', temp: '75°F', desc: 'Sunny' },
+//         { icon: '⛅', temp: '68°F', desc: 'Partly Cloudy' },
+//         { icon: '🌤️', temp: '72°F', desc: 'Mostly Sunny' },
+//         { icon: '🌧️', temp: '64°F', desc: 'Rainy' }
+//     ];
+//     const current = weather[Math.floor(Math.random() * weather.length)];
+    
+//     const parent = document.getElementById('weatherWidget');
+//     if (parent) {
+//         parent.innerHTML = `
+//             <span>${current.icon}</span>
+//             <span>${current.temp} ${current.desc}</span>
+//         `;
+//     }
+// }
+
+// async function updateWeather() {
+//     const weatherEl = document.getElementById('weatherInfo');
+    
+//     if (!weatherEl) {
+//         console.log('Weather element not found');
+//         return;
+//     }
+    
+//     try {
+//         weatherEl.textContent = 'Loading...';
+        
+//         const response = await fetch('https://wttr.in/Houston?format=j1');
+//         const data = await response.json();
+        
+//         const temp = data.current_condition[0].temp_F;
+//         const desc = data.current_condition[0].weatherDesc[0].value;
+        
+//         weatherEl.textContent = `${temp}°F - ${desc}`;
+//     } catch (error) {
+//         console.error('Weather error:', error);
+//         weatherEl.textContent = 'Houston, TX';
+//     }
+// }
+function downloadResume() {
+    // Replace with your actual resume file path (PDF in assets folder or external link)
+    const resumeUrl = 'assets/GopalaKrishnaChennu_Resume.pdf';
+    const a = document.createElement('a');
+    a.href = resumeUrl;
+    a.download = 'GopalaKrishnaChennu_Resume.pdf';
+    a.click();
+    showNotification('📄 Resume downloaded!');
+}
+
+// --- Load About Me data dynamically ---
+async function loadAboutSection() {
+    try {
+      const res = await fetch('assets/about.json');
+      const data = await res.json();
+  
+      // Set text content
+      document.getElementById('aboutName').textContent = `👋 ${data.name}`;
+      document.getElementById('aboutTitle').textContent = data.title;
+      document.getElementById('aboutBio').textContent = data.bio;
+  
+      // Set photo
+      const photoEl = document.getElementById('profilePhoto');
+      const formats = ['jpg', 'jpeg', 'png'];
+      const basePath = data.photo.replace(/\.(jpg|jpeg|png)$/i, '');
+  
+      let found = false;
+      for (const ext of formats) {
+        try {
+          const res = await fetch(`${basePath}.${ext}`, { method: 'HEAD' });
+          if (res.ok) {
+            photoEl.src = `${basePath}.${ext}`;
+            found = true;
+            break;
+          }
+        } catch {}
+      }
+      if (!found) photoEl.src = 'assets/default-profile.png';
+  
+      // Build links
+      const linksContainer = document.getElementById('aboutLinks');
+      linksContainer.innerHTML = ''; // clear any static links
+      data.links.forEach(link => {
+        const div = document.createElement('div');
+        div.className = 'link-badge';
+        div.innerHTML = `<a href="${link.url}" target="_blank">${link.icon} ${link.label}</a>`;
+        linksContainer.appendChild(div);
+      });
+  
+    } catch (err) {
+      console.error('Error loading about.json:', err);
+    }
+  }
+  
+  // Run when DOM is ready
+  document.addEventListener('DOMContentLoaded', loadAboutSection);
+  
+
+async function updateWeather() {
     const weatherEl = document.getElementById('weatherInfo');
+    const locationEl = document.getElementById('weatherLocation');
     if (!weatherEl) return;
-    
-    const weather = [
-        { icon: '☀️', temp: '75°F', desc: 'Sunny' },
-        { icon: '⛅', temp: '68°F', desc: 'Partly Cloudy' },
-        { icon: '🌤️', temp: '72°F', desc: 'Mostly Sunny' },
-        { icon: '🌧️', temp: '64°F', desc: 'Rainy' }
-    ];
-    const current = weather[Math.floor(Math.random() * weather.length)];
-    
-    const parent = document.getElementById('weatherWidget');
-    if (parent) {
-        parent.innerHTML = `
-            <span>${current.icon}</span>
-            <span>${current.temp} ${current.desc}</span>
-        `;
+
+    weatherEl.textContent = 'Detecting location...';
+    if (locationEl) locationEl.textContent = '';
+
+    // --- Helper: Fetch weather ---
+    async function getWeather(lat, lon, cityName) {
+        try {
+            const res = await fetch(`https://wttr.in/${lat},${lon}?format=j1`);
+            const data = await res.json();
+
+            const temp = data.current_condition[0].temp_F;
+            const desc = data.current_condition[0].weatherDesc[0].value;
+
+            weatherEl.textContent = `${temp}°F - ${desc}`;
+            if (locationEl) locationEl.textContent = `📍 ${cityName}`;
+        } catch (error) {
+            console.error('Weather fetch error:', error);
+            weatherEl.textContent = 'Weather unavailable';
+            if (locationEl) locationEl.textContent = cityName || 'Location unavailable';
+        }
+    }
+
+    // --- Try stored location first ---
+    const stored = localStorage.getItem('weatherLocation');
+    const storedCoords = localStorage.getItem('weatherCoords');
+
+    if (stored && storedCoords) {
+        const { lat, lon } = JSON.parse(storedCoords);
+        console.log('✅ Using stored location:', stored);
+        await getWeather(lat, lon, stored);
+        return;
+    }
+
+    // --- Try exact location once ---
+    if ('geolocation' in navigator) {
+        navigator.geolocation.getCurrentPosition(
+            async (pos) => {
+                const { latitude, longitude } = pos.coords;
+                console.log('📍 Got GPS location:', latitude, longitude);
+
+                // Reverse geocode → city name only
+                const geoRes = await fetch(
+                    `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${latitude}&lon=${longitude}`
+                );
+                const geoData = await geoRes.json();
+                const cityName =
+                    geoData.address.city ||
+                    geoData.address.town ||
+                    geoData.address.village ||
+                    geoData.address.state ||
+                    'Your City';
+
+                // Save for future sessions
+                localStorage.setItem('weatherLocation', cityName);
+                localStorage.setItem('weatherCoords', JSON.stringify({ lat: latitude, lon: longitude }));
+
+                await getWeather(latitude, longitude, cityName);
+            },
+            async (err) => {
+                console.warn('⚠️ GPS denied:', err.message);
+                await fallbackWeather(); // fallback to IP
+            },
+            { enableHighAccuracy: true, timeout: 10000 }
+        );
+    } else {
+        await fallbackWeather(); // no GPS support
+    }
+
+    // --- Fallback via IP ---
+    async function fallbackWeather() {
+        try {
+            const locRes = await fetch('https://ipapi.co/json/');
+            const loc = await locRes.json();
+            const city = loc.city || loc.region || 'Unknown City';
+
+            // Save fallback too, so we don’t re-ask
+            localStorage.setItem('weatherLocation', city);
+            localStorage.setItem('weatherCoords', JSON.stringify({ lat: loc.latitude, lon: loc.longitude }));
+
+            await getWeather(loc.latitude, loc.longitude, city);
+        } catch (error) {
+            console.error('Fallback error:', error);
+            weatherEl.textContent = 'Weather unavailable';
+            if (locationEl) locationEl.textContent = '🌍 Location unavailable';
+        }
     }
 }
+
+  
 
 // Update analytics
 function updateAnalytics() {
@@ -674,6 +938,59 @@ function openFolderInGitHub() {
 // ============================================
 
 // Initialize main dashboard
+// async function initMainDashboard() {
+//     console.log('Initializing main dashboard...');
+    
+//     // Load analytics
+//     loadAnalytics();
+//     loadCategories();
+//     loadFolders();
+//     updateStats();
+    
+//     // Update time features
+//     updateClock();
+//     updateWeather();
+//     updateVisitCounter();
+//     setInterval(updateClock, 1000);
+//     setInterval(updateLastUpdated, 60000);
+    
+//     // Setup view toggle
+//     setupViewToggle();
+    
+//     // Setup filters
+//     const searchInput = document.getElementById('searchInput');
+//     const categoryFilter = document.getElementById('categoryFilter');
+    
+//     if (searchInput) searchInput.addEventListener('input', filterItems);
+//     if (categoryFilter) categoryFilter.addEventListener('change', filterItems);
+    
+//     // Setup FAB menu
+//     setupFAB();
+    
+//     // Setup keyboard shortcuts
+//     setupKeyboardShortcuts();
+    
+//     // Load folders from GitHub
+//     const folders = await getAllFolders();
+//     currentItems = folders;
+    
+//     // Populate category filter
+//     if (categoryFilter) {
+//         const categories = [...new Set(folders.map(f => f.category))];
+//         categories.forEach(cat => {
+//             const option = document.createElement('option');
+//             option.value = cat;
+//             option.textContent = cat.charAt(0).toUpperCase() + cat.slice(1);
+//             categoryFilter.appendChild(option);
+//         });
+//     }
+    
+//     renderFolders(folders);
+    
+//     // Start analytics interval
+//     setInterval(updateAnalytics, 10000);
+// }
+
 async function initMainDashboard() {
     console.log('Initializing main dashboard...');
     
@@ -719,11 +1036,11 @@ async function initMainDashboard() {
     }
     
     renderFolders(folders);
+    updateStats(); // ✅ NOW called AFTER folders are loaded
     
     // Start analytics interval
     setInterval(updateAnalytics, 10000);
 }
-
 // Initialize file viewer
 async function initFileViewer() {
     console.log('Initializing file viewer...');
@@ -821,12 +1138,12 @@ function setupKeyboardShortcuts() {
 // ============================================
 
 // Check which page we're on and initialize accordingly
-document.addEventListener('DOMContentLoaded', () => {
-    const path = window.location.pathname;
+// document.addEventListener('DOMContentLoaded', () => {
+//     const path = window.location.pathname;
     
-    if (path.includes('viewer.html')) {
-        // We're on the viewer page - initFileViewer will be called by the script tag in HTML
-    } else {
-        // We're on the main dashboard - initMainDashboard will be called by the script tag in HTML
-    }
-});
+//     if (path.includes('viewer.html')) {
+//         // We're on the viewer page - initFileViewer will be called by the script tag in HTML
+//     } else {
+//         // We're on the main dashboard - initMainDashboard will be called by the script tag in HTML
+//     }
+// });
