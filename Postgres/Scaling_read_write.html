@@ -1,0 +1,3132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PostgreSQL Scaling Guide</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        h1 {
+            text-align: center;
+            color: white;
+            margin: 30px 0;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .nav-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        
+        .tab-btn {
+            padding: 12px 24px;
+            background: rgba(255,255,255,0.2);
+            border: 2px solid white;
+            color: white;
+            cursor: pointer;
+            border-radius: 25px;
+            font-size: 16px;
+            font-weight: bold;
+            transition: all 0.3s;
+            backdrop-filter: blur(10px);
+        }
+        
+        .tab-btn:hover {
+            background: white;
+            color: #667eea;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+        
+        .tab-btn.active {
+            background: white;
+            color: #667eea;
+        }
+        
+        .tab-content {
+            display: none;
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            animation: fadeIn 0.5s;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        h2 {
+            color: #667eea;
+            margin: 30px 0 20px 0;
+            font-size: 2em;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 10px;
+        }
+        
+        h3 {
+            color: #764ba2;
+            margin: 20px 0 15px 0;
+            font-size: 1.5em;
+        }
+        
+        .animation-container {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 30px;
+            margin: 30px 0;
+            min-height: 400px;
+            position: relative;
+            overflow: hidden;
+            border: 3px solid #e0e0e0;
+        }
+        
+        .server {
+            width: 100px;
+            height: 120px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 10px;
+            position: absolute;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            transition: all 0.3s;
+        }
+        
+        .server::before {
+            content: '';
+            width: 60px;
+            height: 8px;
+            background: rgba(255,255,255,0.3);
+            border-radius: 4px;
+            margin: 3px;
+        }
+        
+        .server::after {
+            content: '';
+            width: 60px;
+            height: 8px;
+            background: rgba(255,255,255,0.3);
+            border-radius: 4px;
+            margin: 3px;
+        }
+        
+        .server.primary {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+        }
+        
+        .server.replica {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+        
+        .server.standby {
+            background: linear-gradient(135deg, #ffa17f 0%, #ff6b6b 100%);
+        }
+        
+        .client {
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, #ffd89b 0%, #19547b 100%);
+            border-radius: 50%;
+            position: absolute;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 12px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.2);
+        }
+        
+        .data-packet {
+            width: 30px;
+            height: 30px;
+            background: #ffd700;
+            border-radius: 5px;
+            position: absolute;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+            animation: pulse 1s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+        
+        .connection-line {
+            position: absolute;
+            height: 3px;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            transform-origin: left center;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        
+        .connection-line.active {
+            opacity: 1;
+            animation: flowAnimation 2s infinite;
+        }
+        
+        @keyframes flowAnimation {
+            0% { box-shadow: 0 0 0 0 rgba(102, 126, 234, 0.7); }
+            50% { box-shadow: 20px 0 20px 0 rgba(102, 126, 234, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(102, 126, 234, 0); }
+        }
+        
+        .code-block {
+            background: #2d2d2d;
+            color: #f8f8f2;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            overflow-x: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            line-height: 1.6;
+            border-left: 5px solid #667eea;
+        }
+        
+        .code-block .comment {
+            color: #6272a4;
+        }
+        
+        .code-block .command {
+            color: #50fa7b;
+        }
+        
+        .code-block .string {
+            color: #f1fa8c;
+        }
+        
+        .info-box {
+            background: linear-gradient(135deg, #e0f7fa 0%, #b2ebf2 100%);
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            border-left: 5px solid #00acc1;
+        }
+        
+        .warning-box {
+            background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            border-left: 5px solid #ff9800;
+        }
+        
+        .best-practice {
+            background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            border-left: 5px solid #4caf50;
+        }
+        
+        .control-panel {
+            display: flex;
+            gap: 15px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+        
+        .control-btn {
+            padding: 12px 24px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.2);
+        }
+        
+        .control-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+        
+        .control-btn:active {
+            transform: translateY(0);
+        }
+        
+        .metric {
+            display: inline-block;
+            padding: 10px 20px;
+            background: #667eea;
+            color: white;
+            border-radius: 20px;
+            margin: 5px;
+            font-weight: bold;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        th, td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        
+        th {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            font-weight: bold;
+        }
+        
+        tr:hover {
+            background: #f5f5f5;
+        }
+        
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 8px;
+            animation: blink 2s infinite;
+        }
+        
+        .status-indicator.online {
+            background: #4caf50;
+        }
+        
+        .status-indicator.syncing {
+            background: #ff9800;
+        }
+        
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🐘 PostgreSQL Scaling & Replication Complete Guide</h1>
+        
+        <div class="nav-tabs">
+            <button class="tab-btn active" onclick="showTab('overview')">Overview</button>
+            <button class="tab-btn" onclick="showTab('vertical')">Vertical Scaling</button>
+            <button class="tab-btn" onclick="showTab('horizontal')">Horizontal Scaling</button>
+            <button class="tab-btn" onclick="showTab('streaming')">Streaming Replication</button>
+            <button class="tab-btn" onclick="showTab('hot-standby')">Hot Standby</button>
+            <button class="tab-btn" onclick="showTab('multi-master')">Multi-Master</button>
+            <button class="tab-btn" onclick="showTab('commands')">DBA Commands</button>
+            <button class="tab-btn" onclick="showTab('real-world')">Real World</button>
+
+            <button class="tab-btn" onclick="showTab('sharding')">Sharding</button>
+
+            <button class="tab-btn" onclick="showTab('fdw')">Foriegn Data Wrappers</button>
+
+            <button class="tab-btn" onclick="showTab('distributed')">Distributed</button>
+        </div>
+        
+        <!-- Overview Tab -->
+        <div id="overview" class="tab-content active">
+            <h2>PostgreSQL Scaling Fundamentals</h2>
+            
+            <div class="animation-container" id="overviewAnimation">
+                <div class="server" style="left: 50%; top: 50%; transform: translate(-50%, -50%);">
+                    <div style="margin-top: 20px;">PostgreSQL</div>
+                </div>
+            </div>
+            
+            <h3>Two Main Scaling Approaches:</h3>
+            
+            <div class="info-box">
+                <h4>🔼 Vertical Scaling (Scale Up)</h4>
+                <p><strong>Definition:</strong> Adding more power to your existing server (CPU, RAM, Disk)</p>
+                <ul>
+                    <li><strong>Pros:</strong> Simple to implement, no code changes, maintains ACID properties</li>
+                    <li><strong>Cons:</strong> Hardware limits, single point of failure, expensive at scale</li>
+                    <li><strong>When to use:</strong> Small to medium applications, when consistency is critical</li>
+                </ul>
+            </div>
+            
+            <div class="info-box">
+                <h4>↔️ Horizontal Scaling (Scale Out)</h4>
+                <p><strong>Definition:</strong> Adding more servers to distribute the load</p>
+                <ul>
+                    <li><strong>Pros:</strong> Unlimited scalability, high availability, cost-effective</li>
+                    <li><strong>Cons:</strong> Complex setup, potential consistency issues, requires application changes</li>
+                    <li><strong>When to use:</strong> Large applications, high read loads, need for high availability</li>
+                </ul>
+            </div>
+            
+            <h3>Horizontal Scaling Types:</h3>
+            
+            <table>
+                <tr>
+                    <th>Type</th>
+                    <th>Description</th>
+                    <th>Use Case</th>
+                    <th>Consistency</th>
+                </tr>
+                <tr>
+                    <td><strong>Synchronous Replication</strong></td>
+                    <td>Primary waits for replica to confirm write before committing</td>
+                    <td>Banking, financial systems</td>
+                    <td>Strong consistency</td>
+                </tr>
+                <tr>
+                    <td><strong>Asynchronous Replication</strong></td>
+                    <td>Primary commits immediately, replica updates later</td>
+                    <td>Social media, analytics, blogs</td>
+                    <td>Eventual consistency</td>
+                </tr>
+            </table>
+        </div>
+        
+        <!-- Vertical Scaling Tab -->
+        <div id="vertical" class="tab-content">
+            <h2>Vertical Scaling Animation</h2>
+            
+            <div class="control-panel">
+                <button class="control-btn" onclick="animateVerticalScaling()">▶️ Start Animation</button>
+                <button class="control-btn" onclick="resetVerticalAnimation()">🔄 Reset</button>
+            </div>
+            
+            <div class="animation-container" id="verticalAnimation">
+                <div id="verticalServer" class="server" style="left: 50%; top: 50%; transform: translate(-50%, -50%);">
+                    <div id="serverSpecs">4 CPU<br>8GB RAM</div>
+                </div>
+            </div>
+            
+            <div class="best-practice">
+                <h4>✅ Key PostgreSQL Configuration Parameters for Vertical Scaling:</h4>
+                <div class="metric">shared_buffers = 25% of RAM</div>
+                <div class="metric">effective_cache_size = 50-75% of RAM</div>
+                <div class="metric">work_mem = RAM/connections</div>
+                <div class="metric">maintenance_work_mem = RAM/16</div>
+            </div>
+            
+            <div class="code-block">
+<span class="comment"># postgresql.conf optimization for 32GB server</span>
+
+<span class="command">shared_buffers</span> = <span class="string">8GB</span>          <span class="comment"># 25% of RAM</span>
+<span class="command">effective_cache_size</span> = <span class="string">24GB</span>   <span class="comment"># 75% of RAM</span>
+<span class="command">work_mem</span> = <span class="string">64MB</span>                <span class="comment"># For 100 connections</span>
+<span class="command">maintenance_work_mem</span> = <span class="string">2GB</span>
+<span class="command">max_connections</span> = <span class="string">100</span>
+<span class="command">checkpoint_completion_target</span> = <span class="string">0.9</span>
+<span class="command">wal_buffers</span> = <span class="string">16MB</span>
+<span class="command">random_page_cost</span> = <span class="string">1.1</span>         <span class="comment"># For SSD</span>
+            </div>
+        </div>
+        
+        <!-- Horizontal Scaling Tab -->
+        <div id="horizontal" class="tab-content">
+            <h2>Horizontal Scaling with Read Replicas</h2>
+            
+            <div class="control-panel">
+                <button class="control-btn" onclick="animateHorizontalScaling()">▶️ Simulate Traffic</button>
+                <button class="control-btn" onclick="resetHorizontalAnimation()">🔄 Reset</button>
+            </div>
+            
+            <div class="animation-container" id="horizontalAnimation" style="min-height: 500px;">
+                <div class="server primary" id="primaryDB" style="left: 50%; top: 100px; transform: translateX(-50%);">
+                    <div>PRIMARY</div>
+                    <div style="font-size: 11px; margin-top: 5px;">Write DB</div>
+                </div>
+                
+                <div class="server replica" id="replica1" style="left: 20%; top: 300px;">
+                    <div>REPLICA 1</div>
+                    <div style="font-size: 11px; margin-top: 5px;">Read Only</div>
+                </div>
+                
+                <div class="server replica" id="replica2" style="left: 50%; top: 300px; transform: translateX(-50%);">
+                    <div>REPLICA 2</div>
+                    <div style="font-size: 11px; margin-top: 5px;">Read Only</div>
+                </div>
+                
+                <div class="server replica" id="replica3" style="right: 20%; top: 300px;">
+                    <div>REPLICA 3</div>
+                    <div style="font-size: 11px; margin-top: 5px;">Read Only</div>
+                </div>
+            </div>
+            
+            <h3>Setup Commands:</h3>
+            
+            <div class="code-block">
+<span class="comment"># ============================================</span>
+<span class="comment"># PRIMARY SERVER SETUP</span>
+<span class="comment"># ============================================</span>
+
+<span class="comment"># 1. Create replication user on primary</span>
+<span class="command">CREATE ROLE replicator WITH REPLICATION LOGIN PASSWORD</span> <span class="string">'secure_password'</span>;
+
+<span class="comment"># 2. Edit postgresql.conf on primary</span>
+<span class="command">wal_level</span> = <span class="string">replica</span>
+<span class="command">max_wal_senders</span> = <span class="string">10</span>              <span class="comment"># Max number of replicas + 2</span>
+<span class="command">max_replication_slots</span> = <span class="string">10</span>
+<span class="command">wal_keep_size</span> = <span class="string">1GB</span>               <span class="comment"># PostgreSQL 13+</span>
+<span class="command">hot_standby</span> = <span class="string">on</span>
+
+<span class="comment"># 3. Edit pg_hba.conf on primary to allow replication</span>
+<span class="command">host    replication    replicator    replica_ip/32    md5</span>
+
+<span class="comment"># 4. Restart PostgreSQL</span>
+<span class="command">sudo systemctl restart postgresql</span>
+
+<span class="comment"># ============================================</span>
+<span class="comment"># REPLICA SERVER SETUP</span>
+<span class="comment"># ============================================</span>
+
+<span class="comment"># 1. Stop PostgreSQL on replica</span>
+<span class="command">sudo systemctl stop postgresql</span>
+
+<span class="comment"># 2. Backup existing data (optional)</span>
+<span class="command">mv /var/lib/postgresql/14/main /var/lib/postgresql/14/main_backup</span>
+
+<span class="comment"># 3. Use pg_basebackup to clone primary</span>
+<span class="command">pg_basebackup -h primary_ip -D /var/lib/postgresql/14/main \
+  -U replicator -P -v -R -X stream -C -S replica_1</span>
+
+<span class="comment"># Explanation:</span>
+<span class="comment"># -h: primary server IP</span>
+<span class="comment"># -D: data directory</span>
+<span class="comment"># -U: replication user</span>
+<span class="comment"># -P: show progress</span>
+<span class="comment"># -v: verbose</span>
+<span class="comment"># -R: write recovery configuration (creates standby.signal)</span>
+<span class="comment"># -X stream: stream WAL while backing up</span>
+<span class="comment"># -C: create replication slot</span>
+<span class="comment"># -S: replication slot name</span>
+
+<span class="comment"># 4. The -R flag creates postgresql.auto.conf with:</span>
+<span class="command">primary_conninfo</span> = <span class="string">'host=primary_ip port=5432 user=replicator password=secure_password'</span>
+
+<span class="comment"># 5. Start replica</span>
+<span class="command">sudo systemctl start postgresql</span>
+            </div>
+            
+            <h3>Verification Commands:</h3>
+            
+            <div class="code-block">
+<span class="comment"># Check replication status on PRIMARY</span>
+<span class="command">SELECT client_addr, state, sync_state, replay_lag 
+FROM pg_stat_replication;</span>
+
+<span class="comment"># Check replication status on REPLICA</span>
+<span class="command">SELECT status, receive_start_lsn, received_lsn, latest_end_lsn
+FROM pg_stat_wal_receiver;</span>
+
+<span class="comment"># Check if replica is in recovery mode</span>
+<span class="command">SELECT pg_is_in_recovery();</span>
+<span class="comment"># Should return 't' (true) on replica</span>
+
+<span class="comment"># Check replication lag</span>
+<span class="command">SELECT 
+  CASE WHEN pg_last_wal_receive_lsn() = pg_last_wal_replay_lsn()
+    THEN 0
+    ELSE EXTRACT(EPOCH FROM now() - pg_last_xact_replay_timestamp())
+  END AS lag_seconds;</span>
+            </div>
+        </div>
+        
+        <!-- Streaming Replication Tab -->
+        <div id="streaming" class="tab-content">
+            <h2>Synchronous vs Asynchronous Replication</h2>
+            
+            <div class="control-panel">
+                <button class="control-btn" onclick="animateSyncReplication()">▶️ Synchronous</button>
+                <button class="control-btn" onclick="animateAsyncReplication()">▶️ Asynchronous</button>
+                <button class="control-btn" onclick="resetStreamingAnimation()">🔄 Reset</button>
+            </div>
+            
+            <div class="animation-container" id="streamingAnimation" style="min-height: 500px;">
+                <div class="client" id="writeClient" style="left: 10%; top: 150px;">
+                    WRITE
+                </div>
+                <div class="server primary" id="streamPrimary" style="left: 50%; top: 150px; transform: translateX(-50%);">
+                    <div>PRIMARY</div>
+                </div>
+                <div class="server replica" id="streamReplica" style="right: 10%; top: 150px;">
+                    <div>REPLICA</div>
+                </div>
+                <div id="statusText" style="position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); font-size: 18px; font-weight: bold; color: #667eea;"></div>
+            </div>
+            
+            <h3>Synchronous Replication Configuration:</h3>
+            
+            <div class="code-block">
+<span class="comment"># postgresql.conf on PRIMARY</span>
+<span class="command">synchronous_commit</span> = <span class="string">on</span>
+<span class="command">synchronous_standby_names</span> = <span class="string">'replica_1,replica_2'</span>
+
+<span class="comment"># Options for synchronous_standby_names:</span>
+<span class="comment"># FIRST 1 (replica_1, replica_2) - Wait for any 1 replica</span>
+<span class="comment"># ANY 2 (replica_1, replica_2, replica_3) - Wait for any 2 replicas</span>
+<span class="comment"># replica_1 - Wait specifically for replica_1</span>
+            </div>
+            
+            <h3>Comparison Table:</h3>
+            
+            <table>
+                <tr>
+                    <th>Aspect</th>
+                    <th>Synchronous</th>
+                    <th>Asynchronous</th>
+                </tr>
+                <tr>
+                    <td><strong>Data Safety</strong></td>
+                    <td>✅ Zero data loss</td>
+                    <td>⚠️ Possible data loss (seconds/minutes)</td>
+                </tr>
+                <tr>
+                    <td><strong>Performance</strong></td>
+                    <td>⚠️ Slower writes (wait for confirmation)</td>
+                    <td>✅ Faster writes</td>
+                </tr>
+                <tr>
+                    <td><strong>Network Sensitivity</strong></td>
+                    <td>❌ High - network lag affects writes</td>
+                    <td>✅ Low - writes not affected</td>
+                </tr>
+                <tr>
+                    <td><strong>Consistency</strong></td>
+                    <td>✅ Strong consistency</td>
+                    <td>⚠️ Eventual consistency</td>
+                </tr>
+                <tr>
+                    <td><strong>Use Cases</strong></td>
+                    <td>Banking, financial transactions, legal records</td>
+                    <td>Social media, blogs, analytics, caching</td>
+                </tr>
+            </table>
+            
+            <div class="warning-box">
+                <h4>⚠️ Important Considerations:</h4>
+                <p><strong>Synchronous Replication:</strong> If the replica goes down, writes will FAIL or BLOCK until timeout. Always have multiple replicas or use FIRST/ANY syntax.</p>
+                <p><strong>Asynchronous Replication:</strong> In case of primary failure before replication, recent transactions (last few seconds) may be lost.</p>
+            </div>
+        </div>
+        
+        <!-- Hot Standby Tab -->
+        <div id="hot-standby" class="tab-content">
+            <h2>Hot Standby with Eventually Consistent Reads</h2>
+            
+            <div class="control-panel">
+                <button class="control-btn" onclick="animateHotStandby()">▶️ Simulate Write & Reads</button>
+                <button class="control-btn" onclick="resetHotStandbyAnimation()">🔄 Reset</button>
+            </div>
+            
+            <div class="animation-container" id="hotStandbyAnimation" style="min-height: 500px;">
+                <div class="client" id="hsWriteClient" style="left: 5%; top: 100px;">W</div>
+                <div class="client" id="hsReadClient1" style="left: 5%; top: 200px;">R1</div>
+                <div class="client" id="hsReadClient2" style="left: 5%; top: 300px;">R2</div>
+                <div class="client" id="hsReadClient3" style="left: 5%; top: 400px;">R3</div>
+                
+                <div class="server primary" id="hsPrimary" style="left: 40%; top: 200px;">
+                    <div>PRIMARY</div>
+                    <div style="font-size: 10px; margin-top: 5px;">Read + Write</div>
+                </div>
+                
+                <div class="server standby" id="hsStandby" style="right: 10%; top: 200px;">
+                    <div>HOT STANDBY</div>
+                    <div style="font-size: 10px; margin-top: 5px;">Read Only</div>
+                </div>
+            </div>
+            
+            <div class="info-box">
+                <h4>🔥 What is Hot Standby?</h4>
+                <p><strong>Hot Standby</strong> allows read-only queries on a standby replica while it's continuously receiving updates from the primary. This enables:</p>
+                <ul>
+                    <li>✅ Offload read traffic from primary to replicas</li>
+                    <li>✅ Serve read requests even during primary maintenance</li>
+                    <li>✅ Quick failover - standby can become primary in seconds</li>
+                    <li>⚠️ Eventually consistent - replicas may lag behind primary by milliseconds to seconds</li>
+                </ul>
+            </div>
+            
+            <h3>Hot Standby Configuration:</h3>
+            
+            <div class="code-block">
+<span class="comment"># PRIMARY postgresql.conf</span>
+<span class="command">wal_level</span> = <span class="string">replica</span>
+<span class="command">max_wal_senders</span> = <span class="string">5</span>
+<span class="command">wal_keep_size</span> = <span class="string">1GB</span>
+<span class="command">hot_standby</span> = <span class="string">on</span>
+<span class="command">hot_standby_feedback</span> = <span class="string">on</span>       <span class="comment"># Prevents query conflicts</span>
+
+<span class="comment"># STANDBY postgresql.conf</span>
+<span class="command">hot_standby</span> = <span class="string">on</span>
+<span class="command">max_standby_streaming_delay</span> = <span class="string">30s</span>   <span class="comment"># How long to wait before canceling conflicting queries</span>
+<span class="command">wal_receiver_status_interval</span> = <span class="string">10s</span>
+            </div>
+            
+            <h3>Monitoring Hot Standby Lag:</h3>
+            
+            <div class="code-block">
+<span class="comment"># On PRIMARY - Check replication lag for each replica</span>
+<span class="command">SELECT 
+    application_name,
+    client_addr,
+    state,
+    sync_state,
+    pg_wal_lsn_diff(pg_current_wal_lsn(), replay_lsn) AS byte_lag,
+    EXTRACT(EPOCH FROM (now() - reply_time)) AS seconds_since_last_reply
+FROM pg_stat_replication;</span>
+
+<span class="comment"># On STANDBY - Check current lag</span>
+<span class="command">SELECT 
+    now() - pg_last_xact_replay_timestamp() AS replication_lag;</span>
+
+<span class="comment"># Check if standby is accepting read queries</span>
+<span class="command">SELECT pg_is_in_recovery();  </span><span class="comment">-- Should be 't'</span>
+<span class="command">SHOW hot_standby;            </span><span class="comment">-- Should be 'on'</span>
+            </div>
+            
+            <div class="best-practice">
+                <h4>✅ Real-World Best Practices for Hot Standby:</h4>
+                <ul>
+                    <li><strong>Application-Level Routing:</strong> Use connection poolers (PgBouncer, HAProxy) to route writes to primary and reads to standbys</li>
+                    <li><strong>Monitor Lag:</strong> Set up alerts when replication lag exceeds acceptable threshold (typically 5-10 seconds)</li>
+                    <li><strong>Handle Query Conflicts:</strong> Long-running queries on standby may be canceled if they conflict with incoming WAL. Design queries accordingly</li>
+                    <li><strong>Use Replication Slots:</strong> Prevents WAL deletion before standby processes it</li>
+                </ul>
+            </div>
+        </div>
+        
+        <!-- Multi-Master Tab -->
+        <div id="multi-master" class="tab-content">
+            <h2>Multi-Master Replication (BDR / Logical Replication)</h2>
+            
+            <div class="control-panel">
+                <button class="control-btn" onclick="animateMultiMaster()">▶️ Simulate Multi-Master</button>
+                <button class="control-btn" onclick="resetMultiMasterAnimation()">🔄 Reset</button>
+            </div>
+            
+            <div class="animation-container" id="multiMasterAnimation" style="min-height: 500px;">
+                <div class="server primary" id="mm1" style="left: 20%; top: 150px;">
+                    <div>MASTER 1</div>
+                    <div style="font-size: 10px;">US-EAST</div>
+                </div>
+                
+                <div class="server primary" id="mm2" style="right: 20%; top: 150px;">
+                    <div>MASTER 2</div>
+                    <div style="font-size: 10px;">EU-WEST</div>
+                </div>
+                
+                <div class="server primary" id="mm3" style="left: 50%; top: 350px; transform: translateX(-50%);">
+                    <div>MASTER 3</div>
+                    <div style="font-size: 10px;">ASIA-PAC</div>
+                </div>
+                
+                <div class="client" id="mmClient1" style="left: 10%; top: 50px;">US</div>
+                <div class="client" id="mmClient2" style="right: 10%; top: 50px;">EU</div>
+                <div class="client" id="mmClient3" style="left: 50%; top: 450px; transform: translateX(-50%);">ASIA</div>
+            </div>
+            
+            <div class="info-box">
+                <h4>🌐 What is Multi-Master Replication?</h4>
+                <p><strong>Multi-Master</strong> (also called <strong>Multi-Primary</strong>) allows writes on multiple database nodes simultaneously. Each master accepts writes and propagates changes to other masters.</p>
+                
+                <h5>Technologies for PostgreSQL Multi-Master:</h5>
+                <ul>
+                    <li><strong>BDR (Bi-Directional Replication):</strong> By EDB/2ndQuadrant - enterprise solution</li>
+                    <li><strong>Logical Replication:</strong> Built into PostgreSQL 10+ (limited multi-master capabilities)</li>
+                    <li><strong>Bucardo:</strong> Trigger-based multi-master replication</li>
+                    <li><strong>Pgpool-II:</strong> Connection pooling with limited multi-master support</li>
+                </ul>
+            </div>
+            
+            <h3>Logical Replication Setup (PostgreSQL 10+):</h3>
+            
+            <div class="code-block">
+<span class="comment"># ============================================</span>
+<span class="comment"># PUBLISHER NODE (Master 1) SETUP</span>
+<span class="comment"># ============================================</span>
+
+<span class="comment"># 1. Enable logical replication in postgresql.conf</span>
+<span class="command">wal_level</span> = <span class="string">logical</span>
+<span class="command">max_replication_slots</span> = <span class="string">10</span>
+<span class="command">max_wal_senders</span> = <span class="string">10</span>
+
+<span class="comment"># 2. Restart PostgreSQL</span>
+<span class="command">sudo systemctl restart postgresql</span>
+
+<span class="comment"># 3. Create a publication for specific tables</span>
+<span class="command">CREATE PUBLICATION my_publication FOR TABLE users, orders, products;</span>
+
+<span class="comment"># Or for all tables in the database</span>
+<span class="command">CREATE PUBLICATION all_tables FOR ALL TABLES;</span>
+
+<span class="comment"># 4. Create replication user</span>
+<span class="command">CREATE ROLE replicator WITH REPLICATION LOGIN PASSWORD 'secure_pass';</span>
+<span class="command">GRANT SELECT ON ALL TABLES IN SCHEMA public TO replicator;</span>
+
+<span class="comment"># 5. Edit pg_hba.conf to allow logical replication</span>
+<span class="command">host    all    replicator    subscriber_ip/32    md5</span>
+
+<span class="comment"># ============================================</span>
+<span class="comment"># SUBSCRIBER NODE (Master 2) SETUP</span>
+<span class="comment"># ============================================</span>
+
+<span class="comment"># 1. Create the same table structures as publisher</span>
+<span class="command">CREATE TABLE users (
+    id SERIAL PRIMARY KEY,
+    username VARCHAR(50),
+    email VARCHAR(100)
+);</span>
+
+<span class="comment"># 2. Create a subscription</span>
+<span class="command">CREATE SUBSCRIPTION my_subscription
+CONNECTION 'host=publisher_ip port=5432 dbname=mydb user=replicator password=secure_pass'
+PUBLICATION my_publication;</span>
+
+<span class="comment"># 3. Verify subscription is working</span>
+<span class="command">SELECT * FROM pg_stat_subscription;</span>
+
+<span class="comment"># ============================================</span>
+<span class="comment"># BIDIRECTIONAL SETUP (True Multi-Master)</span>
+<span class="comment"># ============================================</span>
+
+<span class="comment"># On Master 1: Create publication AND subscription to Master 2</span>
+<span class="command">CREATE PUBLICATION pub_master1 FOR ALL TABLES;</span>
+<span class="command">CREATE SUBSCRIPTION sub_from_master2 
+CONNECTION 'host=master2_ip dbname=mydb user=replicator password=pass'
+PUBLICATION pub_master2;</span>
+
+<span class="comment"># On Master 2: Create publication AND subscription to Master 1</span>
+<span class="command">CREATE PUBLICATION pub_master2 FOR ALL TABLES;</span>
+<span class="command">CREATE SUBSCRIPTION sub_from_master1 
+CONNECTION 'host=master1_ip dbname=mydb user=replicator password=pass'
+PUBLICATION pub_master1;</span>
+            </div>
+            
+            <h3>Monitoring Logical Replication:</h3>
+            
+            <div class="code-block">
+<span class="comment"># Check publication status</span>
+<span class="command">SELECT * FROM pg_publication;</span>
+<span class="command">SELECT * FROM pg_publication_tables;</span>
+
+<span class="comment"># Check subscription status</span>
+<span class="command">SELECT 
+    subname,
+    pid,
+    received_lsn,
+    latest_end_lsn,
+    last_msg_send_time,
+    last_msg_receipt_time,
+    latest_end_time
+FROM pg_stat_subscription;</span>
+
+<span class="comment"># Check replication slots</span>
+<span class="command">SELECT 
+    slot_name,
+    plugin,
+    slot_type,
+    database,
+    active,
+    restart_lsn
+FROM pg_replication_slots;</span>
+
+<span class="comment"># View subscription workers</span>
+<span class="command">SELECT * FROM pg_stat_subscription_stats;</span>
+            </div>
+            
+            <div class="warning-box">
+                <h4>⚠️ Multi-Master Challenges & Solutions:</h4>
+                
+                <h5>1. Conflict Resolution:</h5>
+                <p><strong>Problem:</strong> Two masters update the same row simultaneously</p>
+                <p><strong>Solutions:</strong></p>
+                <ul>
+                    <li><strong>Last Write Wins:</strong> Most recent timestamp wins (default in BDR)</li>
+                    <li><strong>First Write Wins:</strong> First committed transaction wins</li>
+                    <li><strong>Application-Level:</strong> Use UUIDs, partition data by region</li>
+                    <li><strong>Custom Functions:</strong> Define conflict resolution functions</li>
+                </ul>
+                
+                <h5>2. Circular Replication Prevention:</h5>
+                <p>PostgreSQL logical replication automatically prevents loops by tracking origin of changes</p>
+                
+                <h5>3. Schema Changes:</h5>
+                <p>DDL changes (ALTER TABLE, etc.) are NOT replicated automatically. Must be applied manually to all masters.</p>
+            </div>
+            
+            <div class="code-block">
+<span class="comment"># Handling conflicts - Check for conflicts in logs</span>
+<span class="command">SELECT * FROM pg_stat_subscription 
+WHERE last_msg_send_time != last_msg_receipt_time;</span>
+
+<span class="comment"># For BDR (Enterprise) - Conflict detection</span>
+<span class="command">SELECT 
+    conflict_time,
+    conflict_type,
+    conflict_resolution,
+    local_tuple,
+    remote_tuple
+FROM bdr.conflict_history
+ORDER BY conflict_time DESC LIMIT 10;</span>
+            </div>
+        </div>
+        
+        <!-- Commands Tab -->
+        <div id="commands" class="tab-content">
+            <h2>Essential DBA Commands for Replication</h2>
+            
+            <h3>🔧 Daily Operations:</h3>
+            
+            <div class="code-block">
+<span class="comment"># ============================================</span>
+<span class="comment"># CONNECTION & BASIC INFO</span>
+<span class="comment"># ============================================</span>
+
+<span class="comment"># Connect to PostgreSQL</span>
+<span class="command">psql -U postgres -d database_name</span>
+
+<span class="comment"># List all databases</span>
+<span class="command">\l</span>
+
+<span class="comment"># Connect to specific database</span>
+<span class="command">\c database_name</span>
+
+<span class="comment"># List all tables</span>
+<span class="command">\dt</span>
+
+<span class="comment"># Check PostgreSQL version</span>
+<span class="command">SELECT version();</span>
+
+<span class="comment"># ============================================</span>
+<span class="comment"># REPLICATION MONITORING</span>
+<span class="comment"># ============================================</span>
+
+<span class="comment"># Check if server is primary or standby</span>
+<span class="command">SELECT pg_is_in_recovery();</span>
+<span class="comment">-- Returns 'f' for primary, 't' for standby</span>
+
+<span class="comment"># View all replication connections (PRIMARY)</span>
+<span class="command">SELECT 
+    application_name,
+    client_addr,
+    client_hostname,
+    state,
+    sync_state,
+    sync_priority,
+    pg_wal_lsn_diff(pg_current_wal_lsn(), sent_lsn) AS sending_lag_bytes,
+    pg_wal_lsn_diff(pg_current_wal_lsn(), write_lsn) AS writing_lag_bytes,
+    pg_wal_lsn_diff(pg_current_wal_lsn(), flush_lsn) AS flushing_lag_bytes,
+    pg_wal_lsn_diff(pg_current_wal_lsn(), replay_lsn) AS replay_lag_bytes,
+    EXTRACT(EPOCH FROM (now() - backend_start))::INT AS connection_age_seconds
+FROM pg_stat_replication;</span>
+
+<span class="comment"># Check replication lag in seconds (STANDBY)</span>
+<span class="command">SELECT 
+    CASE 
+        WHEN pg_last_wal_receive_lsn() = pg_last_wal_replay_lsn() THEN 0
+        ELSE EXTRACT(EPOCH FROM now() - pg_last_xact_replay_timestamp())
+    END AS lag_seconds;</span>
+
+<span class="comment"># View WAL receiver status (STANDBY)</span>
+<span class="command">SELECT 
+    status,
+    receive_start_lsn,
+    receive_start_tli,
+    received_lsn,
+    received_tli,
+    last_msg_send_time,
+    last_msg_receipt_time,
+    latest_end_lsn,
+    slot_name,
+    sender_host
+FROM pg_stat_wal_receiver;</span>
+
+<span class="comment"># Check replication slots</span>
+<span class="command">SELECT 
+    slot_name,
+    slot_type,
+    database,
+    active,
+    active_pid,
+    restart_lsn,
+    confirmed_flush_lsn,
+    pg_wal_lsn_diff(pg_current_wal_lsn(), restart_lsn) AS retained_bytes
+FROM pg_replication_slots;</span>
+
+<span class="comment"># ============================================</span>
+<span class="comment"># PERFORMANCE MONITORING</span>
+<span class="comment"># ============================================</span>
+
+<span class="comment"># Check active queries</span>
+<span class="command">SELECT 
+    pid,
+    usename,
+    application_name,
+    client_addr,
+    state,
+    query_start,
+    state_change,
+    wait_event_type,
+    wait_event,
+    query
+FROM pg_stat_activity
+WHERE state != 'idle'
+ORDER BY query_start;</span>
+
+<span class="comment"># Find long-running queries</span>
+<span class="command">SELECT 
+    pid,
+    now() - query_start AS duration,
+    usename,
+    query
+FROM pg_stat_activity
+WHERE state = 'active' 
+  AND now() - query_start > interval '5 minutes'
+ORDER BY duration DESC;</span>
+
+<span class="comment"># Kill a query</span>
+<span class="command">SELECT pg_cancel_backend(pid);  </span><span class="comment">-- Graceful cancel</span>
+<span class="command">SELECT pg_terminate_backend(pid); </span><span class="comment">-- Force kill</span>
+
+<span class="comment"># Check database size</span>
+<span class="command">SELECT 
+    pg_database.datname,
+    pg_size_pretty(pg_database_size(pg_database.datname)) AS size
+FROM pg_database
+ORDER BY pg_database_size(pg_database.datname) DESC;</span>
+
+<span class="comment"># Check table sizes</span>
+<span class="command">SELECT 
+    schemaname,
+    tablename,
+    pg_size_pretty(pg_total_relation_size(schemaname||'.'||tablename)) AS size
+FROM pg_tables
+ORDER BY pg_total_relation_size(schemaname||'.'||tablename) DESC
+LIMIT 20;</span>
+
+<span class="comment"># Check cache hit ratio (should be > 99%)</span>
+<span class="command">SELECT 
+    sum(heap_blks_read) AS heap_read,
+    sum(heap_blks_hit) AS heap_hit,
+    sum(heap_blks_hit) / (sum(heap_blks_hit) + sum(heap_blks_read)) AS ratio
+FROM pg_statio_user_tables;</span>
+
+<span class="comment"># ============================================</span>
+<span class="comment"># BACKUP & RECOVERY</span>
+<span class="comment"># ============================================</span>
+
+<span class="comment"># Create full backup</span>
+<span class="command">pg_dump -U postgres -d database_name -F c -f backup.dump</span>
+
+<span class="comment"># Restore from backup</span>
+<span class="command">pg_restore -U postgres -d database_name -v backup.dump</span>
+
+<span class="comment"># Backup all databases</span>
+<span class="command">pg_dumpall -U postgres -f all_databases.sql</span>
+
+<span class="comment"># Continuous archiving setup</span>
+<span class="command">archive_mode = on
+archive_command = 'test ! -f /archive/%f && cp %p /archive/%f'</span>
+
+<span class="comment"># ============================================</span>
+<span class="comment"># MAINTENANCE</span>
+<span class="comment"># ============================================</span>
+
+<span class="comment"># Vacuum specific table</span>
+<span class="command">VACUUM ANALYZE table_name;</span>
+
+<span class="comment"># Full vacuum (locks table)</span>
+<span class="command">VACUUM FULL table_name;</span>
+
+<span class="comment"># Reindex table</span>
+<span class="command">REINDEX TABLE table_name;</span>
+
+<span class="comment"># Reindex database</span>
+<span class="command">REINDEX DATABASE database_name;</span>
+
+<span class="comment"># Check for bloat</span>
+<span class="command">SELECT 
+    schemaname,
+    tablename,
+    pg_size_pretty(pg_total_relation_size(schemaname||'.'||tablename)) AS size,
+    n_dead_tup,
+    n_live_tup,
+    round(n_dead_tup * 100.0 / NULLIF(n_live_tup + n_dead_tup, 0), 2) AS dead_ratio
+FROM pg_stat_user_tables
+WHERE n_dead_tup > 0
+ORDER BY n_dead_tup DESC;</span>
+
+<span class="comment"># ============================================</span>
+<span class="comment"># USER & SECURITY MANAGEMENT</span>
+<span class="comment"># ============================================</span>
+
+<span class="comment"># Create user</span>
+<span class="command">CREATE USER username WITH PASSWORD 'password';</span>
+
+<span class="comment"># Grant privileges</span>
+<span class="command">GRANT ALL PRIVILEGES ON DATABASE dbname TO username;</span>
+<span class="command">GRANT SELECT, INSERT, UPDATE ON table_name TO username;</span>
+
+<span class="comment"># Create read-only user</span>
+<span class="command">CREATE USER readonly WITH PASSWORD 'pass';
+GRANT CONNECT ON DATABASE mydb TO readonly;
+GRANT USAGE ON SCHEMA public TO readonly;
+GRANT SELECT ON ALL TABLES IN SCHEMA public TO readonly;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT ON TABLES TO readonly;</span>
+
+<span class="comment"># List all users</span>
+<span class="command">\du</span>
+
+<span class="comment"># Change user password</span>
+<span class="command">ALTER USER username WITH PASSWORD 'newpassword';</span>
+            </div>
+            
+            <h3>📊 Critical Metrics to Monitor:</h3>
+            
+            <div class="best-practice">
+                <h4>Key Performance Indicators (KPIs):</h4>
+                <table style="margin-top: 15px;">
+                    <tr>
+                        <th>Metric</th>
+                        <th>Healthy Range</th>
+                        <th>Critical Threshold</th>
+                    </tr>
+                    <tr>
+                        <td>Replication Lag</td>
+                        <td>< 1 second</td>
+                        <td>> 10 seconds</td>
+                    </tr>
+                    <tr>
+                        <td>Cache Hit Ratio</td>
+                        <td>> 99%</td>
+                        <td>< 90%</td>
+                    </tr>
+                    <tr>
+                        <td>Connection Usage</td>
+                        <td>< 80% of max</td>
+                        <td>> 95% of max</td>
+                    </tr>
+                    <tr>
+                        <td>Disk Usage</td>
+                        <td>< 70%</td>
+                        <td>> 90%</td>
+                    </tr>
+                    <tr>
+                        <td>Dead Tuples Ratio</td>
+                        <td>< 10%</td>
+                        <td>> 20%</td>
+                    </tr>
+                    <tr>
+                        <td>Transaction Age</td>
+                        <td>< 1 billion</td>
+                        <td>> 2 billion (vacuum freeze)</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+        
+        <!-- Real World Tab -->
+        <div id="real-world" class="tab-content">
+            <h2>Real-World Scenarios & Best Practices</h2>
+            
+            <div class="best-practice">
+                <h3>🏆 Most Widely Used Method: Streaming Replication (Primary + Hot Standby)</h3>
+                <p><strong>Why it's popular:</strong></p>
+                <ul>
+                    <li>✅ Built into PostgreSQL (no external tools)</li>
+                    <li>✅ Easy to setup and maintain</li>
+                    <li>✅ Reliable and battle-tested</li>
+                    <li>✅ Works for 90% of use cases</li>
+                    <li>✅ Good balance of performance and data safety</li>
+                </ul>
+                
+                <p><strong>Typical Setup:</strong></p>
+                <ul>
+                    <li>1 Primary (master) for writes</li>
+                    <li>2-3 Asynchronous Hot Standby replicas for reads</li>
+                    <li>Application routes writes to primary, reads to replicas via connection pooler</li>
+                </ul>
+            </div>
+            
+            <h3>🎯 Real-World Architecture Examples:</h3>
+            
+            <div class="info-box">
+                <h4>Scenario 1: E-Commerce Platform (100K daily users)</h4>
+                <p><strong>Architecture:</strong></p>
+                <ul>
+                    <li><strong>Primary:</strong> 1x (8 vCPU, 32GB RAM) - Handles all writes</li>
+                    <li><strong>Read Replicas:</strong> 3x (4 vCPU, 16GB RAM) - Distributed across availability zones</li>
+                    <li><strong>Replication:</strong> Asynchronous streaming</li>
+                    <li><strong>Load Balancer:</strong> HAProxy routes reads to replicas round-robin</li>
+                </ul>
+                
+                <p><strong>Configuration:</strong></p>
+                <div class="code-block" style="margin-top: 10px;">
+<span class="comment"># Primary - postgresql.conf</span>
+<span class="command">max_connections</span> = <span class="string">200</span>
+<span class="command">shared_buffers</span> = <span class="string">8GB</span>
+<span class="command">effective_cache_size</span> = <span class="string">24GB</span>
+<span class="command">work_mem</span> = <span class="string">40MB</span>
+<span class="command">maintenance_work_mem</span> = <span class="string">2GB</span>
+<span class="command">wal_level</span> = <span class="string">replica</span>
+<span class="command">max_wal_senders</span> = <span class="string">5</span>
+<span class="command">synchronous_commit</span> = <span class="string">off</span>  <span class="comment"># For better write performance</span>
+                </div>
+                
+                <p><strong>Results:</strong></p>
+                <ul>
+                    <li>Write capacity: ~5,000 TPS</li>
+                    <li>Read capacity: ~15,000 TPS (distributed across replicas)</li>
+                    <li>Average replication lag: < 500ms</li>
+                </ul>
+            </div>
+            
+            <div class="info-box">
+                <h4>Scenario 2: Financial Application (Banking)</h4>
+                <p><strong>Architecture:</strong></p>
+                <ul>
+                    <li><strong>Primary:</strong> 1x (16 vCPU, 64GB RAM)</li>
+                    <li><strong>Synchronous Replica:</strong> 1x (same specs) - Zero data loss</li>
+                    <li><strong>Asynchronous Replicas:</strong> 2x for reporting/analytics</li>
+                    <li><strong>Replication:</strong> Synchronous to 1 replica, async to others</li>
+                </ul>
+                
+                <p><strong>Configuration:</strong></p>
+                <div class="code-block" style="margin-top: 10px;">
+<span class="comment"># Primary - postgresql.conf</span>
+<span class="command">synchronous_commit</span> = <span class="string">on</span>
+<span class="command">synchronous_standby_names</span> = <span class="string">'FIRST 1 (replica_sync)'</span>
+<span class="command">fsync</span> = <span class="string">on</span>
+<span class="command">full_page_writes</span> = <span class="string">on</span>
+<span class="command">wal_log_hints</span> = <span class="string">on</span>
+                </div>
+                
+                <p><strong>Trade-offs:</strong></p>
+                <ul>
+                    <li>✅ Zero data loss guarantee</li>
+                    <li>✅ Immediate failover capability</li>
+                    <li>⚠️ ~20% slower writes due to sync wait</li>
+                    <li>⚠️ Network latency directly impacts write performance</li>
+                </ul>
+            </div>
+            
+            <div class="info-box">
+                <h4>Scenario 3: Global SaaS Application</h4>
+                <p><strong>Architecture:</strong></p>
+                <ul>
+                    <li><strong>Multi-Region:</strong> 3 regions (US, EU, APAC)</li>
+                    <li><strong>Each Region:</strong> 1 Primary + 2 Read Replicas</li>
+                    <li><strong>Cross-Region:</strong> Logical replication between primaries</li>
+                    <li><strong>Data Partitioning:</strong> By customer/tenant region</li>
+                </ul>
+                
+                <p><strong>Setup:</strong></p>
+                <div class="code-block" style="margin-top: 10px;">
+<span class="comment"># US Primary publishes to EU & APAC</span>
+<span class="command">CREATE PUBLICATION us_pub FOR TABLE users WHERE (region = 'US');</span>
+
+<span class="comment"># EU Primary subscribes to US data and publishes own</span>
+<span class="command">CREATE SUBSCRIPTION from_us 
+CONNECTION 'host=us-primary...' 
+PUBLICATION us_pub;</span>
+
+<span class="command">CREATE PUBLICATION eu_pub FOR TABLE users WHERE (region = 'EU');</span>
+                </div>
+                
+                <p><strong>Benefits:</strong></p>
+                <ul>
+                    <li>✅ Low latency for users in each region</li>
+                    <li>✅ Disaster recovery across regions</li>
+                    <li>✅ Compliance with data residency requirements</li>
+                    <li>⚠️ Eventual consistency across regions</li>
+                </ul>
+            </div>
+            
+            <h3>📋 Step-by-Step Production Setup Checklist:</h3>
+            
+            <div class="warning-box">
+                <h4>Pre-Deployment Checklist:</h4>
+                <ol style="margin-left: 20px;">
+                    <li>✅ <strong>Hardware/Cloud Resources:</strong> Provision servers with SSD storage</li>
+                    <li>✅ <strong>Network:</strong> Ensure low-latency connection between primary and replicas (< 5ms ping)</li>
+                    <li>✅ <strong>Security:</strong> Configure firewall rules, SSL/TLS for replication connections</li>
+                    <li>✅ <strong>Monitoring:</strong> Set up Prometheus, Grafana, or CloudWatch</li>
+                    <li>✅ <strong>Backup Strategy:</strong> Configure pg_basebackup, WAL archiving to S3/Azure/GCS</li>
+                    <li>✅ <strong>Alerting:</strong> Configure alerts for lag > 10s, disk > 80%, connections > 80%</li>
+                    <li>✅ <strong>Documentation:</strong> Document failover procedures</li>
+                    <li>✅ <strong>Testing:</strong> Test failover process in staging</li>
+                </ol>
+            </div>
+            
+            <h3>🚀 Performance Optimization Tips:</h3>
+            
+            <div class="best-practice">
+                <h4>1. Connection Pooling (PgBouncer Setup):</h4>
+                <div class="code-block">
+<span class="comment"># Install PgBouncer</span>
+<span class="command">sudo apt install pgbouncer</span>
+<span class="comment"># /etc/pgbouncer/pgbouncer.ini</span>
+<span class="command">[databases]
+mydb = host=127.0.0.1 port=5432 dbname=mydb
+
+[pgbouncer]
+listen_addr = *
+listen_port = 6432
+auth_type = md5
+auth_file = /etc/pgbouncer/userlist.txt
+pool_mode = transaction
+max_client_conn = 1000
+default_pool_size = 20
+reserve_pool_size = 5</span>
+
+<span class="comment"># Application connects to PgBouncer instead of PostgreSQL</span>
+<span class="command">psql -h localhost -p 6432 -U myuser mydb</span>
+                </div>
+                
+                <h4>2. Index Optimization:</h4>
+                <div class="code-block">
+<span class="comment"># Find missing indexes</span>
+<span class="command">SELECT 
+    schemaname,
+    tablename,
+    seq_scan,
+    seq_tup_read,
+    idx_scan,
+    seq_tup_read / seq_scan AS avg_seq_tup
+FROM pg_stat_user_tables
+WHERE seq_scan > 0
+ORDER BY seq_tup_read DESC
+LIMIT 20;</span>
+
+<span class="comment"># Find unused indexes</span>
+<span class="command">SELECT 
+    schemaname,
+    tablename,
+    indexname,
+    idx_scan,
+    pg_size_pretty(pg_relation_size(indexrelid)) AS size
+FROM pg_stat_user_indexes
+WHERE idx_scan = 0
+  AND indexrelname NOT LIKE '%_pkey'
+ORDER BY pg_relation_size(indexrelid) DESC;</span>
+                </div>
+                
+                <h4>3. Query Optimization:</h4>
+                <div class="code-block">
+<span class="comment"># Enable query planning analysis</span>
+<span class="command">EXPLAIN ANALYZE SELECT * FROM large_table WHERE column = 'value';</span>
+
+<span class="comment"># Find slow queries (requires pg_stat_statements extension)</span>
+<span class="command">CREATE EXTENSION pg_stat_statements;</span>
+
+<span class="command">SELECT 
+    query,
+    calls,
+    total_exec_time,
+    mean_exec_time,
+    max_exec_time
+FROM pg_stat_statements
+ORDER BY mean_exec_time DESC
+LIMIT 20;</span>
+                </div>
+            </div>
+            
+            <h3>🔄 Failover Procedures:</h3>
+            
+            <div class="code-block">
+<span class="comment"># ============================================</span>
+<span class="comment"># MANUAL FAILOVER: Promote Standby to Primary</span>
+<span class="comment"># ============================================</span>
+
+<span class="comment"># On the STANDBY server you want to promote:</span>
+
+<span class="comment"># 1. Stop accepting connections (optional)</span>
+<span class="command">sudo systemctl stop postgresql</span>
+
+<span class="comment"># 2. Promote standby to primary</span>
+<span class="command">pg_ctl promote -D /var/lib/postgresql/14/main</span>
+<span class="comment"># OR use SQL command:</span>
+<span class="command">SELECT pg_promote();</span>
+
+<span class="comment"># 3. Verify promotion</span>
+<span class="command">SELECT pg_is_in_recovery();  </span><span class="comment">-- Should return 'f' (false)</span>
+
+<span class="comment"># 4. Start accepting connections</span>
+<span class="command">sudo systemctl start postgresql</span>
+
+<span class="comment"># 5. Update application to point to new primary</span>
+<span class="comment"># Update DNS, load balancer, or connection strings</span>
+
+<span class="comment"># ============================================</span>
+<span class="comment"># REPOINT OLD PRIMARY AS NEW STANDBY</span>
+<span class="comment"># ============================================</span>
+
+<span class="comment"># On the OLD primary (now should become standby):</span>
+
+<span class="comment"># 1. Stop PostgreSQL</span>
+<span class="command">sudo systemctl stop postgresql</span>
+
+<span class="comment"># 2. Use pg_rewind to sync with new primary</span>
+<span class="command">pg_rewind --target-pgdata=/var/lib/postgresql/14/main \
+  --source-server='host=new_primary_ip port=5432 user=postgres' \
+  -P</span>
+
+<span class="comment"># 3. Create standby.signal file</span>
+<span class="command">touch /var/lib/postgresql/14/main/standby.signal</span>
+
+<span class="comment"># 4. Update postgresql.auto.conf with new primary info</span>
+<span class="command">echo "primary_conninfo = 'host=new_primary_ip port=5432 user=replicator password=pass'" \
+  >> /var/lib/postgresql/14/main/postgresql.auto.conf</span>
+
+<span class="comment"># 5. Start as standby</span>
+<span class="command">sudo systemctl start postgresql</span>
+            </div>
+        </div>
+        
+        <!-- Sharding & Partitioning Tab -->
+        <div id="sharding" class="tab-content">
+            <h2>Sharding & Partitioning</h2>
+            
+            <div class="control-panel">
+                <button class="control-btn" onclick="animateSharding()">▶️ Visualize Sharding</button>
+                <button class="control-btn" onclick="animatePartitioning()">▶️ Visualize Partitioning</button>
+                <button class="control-btn" onclick="resetShardingAnimation()">🔄 Reset</button>
+            </div>
+            
+            <div class="animation-container" id="shardingAnimation" style="min-height: 600px;">
+                <!-- Will be populated by JavaScript -->
+            </div>
+            
+            <div class="info-box">
+                <h4>🔪 What is Sharding vs Partitioning?</h4>
+                
+                <h5>Partitioning (Single Database):</h5>
+                <p><strong>Definition:</strong> Splitting a large table into smaller pieces (partitions) within the SAME database server.</p>
+                <ul>
+                    <li>✅ Built into PostgreSQL 10+</li>
+                    <li>✅ Transparent to applications</li>
+                    <li>✅ Improves query performance for large tables</li>
+                    <li>✅ Easier maintenance (drop old partitions)</li>
+                    <li>⚠️ Still limited by single server resources</li>
+                </ul>
+                
+                <h5>Sharding (Multiple Databases):</h5>
+                <p><strong>Definition:</strong> Distributing data across MULTIPLE database servers, each holding a subset of data.</p>
+                <ul>
+                    <li>✅ True horizontal scaling - unlimited capacity</li>
+                    <li>✅ Each shard operates independently</li>
+                    <li>⚠️ Complex application logic required</li>
+                    <li>⚠️ Difficult to maintain data integrity across shards</li>
+                    <li>⚠️ No built-in solution in PostgreSQL (requires Citus extension or app-level)</li>
+                </ul>
+            </div>
+            
+            <h3>Partitioning Types in PostgreSQL:</h3>
+            
+            <table>
+                <tr>
+                    <th>Type</th>
+                    <th>Description</th>
+                    <th>Use Case</th>
+                    <th>Example</th>
+                </tr>
+                <tr>
+                    <td><strong>Range Partitioning</strong></td>
+                    <td>Partition by value ranges</td>
+                    <td>Time-series data, dates</td>
+                    <td>Sales by year, logs by month</td>
+                </tr>
+                <tr>
+                    <td><strong>List Partitioning</strong></td>
+                    <td>Partition by specific values</td>
+                    <td>Categorical data</td>
+                    <td>Users by country, orders by status</td>
+                </tr>
+                <tr>
+                    <td><strong>Hash Partitioning</strong></td>
+                    <td>Partition by hash of column</td>
+                    <td>Even distribution</td>
+                    <td>Users by ID hash, random distribution</td>
+                </tr>
+            </table>
+            
+            <h3>1. Range Partitioning Example:</h3>
+            
+            <div class="code-block">
+<span class="comment">-- Create parent table</span>
+<span class="command">CREATE TABLE sales (
+    id SERIAL,
+    sale_date DATE NOT NULL,
+    amount NUMERIC(10,2),
+    product_id INT
+) PARTITION BY RANGE (sale_date);</span>
+
+<span class="comment">-- Create partitions for each year</span>
+<span class="command">CREATE TABLE sales_2022 PARTITION OF sales
+    FOR VALUES FROM ('2022-01-01') TO ('2023-01-01');
+
+CREATE TABLE sales_2023 PARTITION OF sales
+    FOR VALUES FROM ('2023-01-01') TO ('2024-01-01');
+
+CREATE TABLE sales_2024 PARTITION OF sales
+    FOR VALUES FROM ('2024-01-01') TO ('2025-01-01');</span>
+
+<span class="comment">-- Create indexes on partitions</span>
+<span class="command">CREATE INDEX idx_sales_2024_date ON sales_2024(sale_date);
+CREATE INDEX idx_sales_2024_product ON sales_2024(product_id);</span>
+
+<span class="comment">-- Queries automatically use correct partition</span>
+<span class="command">SELECT * FROM sales WHERE sale_date = '2024-06-15';
+</span><span class="comment">-- PostgreSQL automatically queries only sales_2024 partition</span>
+
+<span class="comment">-- Drop old partitions easily (for data retention)</span>
+<span class="command">DROP TABLE sales_2022;</span>
+            </div>
+            
+            <h3>2. List Partitioning Example:</h3>
+            
+            <div class="code-block">
+<span class="comment">-- Create parent table</span>
+<span class="command">CREATE TABLE users (
+    id SERIAL,
+    username VARCHAR(50),
+    email VARCHAR(100),
+    country VARCHAR(2) NOT NULL
+) PARTITION BY LIST (country);</span>
+
+<span class="comment">-- Create partitions by country</span>
+<span class="command">CREATE TABLE users_us PARTITION OF users
+    FOR VALUES IN ('US');
+
+CREATE TABLE users_eu PARTITION OF users
+    FOR VALUES IN ('GB', 'DE', 'FR', 'ES', 'IT');
+
+CREATE TABLE users_asia PARTITION OF users
+    FOR VALUES IN ('JP', 'CN', 'IN', 'KR');
+
+CREATE TABLE users_other PARTITION OF users
+    DEFAULT;</span>
+
+<span class="comment">-- Insert automatically goes to correct partition</span>
+<span class="command">INSERT INTO users (username, email, country) 
+VALUES ('john', 'john@example.com', 'US');
+</span><span class="comment">-- Goes to users_us partition</span>
+            </div>
+            
+            <h3>3. Hash Partitioning Example:</h3>
+            
+            <div class="code-block">
+<span class="comment">-- Create parent table</span>
+<span class="command">CREATE TABLE orders (
+    id SERIAL,
+    user_id INT NOT NULL,
+    order_date DATE,
+    total NUMERIC(10,2)
+) PARTITION BY HASH (user_id);</span>
+
+<span class="comment">-- Create 4 hash partitions</span>
+<span class="command">CREATE TABLE orders_p0 PARTITION OF orders
+    FOR VALUES WITH (MODULUS 4, REMAINDER 0);
+
+CREATE TABLE orders_p1 PARTITION OF orders
+    FOR VALUES WITH (MODULUS 4, REMAINDER 1);
+
+CREATE TABLE orders_p2 PARTITION OF orders
+    FOR VALUES WITH (MODULUS 4, REMAINDER 2);
+
+CREATE TABLE orders_p3 PARTITION OF orders
+    FOR VALUES WITH (MODULUS 4, REMAINDER 3);</span>
+
+<span class="comment">-- Data is automatically distributed evenly</span>
+<span class="command">INSERT INTO orders (user_id, order_date, total)
+VALUES (12345, '2024-01-01', 99.99);
+</span><span class="comment">-- PostgreSQL calculates hash(12345) % 4 to determine partition</span>
+            </div>
+            
+            <h3>Sharding with Citus (PostgreSQL Extension):</h3>
+            
+            <div class="code-block">
+<span class="comment">-- Install Citus extension</span>
+<span class="command">CREATE EXTENSION citus;</span>
+
+<span class="comment">-- Add worker nodes (shards)</span>
+<span class="command">SELECT citus_add_node('worker1.example.com', 5432);
+SELECT citus_add_node('worker2.example.com', 5432);
+SELECT citus_add_node('worker3.example.com', 5432);</span>
+
+<span class="comment">-- Create distributed table (sharded across workers)</span>
+<span class="command">CREATE TABLE events (
+    user_id BIGINT,
+    event_type TEXT,
+    event_time TIMESTAMP,
+    properties JSONB
+);
+
+SELECT create_distributed_table('events', 'user_id');</span>
+
+<span class="comment">-- Queries are automatically distributed to shards</span>
+<span class="command">SELECT user_id, COUNT(*) 
+FROM events 
+WHERE event_time > '2024-01-01'
+GROUP BY user_id;</span>
+<span class="comment">-- Citus pushes query to all worker nodes and aggregates results</span>
+
+<span class="comment">-- Check shard distribution</span>
+<span class="command">SELECT * FROM citus_shards;</span>
+            </div>
+            
+            <h3>Application-Level Sharding Pattern:</h3>
+            
+            <div class="code-block">
+<span class="comment"># Python example: Routing to correct shard</span>
+<span class="command">import hashlib
+import psycopg2
+
+class ShardManager:
+    def __init__(self):
+        self.shards = [
+            {'host': 'shard1.db.com', 'db': 'shard1'},
+            {'host': 'shard2.db.com', 'db': 'shard2'},
+            {'host': 'shard3.db.com', 'db': 'shard3'},
+            {'host': 'shard4.db.com', 'db': 'shard4'}
+        ]
+    
+    def get_shard(self, user_id):
+        # Hash user_id and determine shard
+        hash_val = int(hashlib.md5(str(user_id).encode()).hexdigest(), 16)
+        shard_num = hash_val % len(self.shards)
+        return self.shards[shard_num]
+    
+    def execute_query(self, user_id, query):
+        shard = self.get_shard(user_id)
+        conn = psycopg2.connect(
+            host=shard['host'],
+            database=shard['db'],
+            user='app_user',
+            password='password'
+        )
+        cur = conn.cursor()
+        cur.execute(query)
+        result = cur.fetchall()
+        conn.close()
+        return result
+
+# Usage
+manager = ShardManager()
+results = manager.execute_query(
+    user_id=12345,
+    query="SELECT * FROM orders WHERE user_id = 12345"
+)</span>
+            </div>
+            
+            <div class="warning-box">
+                <h4>⚠️ Sharding Challenges:</h4>
+                <ul>
+                    <li><strong>Cross-Shard Queries:</strong> JOINs across shards are slow/impossible</li>
+                    <li><strong>Rebalancing:</strong> Adding/removing shards requires data migration</li>
+                    <li><strong>Transactions:</strong> Distributed transactions are complex (2PC)</li>
+                    <li><strong>Backup/Restore:</strong> Must coordinate across all shards</li>
+                    <li><strong>Hot Shards:</strong> Uneven data distribution can cause bottlenecks</li>
+                </ul>
+                
+                <h5>Solutions:</h5>
+                <ul>
+                    <li>Use consistent hashing for easier rebalancing</li>
+                    <li>Denormalize data to avoid cross-shard queries</li>
+                    <li>Use shard-local transactions when possible</li>
+                    <li>Monitor shard sizes and rebalance proactively</li>
+                </ul>
+            </div>
+        </div>
+        
+        <!-- Foreign Data Wrappers Tab -->
+        <div id="fdw" class="tab-content">
+            <h2>Foreign Data Wrappers (FDW)</h2>
+            
+            <div class="control-panel">
+                <button class="control-btn" onclick="animateFDW()">▶️ Visualize FDW</button>
+                <button class="control-btn" onclick="resetFDWAnimation()">🔄 Reset</button>
+            </div>
+            
+            <div class="animation-container" id="fdwAnimation" style="min-height: 500px;">
+                <!-- Will be populated by JavaScript -->
+            </div>
+            
+            <div class="info-box">
+                <h4>🌉 What are Foreign Data Wrappers?</h4>
+                <p><strong>Definition:</strong> FDW allows PostgreSQL to query external data sources (other PostgreSQL servers, MySQL, Oracle, MongoDB, CSV files, APIs) as if they were local tables.</p>
+                
+                <h5>Key Benefits:</h5>
+                <ul>
+                    <li>✅ Query data from multiple databases in a single SQL query</li>
+                    <li>✅ No ETL needed - query data in real-time</li>
+                    <li>✅ Migrate data gradually from legacy systems</li>
+                    <li>✅ Build federated database systems</li>
+                    <li>✅ Access non-PostgreSQL data sources</li>
+                </ul>
+                
+                <h5>Common FDW Extensions:</h5>
+                <ul>
+                    <li><strong>postgres_fdw:</strong> Connect to other PostgreSQL servers</li>
+                    <li><strong>mysql_fdw:</strong> Connect to MySQL/MariaDB</li>
+                    <li><strong>oracle_fdw:</strong> Connect to Oracle databases</li>
+                    <li><strong>mongo_fdw:</strong> Connect to MongoDB</li>
+                    <li><strong>file_fdw:</strong> Read CSV/text files</li>
+                    <li><strong>multicorn:</strong> Write custom FDW in Python</li>
+                </ul>
+            </div>
+            
+            <h3>1. postgres_fdw - Connect to Remote PostgreSQL:</h3>
+            
+            <div class="code-block">
+<span class="comment">-- Step 1: Install extension on local database</span>
+<span class="command">CREATE EXTENSION postgres_fdw;</span>
+
+<span class="comment">-- Step 2: Create server connection</span>
+<span class="command">CREATE SERVER remote_db
+    FOREIGN DATA WRAPPER postgres_fdw
+    OPTIONS (host 'remote-server.com', port '5432', dbname 'remote_database');</span>
+
+<span class="comment">-- Step 3: Create user mapping</span>
+<span class="command">CREATE USER MAPPING FOR local_user
+    SERVER remote_db
+    OPTIONS (user 'remote_user', password 'remote_password');</span>
+
+<span class="comment">-- Step 4: Import foreign schema (all tables)</span>
+<span class="command">IMPORT FOREIGN SCHEMA public
+    FROM SERVER remote_db
+    INTO public;</span>
+
+<span class="comment">-- OR create specific foreign tables manually</span>
+<span class="command">CREATE FOREIGN TABLE remote_orders (
+    order_id INT,
+    user_id INT,
+    amount NUMERIC,
+    order_date DATE
+)
+SERVER remote_db
+OPTIONS (schema_name 'public', table_name 'orders');</span>
+
+<span class="comment">-- Step 5: Query remote data like local tables</span>
+<span class="command">SELECT * FROM remote_orders WHERE order_date > '2024-01-01';</span>
+
+<span class="comment">-- Join local and remote tables</span>
+<span class="command">SELECT 
+    local_users.name,
+    remote_orders.amount
+FROM local_users
+JOIN remote_orders ON local_users.id = remote_orders.user_id;</span>
+
+<span class="comment">-- Check FDW performance</span>
+<span class="command">EXPLAIN ANALYZE 
+SELECT * FROM remote_orders WHERE user_id = 123;</span>
+            </div>
+            
+            <h3>2. file_fdw - Query CSV Files:</h3>
+            
+            <div class="code-block">
+<span class="comment">-- Install extension</span>
+<span class="command">CREATE EXTENSION file_fdw;</span>
+
+<span class="comment">-- Create server</span>
+<span class="command">CREATE SERVER file_server FOREIGN DATA WRAPPER file_fdw;</span>
+
+<span class="comment">-- Create foreign table pointing to CSV</span>
+<span class="command">CREATE FOREIGN TABLE sales_csv (
+    sale_date DATE,
+    product TEXT,
+    amount NUMERIC
+)
+SERVER file_server
+OPTIONS (filename '/var/data/sales.csv', format 'csv', header 'true');</span>
+
+<span class="comment">-- Query CSV as a table</span>
+<span class="command">SELECT product, SUM(amount) 
+FROM sales_csv 
+GROUP BY product;</span>
+
+<span class="comment">-- Join CSV with database table</span>
+<span class="command">SELECT 
+    p.product_name,
+    s.amount
+FROM products p
+JOIN sales_csv s ON p.product_name = s.product;</span>
+            </div>
+            
+            <h3>3. mysql_fdw - Connect to MySQL:</h3>
+            
+            <div class="code-block">
+<span class="comment">-- Install extension (requires mysql_fdw package)</span>
+<span class="command">CREATE EXTENSION mysql_fdw;</span>
+
+<span class="comment">-- Create server</span>
+<span class="command">CREATE SERVER mysql_server
+    FOREIGN DATA WRAPPER mysql_fdw
+    OPTIONS (host 'mysql-host.com', port '3306');</span>
+
+<span class="comment">-- User mapping</span>
+<span class="command">CREATE USER MAPPING FOR postgres
+    SERVER mysql_server
+    OPTIONS (username 'mysql_user', password 'mysql_pass');</span>
+
+<span class="comment">-- Create foreign table</span>
+<span class="command">CREATE FOREIGN TABLE mysql_customers (
+    id INT,
+    name VARCHAR(100),
+    email VARCHAR(100)
+)
+SERVER mysql_server
+OPTIONS (dbname 'crm', table_name 'customers');</span>
+
+<span class="comment">-- Query MySQL from PostgreSQL</span>
+<span class="command">SELECT * FROM mysql_customers WHERE id > 1000;</span>
+            </div>
+            
+            <h3>Real-World Use Case: Data Federation</h3>
+            
+            <div class="code-block">
+<span class="comment">/*
+Scenario: E-commerce company with:
+- Orders DB (PostgreSQL)
+- Customers DB (MySQL legacy system)
+- Product Analytics (CSV exports)
+- Want to create unified reports without ETL
+*/</span>
+
+<span class="comment">-- Setup FDWs for all sources</span>
+<span class="command">CREATE EXTENSION postgres_fdw;
+CREATE EXTENSION mysql_fdw;
+CREATE EXTENSION file_fdw;</span>
+
+<span class="comment">-- Connect to remote PostgreSQL orders DB</span>
+<span class="command">CREATE SERVER orders_db FOREIGN DATA WRAPPER postgres_fdw
+    OPTIONS (host 'orders.db.internal', dbname 'orders');
+    
+CREATE USER MAPPING FOR current_user SERVER orders_db
+    OPTIONS (user 'reporter', password 'pass');
+
+CREATE FOREIGN TABLE remote_orders (
+    order_id INT,
+    customer_id INT,
+    total NUMERIC,
+    order_date DATE
+) SERVER orders_db OPTIONS (table_name 'orders');</span>
+
+<span class="comment">-- Connect to MySQL customers DB</span>
+<span class="command">CREATE SERVER mysql_crm FOREIGN DATA WRAPPER mysql_fdw
+    OPTIONS (host 'mysql.legacy.internal', port '3306');
+
+CREATE USER MAPPING FOR current_user SERVER mysql_crm
+    OPTIONS (username 'analyst', password 'pass');
+
+CREATE FOREIGN TABLE mysql_customers (
+    customer_id INT,
+    customer_name VARCHAR,
+    country VARCHAR
+) SERVER mysql_crm OPTIONS (dbname 'crm', table_name 'customers');</span>
+
+<span class="comment">-- Access CSV analytics</span>
+<span class="command">CREATE SERVER csv_server FOREIGN DATA WRAPPER file_fdw;
+
+CREATE FOREIGN TABLE product_views (
+    product_id INT,
+    views INT,
+    date DATE
+) SERVER csv_server 
+OPTIONS (filename '/data/product_analytics.csv', format 'csv', header 'true');</span>
+
+<span class="comment">-- Now create unified report with data from 3 sources!</span>
+<span class="command">SELECT 
+    c.customer_name,
+    c.country,
+    COUNT(o.order_id) as total_orders,
+    SUM(o.total) as revenue,
+    AVG(pv.views) as avg_product_views
+FROM mysql_customers c
+LEFT JOIN remote_orders o ON c.customer_id = o.customer_id
+LEFT JOIN product_views pv ON pv.date = o.order_date
+WHERE o.order_date >= '2024-01-01'
+GROUP BY c.customer_name, c.country
+ORDER BY revenue DESC;</span>
+            </div>
+            
+            <div class="warning-box">
+                <h4>⚠️ FDW Performance Considerations:</h4>
+                <ul>
+                    <li><strong>Network Latency:</strong> Each query crosses the network - can be slow</li>
+                    <li><strong>Limited Push-Down:</strong> Not all WHERE clauses are pushed to remote server</li>
+                    <li><strong>No Transactions:</strong> Foreign tables don't support full ACID across servers</li>
+                    <li><strong>Authentication:</strong> Passwords stored in plain text (use connection service files)</li>
+                </ul>
+                
+                <h5>Optimization Tips:</h5>
+                <ul>
+                    <li>Use <code>use_remote_estimate = true</code> for better query planning</li>
+                    <li>Create indexes on foreign servers</li>
+                    <li>Use materialized views to cache foreign data locally</li>
+                    <li>Limit JOIN complexity with foreign tables</li>
+                </ul>
+            </div>
+            
+            <h3>Materialized Views with FDW (Caching):</h3>
+            
+            <div class="code-block">
+<span class="comment">-- Create materialized view from foreign table</span>
+<span class="command">CREATE MATERIALIZED VIEW cached_remote_orders AS
+SELECT * FROM remote_orders
+WHERE order_date >= CURRENT_DATE - INTERVAL '30 days';</span>
+
+<span class="comment">-- Create index on materialized view</span>
+<span class="command">CREATE INDEX idx_cached_orders_date ON cached_remote_orders(order_date);</span>
+
+<span class="comment">-- Refresh cache daily (schedule with cron or pg_cron)</span>
+<span class="command">REFRESH MATERIALIZED VIEW CONCURRENTLY cached_remote_orders;</span>
+
+<span class="comment">-- Query fast local cache instead of slow remote</span>
+<span class="command">SELECT * FROM cached_remote_orders WHERE order_date = '2024-10-15';</span>
+            </div>
+        </div>
+        
+        <!-- Distributed vs Non-Distributed Tab -->
+        <div id="distributed" class="tab-content">
+            <h2>PostgreSQL: Distributed vs Non-Distributed</h2>
+            
+            <div class="control-panel">
+                <button class="control-btn" onclick="animateDistributed()">▶️ Show Distributed</button>
+                <button class="control-btn" onclick="animateNonDistributed()">▶️ Show Non-Distributed</button>
+                <button class="control-btn" onclick="resetDistributedAnimation()">🔄 Reset</button>
+            </div>
+            
+            <div class="animation-container" id="distributedAnimation" style="min-height: 600px;">
+                <!-- Will be populated by JavaScript -->
+            </div>
+            
+            <div class="info-box">
+                <h4>📊 PostgreSQL is NOT a Distributed Database by Default</h4>
+                <p><strong>What this means:</strong></p>
+                <ul>
+                    <li>🔹 PostgreSQL is designed as a <strong>single-node</strong> RDBMS</li>
+                    <li>🔹 Each PostgreSQL instance operates independently</li>
+                    <li>🔹 There is NO automatic data distribution across nodes</li>
+                    <li>🔹 Replication is achieved through streaming (not native distribution)</li>
+                </ul>
+                
+                <p><strong>Contrast with True Distributed Databases:</strong></p>
+                <ul>
+                    <li>✅ <strong>Cassandra, CockroachDB, MongoDB:</strong> Data automatically sharded and replicated across cluster</li>
+                    <li>✅ <strong>Coordination:</strong> Built-in consensus protocols (Raft, Paxos)</li>
+                    <li>✅ <strong>Fault Tolerance:</strong> Automatic failover without manual intervention</li>
+                    <li>⚠️ <strong>Trade-offs:</strong> Often sacrifice strong consistency for availability (CAP theorem)</li>
+                </ul>
+            </div>
+            
+            <h3>Comparison Table: PostgreSQL vs Distributed Databases</h3>
+            
+            <table>
+                <tr>
+                    <th>Feature</th>
+                    <th>PostgreSQL (Non-Distributed)</th>
+                    <th>Distributed DB (e.g., CockroachDB, Cassandra)</th>
+                </tr>
+                <tr>
+                    <td><strong>Data Distribution</strong></td>
+                    <td>❌ Manual (replication, FDW, Citus)</td>
+                    <td>✅ Automatic sharding across nodes</td>
+                </tr>
+                <tr>
+                    <td><strong>Consistency</strong></td>
+                    <td>✅ Strong ACID guarantees (single node)</td>
+                    <td>⚠️ Often eventual consistency (tunable)</td>
+                </tr>
+                <tr>
+                    <td><strong>Failover</strong></td>
+                    <td>⚠️ Manual or with tools (Patroni, repmgr)</td>
+                    <td>✅ Automatic (built-in consensus)</td>
+                </tr>
+                <tr>
+                    <td><strong>Scaling Writes</strong></td>
+                    <td>⚠️ Limited to single primary (unless multi-master)</td>
+                    <td>✅ Writes distributed across nodes</td>
+                </tr>
+                <tr>
+                    <td><strong>Transactions</strong></td>
+                    <td>✅ Full ACID on single node</td>
+                    <td>⚠️ Limited cross-shard transactions</td>
+                </tr>
+                <tr>
+                    <td><strong>SQL Support</strong></td>
+                    <td>✅ Full SQL standard</td>
+                    <td>⚠️ Often limited SQL or NoSQL</td>
+                </tr>
+                <tr>
+                    <td><strong>Operational Complexity</strong></td>
+                    <td>⚠️ Medium (DBA needed for scaling)</td>
+                    <td>✅ Low (auto-scaling, auto-rebalancing)</td>
+                </tr>
+                <tr>
+                    <td><strong>Best For</strong></td>
+                    <td>Transactional apps, strong consistency, complex queries</td>
+                    <td>Massive scale, high availability, geo-distribution</td>
+                </tr>
+            </table>
+            
+            <h3>Making PostgreSQL "Distributed" with Extensions:</h3>
+            
+            <div class="best-practice">
+                <h4>Option 1: Citus Extension (By Microsoft)</h4>
+                <p><strong>What it does:</strong> Turns PostgreSQL into a distributed database</p>
+                
+                <div class="code-block">
+<span class="comment">-- Install Citus</span>
+<span class="command">CREATE EXTENSION citus;</span>
+
+<span class="comment">-- Add worker nodes</span>
+<span class="command">SELECT citus_add_node('worker1', 5432);
+SELECT citus_add_node('worker2', 5432);</span>
+
+<span class="comment">-- Create distributed table</span>
+<span class="command">CREATE TABLE events (
+    user_id BIGINT,
+    event_type TEXT,
+    created_at TIMESTAMP
+);
+
+SELECT create_distributed_table('events', 'user_id');</span>
+
+<span class="comment">-- Now data is automatically sharded across workers!</span>
+<span class="command">INSERT INTO events VALUES (123, 'click', NOW());
+</span><span class="comment">-- Citus routes to correct worker based on hash(user_id)</span>
+
+<span class="comment">-- Queries run in parallel across workers</span>
+<span class="command">SELECT user_id, COUNT(*) 
+FROM events 
+GROUP BY user_id;</span>
+                </div>
+                
+                <p><strong>Pros:</strong></p>
+                <ul>
+                    <li>✅ Automatic data sharding</li>
+                    <li>✅ Parallel query execution</li>
+                    <li>✅ Still PostgreSQL - full SQL support</li>
+                </ul>
+                
+                <p><strong>Cons:</strong></p>
+                <ul>
+                    <li>⚠️ Requires Citus coordinator node</li>
+                    <li>⚠️ Limited cross-shard JOINs</li>
+                    <li>⚠️ Not true auto-failover (needs Patroni)</li>
+                </ul>
+            </div>
+            
+            <div class="best-practice">
+                <h4>Option 2: Patroni + etcd (High Availability Cluster)</h4>
+                <p><strong>What it does:</strong> Automatic failover and cluster management</p>
+                
+                <div class="code-block">
+<span class="comment"># Patroni configuration (patroni.yml)</span>
+<span class="command">scope: postgres-cluster
+name: postgres-node1
+
+restapi:
+  listen: 0.0.0.0:8008
+  connect_address: node1:8008
+
+etcd:
+  hosts: etcd1:2379,etcd2:2379,etcd3:2379
+
+bootstrap:
+  dcs:
+    ttl: 30
+    loop_wait: 10
+    retry_timeout: 10
+    maximum_lag_on_failover: 1048576
+    postgresql:
+      use_pg_rewind: true
+      parameters:
+        wal_level: replica
+        hot_standby: "on"
+        max_wal_senders: 5
+        max_replication_slots: 5
+
+postgresql:
+  listen: 0.0.0.0:5432
+  connect_address: node1:5432
+  data_dir: /var/lib/postgresql/14/main
+  authentication:
+    replication:
+      username: replicator
+      password: repl_password
+    superuser:
+      username: postgres
+      password: postgres_password</span>
+
+<span class="comment"># Start Patroni on each node</span>
+<span class="command">patroni /etc/patroni.yml</span>
+
+<span class="comment"># Automatic failover - if primary dies, Patroni promotes standby!</span>
+                </div>
+                
+                <p><strong>Pros:</strong></p>
+                <ul>
+                    <li>✅ Automatic failover (seconds, not minutes)</li>
+                    <li>✅ No data loss with synchronous replication</li>
+                    <li>✅ RESTful API for monitoring</li>
+                </ul>
+            </div>
+            
+            <div class="best-practice">
+                <h4>Option 3: Pgpool-II (Connection Pooling + Load Balancing)</h4>
+                <p><strong>What it does:</strong> Load balance reads, pool connections, automatic failover</p>
+                
+                <div class="code-block">
+<span class="comment"># pgpool.conf</span>
+<span class="command">backend_hostname0 = 'primary-db'
+backend_port0 = 5432
+backend_weight0 = 1
+backend_flag0 = 'ALLOW_TO_FAILOVER'
+
+backend_hostname1 = 'standby1-db'
+backend_port1 = 5432
+backend_weight1 = 1
+backend_flag1 = 'ALLOW_TO_FAILOVER'
+
+backend_hostname2 = 'standby2-db'
+backend_port2 = 5432
+backend_weight2 = 1
+backend_flag2 = 'ALLOW_TO_FAILOVER'
+
+load_balance_mode = on
+master_slave_mode = on
+master_slave_sub_mode = 'stream'</span>
+
+<span class="comment"># Applications connect to Pgpool, which routes queries</span>
+<span class="command">psql -h pgpool-host -p 9999 -U myuser mydb</span>
+                </div>
+            </div>
+            
+            <h3>Responsibilities: DBA in Distributed vs Non-Distributed</h3>
+            
+            <table>
+                <tr>
+                    <th>Responsibility</th>
+                    <th>PostgreSQL (Non-Distributed)</th>
+                    <th>Distributed Database</th>
+                </tr>
+                <tr>
+                    <td><strong>Scaling</strong></td>
+                    <td>Manual setup of replication, sharding logic</td>
+                    <td>Auto-scaling (add nodes via UI/API)</td>
+                </tr>
+                <tr>
+                    <td><strong>Failover</strong></td>
+                    <td>Manual promotion or Patroni setup</td>
+                    <td>Automatic (built-in Raft/Paxos)</td>
+                </tr>
+                <tr>
+                    <td><strong>Backup</strong></td>
+                    <td>pg_dump, WAL archiving, custom scripts</td>
+                    <td>Often automated by platform</td>
+                </tr>
+                <tr>
+                    <td><strong>Monitoring</strong></td>
+                    <td>Custom (Prometheus, Grafana, pg_stat_*)</td>
+                    <td>Built-in dashboards</td>
+                </tr>
+                <tr>
+                    <td><strong>Data Distribution</strong></td>
+                    <td>Manual (Citus, FDW, app-level sharding)</td>
+                    <td>Automatic sharding and rebalancing</td>
+                </tr>
+                <tr>
+                    <td><strong>Consistency Tuning</strong></td>
+                    <td>Configure sync/async replication</td>
+                    <td>Tune consistency level (quorum reads/writes)</td>
+                </tr>
+                <tr>
+                    <td><strong>Schema Changes</strong></td>
+                    <td>ALTER TABLE on each node (or via FDW)</td>
+                    <td>Often limited DDL or automatic propagation</td>
+                </tr>
+            </table>
+            
+            <h3>When to Choose What?</h3>
+            
+            <div class="info-box">
+                <h4>Choose PostgreSQL (Non-Distributed) When:</h4>
+                <ul>
+                    <li>✅ Strong ACID guarantees are critical (finance, healthcare)</li>
+                    <li>✅ Complex JOINs and transactions across tables</li>
+                    <li>✅ Data size is manageable (< 1TB) or can be partitioned</li>
+                    <li>✅ You have experienced DBAs</li>
+                    <li>✅ Read replicas can handle 90% of read traffic</li>
+                    <li>✅ You need full SQL standard compliance</li>
+                </ul>
+                
+                <h4>Choose Distributed Database When:</h4>
+                <ul>
+                    <li>✅ Need to scale beyond 10TB+ data</li>
+                    <li>✅ Write traffic cannot be handled by single primary</li>
+                    <li>✅ Geo-distributed deployment (multi-region)</li>
+                    <li>✅ Auto-scaling and auto-failover are priorities</li>
+                    <li>✅ Eventual consistency is acceptable</li>
+                    <li>✅ Minimal operational overhead desired</li>
+                </ul>
+            </div>
+            
+            <div class="warning-box">
+                <h4>Hybrid Approach (Best of Both Worlds):</h4>
+                <p>Many companies use:</p>
+                <ul>
+                    <li><strong>PostgreSQL:</strong> For transactional data (orders, payments, user accounts)</li>
+                    <li><strong>Distributed DB (Cassandra/MongoDB):</strong> For logs, analytics, time-series data</li>
+                    <li><strong>Redis:</strong> For caching and session storage</li>
+                    <li><strong>Kafka:</strong> For event streaming between systems</li>
+                </ul>
+                <p><strong>Example Architecture:</strong></p>
+                <ul>
+                    <li>Write to PostgreSQL (source of truth)</li>
+                    <li>Stream changes via Debezium/Kafka to Cassandra</li>
+                    <li>Query Cassandra for analytics at scale</li>
+                    <li>Best of both: ACID + Scale</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ============================================
+        // TAB NAVIGATION
+        // ============================================
+        function showTab(tabName) {
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Remove active class from all buttons
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            // Show selected tab
+            document.getElementById(tabName).classList.add('active');
+            
+            // Activate clicked button
+            event.target.classList.add('active');
+        }
+        
+        // ============================================
+        // VERTICAL SCALING ANIMATION
+        // ============================================
+        function animateVerticalScaling() {
+            const server = document.getElementById('verticalServer');
+            const specs = document.getElementById('serverSpecs');
+            
+            let stage = 0;
+            const stages = [
+                {cpu: 4, ram: 8, size: 100},
+                {cpu: 8, ram: 16, size: 130},
+                {cpu: 16, ram: 32, size: 160},
+                {cpu: 32, ram: 64, size: 190}
+            ];
+            
+            const interval = setInterval(() => {
+                if (stage >= stages.length) {
+                    clearInterval(interval);
+                    return;
+                }
+                
+                const s = stages[stage];
+                server.style.width = s.size + 'px';
+                server.style.height = (s.size * 1.2) + 'px';
+                specs.innerHTML = `${s.cpu} CPU<br>${s.ram}GB RAM`;
+                
+                // Add pulse effect
+                server.style.transform = 'translate(-50%, -50%) scale(1.1)';
+                setTimeout(() => {
+                    server.style.transform = 'translate(-50%, -50%) scale(1)';
+                }, 200);
+                
+                stage++;
+            }, 1500);
+        }
+        
+        function resetVerticalAnimation() {
+            const server = document.getElementById('verticalServer');
+            const specs = document.getElementById('serverSpecs');
+            server.style.width = '100px';
+            server.style.height = '120px';
+            server.style.transform = 'translate(-50%, -50%)';
+            specs.innerHTML = '4 CPU<br>8GB RAM';
+        }
+        
+        // ============================================
+        // HORIZONTAL SCALING ANIMATION
+        // ============================================
+        function animateHorizontalScaling() {
+            const primary = document.getElementById('primaryDB');
+            const replicas = [
+                document.getElementById('replica1'),
+                document.getElementById('replica2'),
+                document.getElementById('replica3')
+            ];
+            
+            // Create clients
+            const container = document.getElementById('horizontalAnimation');
+            const clients = [];
+            
+            for (let i = 0; i < 8; i++) {
+                const client = document.createElement('div');
+                client.className = 'client';
+                client.textContent = i % 2 === 0 ? 'W' : 'R';
+                client.style.left = (10 + Math.random() * 80) + '%';
+                client.style.top = '20px';
+                container.appendChild(client);
+                clients.push({el: client, isWrite: i % 2 === 0});
+            }
+            
+            // Animate clients
+            clients.forEach((client, idx) => {
+                setTimeout(() => {
+                    if (client.isWrite) {
+                        // Route writes to primary
+                        animateClientToPrimary(client.el, primary);
+                    } else {
+                        // Route reads to random replica
+                        const replica = replicas[Math.floor(Math.random() * replicas.length)];
+                        animateClientToReplica(client.el, replica);
+                    }
+                }, idx * 400);
+            });
+            
+            // Clean up after animation
+            setTimeout(() => {
+                clients.forEach(c => c.el.remove());
+            }, 8000);
+        }
+        
+        function animateClientToPrimary(client, primary) {
+            const primaryRect = primary.getBoundingClientRect();
+            const containerRect = primary.parentElement.getBoundingClientRect();
+            
+            client.style.transition = 'all 1s ease';
+            client.style.left = (primaryRect.left - containerRect.left + 50) + 'px';
+            client.style.top = (primaryRect.top - containerRect.top + 50) + 'px';
+            client.style.opacity = '0';
+        }
+        
+        function animateClientToReplica(client, replica) {
+            const replicaRect = replica.getBoundingClientRect();
+            const containerRect = replica.parentElement.getBoundingClientRect();
+            
+            client.style.transition = 'all 1s ease';
+            client.style.left = (replicaRect.left - containerRect.left + 50) + 'px';
+            client.style.top = (replicaRect.top - containerRect.top + 50) + 'px';
+            client.style.opacity = '0';
+        }
+        
+        function resetHorizontalAnimation() {
+            const container = document.getElementById('horizontalAnimation');
+            container.querySelectorAll('.client').forEach(el => el.remove());
+        }
+        
+        // ============================================
+        // STREAMING REPLICATION ANIMATIONS
+        // ============================================
+        function animateSyncReplication() {
+            const client = document.getElementById('writeClient');
+            const primary = document.getElementById('streamPrimary');
+            const replica = document.getElementById('streamReplica');
+            const status = document.getElementById('statusText');
+            const container = document.getElementById('streamingAnimation');
+            
+            resetStreamingAnimation();
+            
+            // Step 1: Client sends write
+            status.textContent = '1. Client sends WRITE request';
+            createDataPacket(container, client, primary, '💾', 1000);
+            
+            setTimeout(() => {
+                status.textContent = '2. Primary receives data';
+                primary.style.transform = 'translateX(-50%) scale(1.1)';
+                setTimeout(() => primary.style.transform = 'translateX(-50%) scale(1)', 200);
+            }, 1000);
+            
+            setTimeout(() => {
+                status.textContent = '3. Primary sends to Replica (SYNC)';
+                createDataPacket(container, primary, replica, '📦', 1500);
+            }, 2000);
+            
+            setTimeout(() => {
+                status.textContent = '4. Replica confirms receipt';
+                replica.style.transform = 'scale(1.1)';
+                setTimeout(() => replica.style.transform = 'scale(1)', 200);
+            }, 3500);
+            
+            setTimeout(() => {
+                status.textContent = '5. Primary commits & ACK to client ✅';
+                status.style.color = '#4caf50';
+                createDataPacket(container, primary, client, '✅', 1000);
+            }, 4500);
+            
+            setTimeout(() => {
+                status.textContent = 'Synchronous Replication Complete! (Zero data loss)';
+                status.style.color = '#667eea';
+            }, 6000);
+        }
+        
+        function animateAsyncReplication() {
+            const client = document.getElementById('writeClient');
+            const primary = document.getElementById('streamPrimary');
+            const replica = document.getElementById('streamReplica');
+            const status = document.getElementById('statusText');
+            const container = document.getElementById('streamingAnimation');
+            
+            resetStreamingAnimation();
+            
+            // Step 1: Client sends write
+            status.textContent = '1. Client sends WRITE request';
+            createDataPacket(container, client, primary, '💾', 1000);
+            
+            setTimeout(() => {
+                status.textContent = '2. Primary receives & commits IMMEDIATELY';
+                primary.style.transform = 'translateX(-50%) scale(1.1)';
+                setTimeout(() => primary.style.transform = 'translateX(-50%) scale(1)', 200);
+            }, 1000);
+            
+            setTimeout(() => {
+                status.textContent = '3. Primary ACK to client ✅ (NO WAIT)';
+                status.style.color = '#4caf50';
+                createDataPacket(container, primary, client, '✅', 800);
+            }, 1800);
+            
+            setTimeout(() => {
+                status.textContent = '4. Replica receives data later...';
+                createDataPacket(container, primary, replica, '📦', 2000);
+            }, 3000);
+            
+            setTimeout(() => {
+                status.textContent = 'Asynchronous Replication Complete! (Fast, but potential data loss)';
+                status.style.color = '#ff9800';
+                replica.style.transform = 'scale(1.1)';
+                setTimeout(() => replica.style.transform = 'scale(1)', 200);
+            }, 5500);
+        }
+        
+        function createDataPacket(container, from, to, emoji, duration) {
+            const packet = document.createElement('div');
+            packet.className = 'data-packet';
+            packet.textContent = emoji;
+            
+            const fromRect = from.getBoundingClientRect();
+            const toRect = to.getBoundingClientRect();
+            const containerRect = container.getBoundingClientRect();
+            
+            packet.style.left = (fromRect.left - containerRect.left + fromRect.width/2) + 'px';
+            packet.style.top = (fromRect.top - containerRect.top + fromRect.height/2) + 'px';
+            
+            container.appendChild(packet);
+            
+            setTimeout(() => {
+                packet.style.transition = `all ${duration}ms ease`;
+                packet.style.left = (toRect.left - containerRect.left + toRect.width/2) + 'px';
+                packet.style.top = (toRect.top - containerRect.top + toRect.height/2) + 'px';
+                packet.style.opacity = '0';
+            }, 50);
+            
+            setTimeout(() => packet.remove(), duration + 100);
+        }
+        
+        function resetStreamingAnimation() {
+            const status = document.getElementById('statusText');
+            status.textContent = '';
+            status.style.color = '#667eea';
+            document.querySelectorAll('#streamingAnimation .data-packet').forEach(el => el.remove());
+        }
+        
+        // ============================================
+        // HOT STANDBY ANIMATION
+        // ============================================
+        function animateHotStandby() {
+            const writeClient = document.getElementById('hsWriteClient');
+            const readClients = [
+                document.getElementById('hsReadClient1'),
+                document.getElementById('hsReadClient2'),
+                document.getElementById('hsReadClient3')
+            ];
+            const primary = document.getElementById('hsPrimary');
+            const standby = document.getElementById('hsStandby');
+            const container = document.getElementById('hotStandbyAnimation');
+            
+            resetHotStandbyAnimation();
+            
+            // Write operation
+            setTimeout(() => createDataPacket(container, writeClient, primary, 'W', 1000), 0);
+            setTimeout(() => primary.style.boxShadow = '0 0 20px #11998e', 1000);
+            setTimeout(() => primary.style.boxShadow = '0 5px 15px rgba(0,0,0,0.2)', 1300);
+            
+            // Replicate to standby
+            setTimeout(() => createDataPacket(container, primary, standby, '📦', 1500), 1500);
+            setTimeout(() => standby.style.boxShadow = '0 0 20px #ff6b6b', 3000);
+            setTimeout(() => standby.style.boxShadow = '0 5px 15px rgba(0,0,0,0.2)', 3300);
+            
+            // Read operations from standby
+            readClients.forEach((client, idx) => {
+                setTimeout(() => {
+                    createDataPacket(container, client, standby, 'R', 1000);
+                    setTimeout(() => {
+                        standby.style.boxShadow = '0 0 20px #f5576c';
+                        setTimeout(() => standby.style.boxShadow = '0 5px 15px rgba(0,0,0,0.2)', 200);
+                    }, 1000);
+                }, 3500 + idx * 800);
+            });
+        }
+        
+        function resetHotStandbyAnimation() {
+            document.querySelectorAll('#hotStandbyAnimation .data-packet').forEach(el => el.remove());
+            document.getElementById('hsPrimary').style.boxShadow = '0 5px 15px rgba(0,0,0,0.2)';
+            document.getElementById('hsStandby').style.boxShadow = '0 5px 15px rgba(0,0,0,0.2)';
+        }
+        
+        // ============================================
+        // MULTI-MASTER ANIMATION
+        // ============================================
+        function animateMultiMaster() {
+            const masters = [
+                document.getElementById('mm1'),
+                document.getElementById('mm2'),
+                document.getElementById('mm3')
+            ];
+            const clients = [
+                document.getElementById('mmClient1'),
+                document.getElementById('mmClient2'),
+                document.getElementById('mmClient3')
+            ];
+            const container = document.getElementById('multiMasterAnimation');
+            
+            resetMultiMasterAnimation();
+            
+            // Each client writes to its local master
+            clients.forEach((client, idx) => {
+                setTimeout(() => {
+                    createDataPacket(container, client, masters[idx], 'W', 1000);
+                    setTimeout(() => {
+                        masters[idx].style.boxShadow = '0 0 25px #38ef7d';
+                        setTimeout(() => masters[idx].style.boxShadow = '0 5px 15px rgba(0,0,0,0.2)', 300);
+                    }, 1000);
+                }, idx * 1000);
+            });
+            
+            // Masters replicate to each other
+            setTimeout(() => {
+                // MM1 -> MM2, MM3
+                createDataPacket(container, masters[0], masters[1], '🔄', 1500);
+                createDataPacket(container, masters[0], masters[2], '🔄', 1500);
+                
+                // MM2 -> MM1, MM3
+                setTimeout(() => {
+                    createDataPacket(container, masters[1], masters[0], '🔄', 1500);
+                    createDataPacket(container, masters[1], masters[2], '🔄', 1500);
+                }, 500);
+                
+                // MM3 -> MM1, MM2
+                setTimeout(() => {
+                    createDataPacket(container, masters[2], masters[0], '🔄', 1500);
+                    createDataPacket(container, masters[2], masters[1], '🔄', 1500);
+                }, 1000);
+            }, 4000);
+            
+            // Highlight all masters as synced
+            setTimeout(() => {
+                masters.forEach(m => {
+                    m.style.boxShadow = '0 0 30px #ffd700';
+                    setTimeout(() => m.style.boxShadow = '0 5px 15px rgba(0,0,0,0.2)', 500);
+                });
+            }, 7000);
+        }
+        
+        function resetMultiMasterAnimation() {
+            document.querySelectorAll('#multiMasterAnimation .data-packet').forEach(el => el.remove());
+            [document.getElementById('mm1'), document.getElementById('mm2'), document.getElementById('mm3')].forEach(m => {
+                m.style.boxShadow = '0 5px 15px rgba(0,0,0,0.2)';
+            });
+        }
+        
+        // ============================================
+        // SHARDING ANIMATIONS
+        // ============================================
+        function animateSharding() {
+            const container = document.getElementById('shardingAnimation');
+            container.innerHTML = `
+                <div style="position: absolute; top: 20px; left: 50%; transform: translateX(-50%); font-size: 20px; font-weight: bold; color: #667eea;">
+                    Sharding: Data Distributed Across Multiple Servers
+                </div>
+                
+                <div class="client" style="left: 10%; top: 200px;">Client</div>
+                
+                <div style="position: absolute; left: 30%; top: 180px; padding: 15px; background: #e0f7fa; border-radius: 10px; border: 2px solid #00acc1;">
+                    <div style="font-weight: bold; margin-bottom: 10px;">Shard Router</div>
+                    <div style="font-size: 12px;">hash(user_id) % 4</div>
+                </div>
+                
+                <div class="server" id="shard1" style="left: 60%; top: 80px; width: 90px; height: 110px;">
+                    <div>SHARD 1</div>
+                    <div style="font-size: 10px;">users 0-250K</div>
+                </div>
+                <div class="server" id="shard2" style="left: 75%; top: 80px; width: 90px; height: 110px;">
+                    <div>SHARD 2</div>
+                    <div style="font-size: 10px;">users 250K-500K</div>
+                </div>
+                <div class="server" id="shard3" style="left: 60%; top: 280px; width: 90px; height: 110px;">
+                    <div>SHARD 3</div>
+                    <div style="font-size: 10px;">users 500K-750K</div>
+                </div>
+                <div class="server" id="shard4" style="left: 75%; top: 280px; width: 90px; height: 110px;">
+                    <div>SHARD 4</div>
+                    <div style="font-size: 10px;">users 750K-1M</div>
+                </div>
+            `;
+            
+            // Animate data routing
+            const shards = [
+                document.getElementById('shard1'),
+                document.getElementById('shard2'),
+                document.getElementById('shard3'),
+                document.getElementById('shard4')
+            ];
+            
+            let count = 0;
+            const interval = setInterval(() => {
+                if (count >= 12) {
+                    clearInterval(interval);
+                    return;
+                }
+                
+                const randomShard = shards[Math.floor(Math.random() * 4)];
+                const packet = document.createElement('div');
+                packet.className = 'data-packet';
+                packet.textContent = '📊';
+                packet.style.left = '10%';
+                packet.style.top = '220px';
+                container.appendChild(packet);
+                
+                const shardRect = randomShard.getBoundingClientRect();
+                const containerRect = container.getBoundingClientRect();
+                
+                setTimeout(() => {
+                    packet.style.transition = 'all 1.2s ease';
+                    packet.style.left = (shardRect.left - containerRect.left + 45) + 'px';
+                    packet.style.top = (shardRect.top - containerRect.top + 55) + 'px';
+                    packet.style.opacity = '0';
+                }, 50);
+                
+                setTimeout(() => {
+                    randomShard.style.boxShadow = '0 0 25px #ffd700';
+                    setTimeout(() => randomShard.style.boxShadow = '0 5px 15px rgba(0,0,0,0.2)', 200);
+                }, 1200);
+                
+                setTimeout(() => packet.remove(), 1300);
+                
+                count++;
+            }, 800);
+        }
+        
+        function animatePartitioning() {
+            const container = document.getElementById('shardingAnimation');
+            container.innerHTML = `
+                <div style="position: absolute; top: 20px; left: 50%; transform: translateX(-50%); font-size: 20px; font-weight: bold; color: #764ba2;">
+                    Partitioning: Table Split Within Single Server
+                </div>
+                
+                <div style="position: absolute; left: 50%; top: 100px; transform: translateX(-50%); padding: 20px; background: white; border: 3px solid #667eea; border-radius: 15px; width: 600px;">
+                    <div style="font-weight: bold; font-size: 18px; margin-bottom: 15px; text-align: center;">PostgreSQL Server</div>
+                    
+                    <div style="background: #e8f5e9; padding: 12px; margin: 8px 0; border-radius: 8px; border-left: 4px solid #4caf50;">
+                        <strong>sales_2022</strong> partition<br>
+                        <span style="font-size: 12px;">Date range: 2022-01-01 to 2023-01-01</span>
+                    </div>
+                    
+                    <div style="background: #e3f2fd; padding: 12px; margin: 8px 0; border-radius: 8px; border-left: 4px solid #2196f3;">
+                        <strong>sales_2023</strong> partition<br>
+                        <span style="font-size: 12px;">Date range: 2023-01-01 to 2024-01-01</span>
+                    </div>
+                    
+                    <div style="background: #fff3e0; padding: 12px; margin: 8px 0; border-radius: 8px; border-left: 4px solid #ff9800;">
+                        <strong>sales_2024</strong> partition<br>
+                        <span style="font-size: 12px;">Date range: 2024-01-01 to 2025-01-01</span>
+                    </div>
+                    
+                    <div style="background: #fce4ec; padding: 12px; margin: 8px 0; border-radius: 8px; border-left: 4px solid #e91e63;">
+                        <strong>sales_2025</strong> partition<br>
+                        <span style="font-size: 12px;">Date range: 2025-01-01 to 2026-01-01</span>
+                    </div>
+                </div>
+                
+                <div class="client" style="left: 10%; top: 300px;">Query: WHERE date = '2024-06-15'</div>
+                
+                <div style="position: absolute; left: 85%; top: 300px; padding: 15px; background: #c8e6c9; border-radius: 10px; border: 2px solid #4caf50; max-width: 200px;">
+                    <div style="font-weight: bold;">✅ Optimization</div>
+                    <div style="font-size: 12px; margin-top: 5px;">PostgreSQL scans ONLY sales_2024 partition!</div>
+                </div>
+            `;
+            
+            // Animate query routing
+            setTimeout(() => {
+                const partition = document.querySelector('div[style*="background: #fff3e0"]');
+                partition.style.transform = 'scale(1.05)';
+                partition.style.boxShadow = '0 0 25px #ff9800';
+                setTimeout(() => {
+                    partition.style.transform = 'scale(1)';
+                    partition.style.boxShadow = 'none';
+                }, 1000);
+            }, 500);
+        }
+        
+        function resetShardingAnimation() {
+            const container = document.getElementById('shardingAnimation');
+            container.innerHTML = `
+                <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; color: #999;">
+                    <div style="font-size: 18px; margin-bottom: 10px;">Click a button above to see the animation</div>
+                    <div style="font-size: 14px;">🔪 Sharding = Multiple Servers</div>
+                    <div style="font-size: 14px;">📊 Partitioning = Single Server</div>
+                </div>
+            `;
+        }
+        
+        // ============================================
+        // FOREIGN DATA WRAPPER ANIMATION
+        // ============================================
+        function animateFDW() {
+            const container = document.getElementById('fdwAnimation');
+            container.innerHTML = `
+                <div style="position: absolute; top: 20px; left: 50%; transform: translateX(-50%); font-size: 20px; font-weight: bold; color: #667eea;">
+                    Foreign Data Wrappers: Querying External Data Sources
+                </div>
+                
+                <div class="server primary" id="fdwPG" style="left: 50%; top: 50%; transform: translate(-50%, -50%); width: 140px; height: 160px;">
+                    <div style="margin-top: 30px;">PostgreSQL</div>
+                    <div style="font-size: 11px; margin-top: 5px;">Main Database</div>
+                </div>
+                
+                <div style="position: absolute; left: 10%; top: 20%; padding: 15px; background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); border-radius: 10px; color: white; width: 100px; text-align: center;">
+                    <div style="font-weight: bold;">MySQL</div>
+                    <div style="font-size: 10px;">Legacy CRM</div>
+                </div>
+                
+                <div style="position: absolute; right: 10%; top: 20%; padding: 15px; background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); border-radius: 10px; color: white; width: 100px; text-align: center;">
+                    <div style="font-weight: bold;">MongoDB</div>
+                    <div style="font-size: 10px;">Logs DB</div>
+                </div>
+                
+                <div style="position: absolute; left: 10%; bottom: 15%; padding: 15px; background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); border-radius: 10px; color: white; width: 100px; text-align: center;">
+                    <div style="font-weight: bold;">CSV Files</div>
+                    <div style="font-size: 10px;">Analytics</div>
+                </div>
+                
+                <div style="position: absolute; right: 10%; bottom: 15%; padding: 15px; background: linear-gradient(135deg, #30cfd0 0%, #330867 100%); border-radius: 10px; color: white; width: 100px; text-align: center;">
+                    <div style="font-weight: bold;">Oracle</div>
+                    <div style="font-size: 10px;">ERP System</div>
+                </div>
+            `;
+            
+            const sources = container.querySelectorAll('div[style*="position: absolute"]');
+            const pgServer = document.getElementById('fdwPG');
+            
+            let delay = 500;
+            sources.forEach((source, idx) => {
+                if (idx === 0 || idx === 1 || !source.style.padding) return; // Skip title and PG server
+                
+                setTimeout(() => {
+                    // Create connection line
+                    const line = document.createElement('div');
+                    line.className = 'connection-line active';
+                    
+                    const sourceRect = source.getBoundingClientRect();
+                    const pgRect = pgServer.getBoundingClientRect();
+                    const containerRect = container.getBoundingClientRect();
+                    
+                    const x1 = sourceRect.left - containerRect.left + sourceRect.width / 2;
+                    const y1 = sourceRect.top - containerRect.top + sourceRect.height / 2;
+                    const x2 = pgRect.left - containerRect.left + pgRect.width / 2;
+                    const y2 = pgRect.top - containerRect.top + pgRect.height / 2;
+                    
+                    const length = Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
+                    const angle = Math.atan2(y2 - y1, x2 - x1) * 180 / Math.PI;
+                    
+                    line.style.width = length + 'px';
+                    line.style.left = x1 + 'px';
+                    line.style.top = y1 + 'px';
+                    line.style.transform = `rotate(${angle}deg)`;
+                    
+                    container.appendChild(line);
+                    
+                    // Pulse effect
+                    source.style.transform = 'scale(1.1)';
+                    setTimeout(() => source.style.transform = 'scale(1)', 200);
+                    
+                    setTimeout(() => {
+                        pgServer.style.boxShadow = '0 0 30px #667eea';
+                        setTimeout(() => pgServer.style.boxShadow = '0 5px 15px rgba(0,0,0,0.2)', 300);
+                    }, 800);
+                    
+                }, delay);
+                
+                delay += 1000;
+            });
+            
+            // Show unified query
+            setTimeout(() => {
+                const queryBox = document.createElement('div');
+                queryBox.style.cssText = `
+                    position: absolute;
+                    bottom: 10px;
+                    left: 50%;
+                    transform: translateX(-50%);
+                    padding: 15px;
+                    background: #2d2d2d;
+                    color: #50fa7b;
+                    border-radius: 10px;
+                    font-family: monospace;
+                    font-size: 12px;
+                    max-width: 90%;
+                    text-align: center;
+                    animation: fadeIn 0.5s;
+                `;
+                queryBox.innerHTML = `
+                    SELECT * FROM mysql_customers<br>
+                    JOIN mongo_logs ON ...<br>
+                    JOIN csv_analytics ON ...<br>
+                    <span style="color: #f1fa8c;">-- All in ONE query! 🎉</span>
+                `;
+                container.appendChild(queryBox);
+            }, delay + 500);
+        }
+        
+        function resetFDWAnimation() {
+            const container = document.getElementById('fdwAnimation');
+            container.innerHTML = `
+                <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; color: #999;">
+                    <div style="font-size: 18px; margin-bottom: 10px;">Click "Visualize FDW" to see the animation</div>
+                    <div style="font-size: 14px;">🌉 Query multiple databases as if they were local tables</div>
+                </div>
+            `;
+        }
+        
+        // ============================================
+        // DISTRIBUTED VS NON-DISTRIBUTED ANIMATION
+        // ============================================
+        function animateDistributed() {
+            const container = document.getElementById('distributedAnimation');
+            container.innerHTML = `
+                <div style="position: absolute; top: 10px; left: 50%; transform: translateX(-50%); font-size: 22px; font-weight: bold; color: #4caf50;">
+                    ✅ Distributed Database (e.g., CockroachDB, Cassandra)
+                </div>
+                
+                <div class="client" style="left: 10%; top: 50%; transform: translateY(-50%);">Client</div>
+                
+                <div style="position: absolute; left: 35%; top: 45%; transform: translateY(-50%); padding: 15px; background: #e3f2fd; border-radius: 10px; border: 2px solid #2196f3;">
+                    <div style="font-weight: bold;">Load Balancer</div>
+                    <div style="font-size: 11px;">Auto-routing</div>
+                </div>
+                
+                <div class="server primary" id="dist1" style="right: 20%; top: 15%; width: 100px; height: 120px;">
+                    <div>NODE 1</div>
+                    <div style="font-size: 10px;">Shard A</div>
+                    <div style="font-size: 10px;">Replica 1,2</div>
+                </div>
+                
+                <div class="server primary" id="dist2" style="right: 20%; top: 45%; transform: translateY(-50%); width: 100px; height: 120px;">
+                    <div>NODE 2</div>
+                    <div style="font-size: 10px;">Shard B</div>
+                    <div style="font-size: 10px;">Replica 2,3</div>
+                </div>
+                
+                <div class="server primary" id="dist3" style="right: 20%; bottom: 15%; width: 100px; height: 120px;">
+                    <div>NODE 3</div>
+                    <div style="font-size: 10px;">Shard C</div>
+                    <div style="font-size: 10px;">Replica 1,3</div>
+                </div>
+                
+                <div style="position: absolute; left: 10%; bottom: 20px; padding: 15px; background: #c8e6c9; border-radius: 10px; max-width: 300px;">
+                    <div style="font-weight: bold; color: #2e7d32;">Features:</div>
+                    <div style="font-size: 12px; margin-top: 5px;">✅ Auto-sharding</div>
+                    <div style="font-size: 12px;">✅ Auto-replication</div>
+                    <div style="font-size: 12px;">✅ Auto-failover (Raft consensus)</div>
+                    <div style="font-size: 12px;">✅ Distributed transactions</div>
+                    <div style="font-size: 12px;">⚠️ Eventual consistency (tunable)</div>
+                </div>
+            `;
+            
+            const nodes = [
+                document.getElementById('dist1'),
+                document.getElementById('dist2'),
+                document.getElementById('dist3')
+            ];
+            
+            // Animate data distribution
+            let count = 0;
+            const interval = setInterval(() => {
+                if (count >= 15) {
+                    clearInterval(interval);
+                    return;
+                }
+                
+                const randomNode = nodes[Math.floor(Math.random() * 3)];
+                const packet = document.createElement('div');
+                packet.className = 'data-packet';
+                packet.textContent = '📊';
+                packet.style.left = '10%';
+                packet.style.top = '50%';
+                container.appendChild(packet);
+                
+                const nodeRect = randomNode.getBoundingClientRect();
+                const containerRect = container.getBoundingClientRect();
+                
+                setTimeout(() => {
+                    packet.style.transition = 'all 1s ease';
+                    packet.style.left = (nodeRect.left - containerRect.left + 50) + 'px';
+                    packet.style.top = (nodeRect.top - containerRect.top + 60) + 'px';
+                    packet.style.opacity = '0';
+                }, 50);
+                
+                setTimeout(() => {
+                    randomNode.style.boxShadow = '0 0 25px #4caf50';
+                    setTimeout(() => randomNode.style.boxShadow = '0 5px 15px rgba(0,0,0,0.2)', 200);
+                }, 1000);
+                
+                setTimeout(() => packet.remove(), 1100);
+                
+                count++;
+            }, 600);
+            
+            // Show replication between nodes
+            setTimeout(() => {
+                nodes.forEach((node, idx) => {
+                    nodes.forEach((targetNode, targetIdx) => {
+                        if (idx !== targetIdx) {
+                            setTimeout(() => {
+                                const line = createConnectionLine(container, node, targetNode);
+                                line.classList.add('active');
+                                setTimeout(() => line.remove(), 2000);
+                            }, idx * 200);
+                        }
+                    });
+                });
+            }, 5000);
+        }
+        
+        function animateNonDistributed() {
+            const container = document.getElementById('distributedAnimation');
+            container.innerHTML = `
+                <div style="position: absolute; top: 10px; left: 50%; transform: translateX(-50%); font-size: 22px; font-weight: bold; color: #667eea;">
+                    PostgreSQL (Non-Distributed)
+                </div>
+                
+                <div class="client" style="left: 5%; top: 30%;">Write Client</div>
+                <div class="client" style="left: 5%; top: 50%;">Read Client 1</div>
+                <div class="client" style="left: 5%; top: 70%;">Read Client 2</div>
+                
+                <div style="position: absolute; left: 25%; top: 20%; transform: translateY(-50%); padding: 12px; background: #fff3e0; border-radius: 10px; border: 2px solid #ff9800;">
+                    <div style="font-weight: bold;">PgBouncer</div>
+                    <div style="font-size: 10px;">Manual routing</div>
+                </div>
+                
+                <div class="server primary" id="pgPrimary" style="left: 50%; top: 25%; transform: translateX(-50%); width: 120px; height: 140px;">
+                    <div style="margin-top: 25px;">PRIMARY</div>
+                    <div style="font-size: 11px; margin-top: 5px;">Write + Read</div>
+                </div>
+                
+                <div class="server replica" id="pgReplica1" style="left: 50%; top: 55%; transform: translateX(-50%); width: 110px; height: 130px;">
+                    <div style="margin-top: 20px;">REPLICA 1</div>
+                    <div style="font-size: 10px; margin-top: 5px;">Read Only</div>
+                </div>
+                
+                <div class="server replica" id="pgReplica2" style="left: 50%; bottom: 10%; transform: translateX(-50%); width: 110px; height: 130px;">
+                    <div style="margin-top: 20px;">REPLICA 2</div>
+                    <div style="font-size: 10px; margin-top: 5px;">Read Only</div>
+                </div>
+                
+                <div style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); padding: 15px; background: #e3f2fd; border-radius: 10px; max-width: 280px;">
+                    <div style="font-weight: bold; color: #1565c0;">Manual Setup Required:</div>
+                    <div style="font-size: 12px; margin-top: 5px;">⚙️ Configure replication manually</div>
+                    <div style="font-size: 12px;">⚙️ Setup Patroni for auto-failover</div>
+                    <div style="font-size: 12px;">⚙️ Application routes reads/writes</div>
+                    <div style="font-size: 12px;">⚙️ Citus for sharding (extension)</div>
+                    <div style="font-size: 12px; margin-top: 5px; color: #2e7d32;">✅ Strong consistency</div>
+                    <div style="font-size: 12px; color: #2e7d32;">✅ Full SQL support</div>
+                </div>
+            `;
+            
+            const primary = document.getElementById('pgPrimary');
+            const replicas = [
+                document.getElementById('pgReplica1'),
+                document.getElementById('pgReplica2')
+            ];
+            
+            // Animate write to primary
+            setTimeout(() => {
+                const packet = document.createElement('div');
+                packet.className = 'data-packet';
+                packet.textContent = 'W';
+                packet.style.left = '5%';
+                packet.style.top = '30%';
+                container.appendChild(packet);
+                
+                setTimeout(() => {
+                    packet.style.transition = 'all 1s ease';
+                    packet.style.left = '50%';
+                    packet.style.top = '25%';
+                    packet.style.opacity = '0';
+                }, 50);
+                
+                setTimeout(() => {
+                    primary.style.boxShadow = '0 0 25px #11998e';
+                    setTimeout(() => primary.style.boxShadow = '0 5px 15px rgba(0,0,0,0.2)', 300);
+                }, 1000);
+                
+                setTimeout(() => packet.remove(), 1100);
+            }, 500);
+            
+            // Replicate to standbys
+            setTimeout(() => {
+                replicas.forEach((replica, idx) => {
+                    setTimeout(() => {
+                        const packet = document.createElement('div');
+                        packet.className = 'data-packet';
+                        packet.textContent = '📦';
+                        packet.style.left = '50%';
+                        packet.style.top = '25%';
+                        container.appendChild(packet);
+                        
+                        const replicaRect = replica.getBoundingClientRect();
+                        const containerRect = container.getBoundingClientRect();
+                        
+                        setTimeout(() => {
+                            packet.style.transition = 'all 1.2s ease';
+                            packet.style.left = (replicaRect.left - containerRect.left + 55) + 'px';
+                            packet.style.top = (replicaRect.top - containerRect.top + 65) + 'px';
+                            packet.style.opacity = '0';
+                        }, 50);
+                        
+                        setTimeout(() => {
+                            replica.style.boxShadow = '0 0 25px #f5576c';
+                            setTimeout(() => replica.style.boxShadow = '0 5px 15px rgba(0,0,0,0.2)', 300);
+                        }, 1200);
+                        
+                        setTimeout(() => packet.remove(), 1300);
+                    }, idx * 600);
+                });
+            }, 2000);
+            
+            // Animate reads from replicas
+            setTimeout(() => {
+                [50, 70].forEach((topPercent, idx) => {
+                    setTimeout(() => {
+                        const packet = document.createElement('div');
+                        packet.className = 'data-packet';
+                        packet.textContent = 'R';
+                        packet.style.left = '5%';
+                        packet.style.top = topPercent + '%';
+                        container.appendChild(packet);
+                        
+                        const replica = replicas[idx];
+                        const replicaRect = replica.getBoundingClientRect();
+                        const containerRect = container.getBoundingClientRect();
+                        
+                        setTimeout(() => {
+                            packet.style.transition = 'all 1s ease';
+                            packet.style.left = (replicaRect.left - containerRect.left + 55) + 'px';
+                            packet.style.top = (replicaRect.top - containerRect.top + 65) + 'px';
+                            packet.style.opacity = '0';
+                        }, 50);
+                        
+                        setTimeout(() => {
+                            replica.style.boxShadow = '0 0 20px #f5576c';
+                            setTimeout(() => replica.style.boxShadow = '0 5px 15px rgba(0,0,0,0.2)', 200);
+                        }, 1000);
+                        
+                        setTimeout(() => packet.remove(), 1100);
+                    }, idx * 500);
+                });
+            }, 4500);
+        }
+        
+        function createConnectionLine(container, from, to) {
+            const line = document.createElement('div');
+            line.className = 'connection-line';
+            
+            const fromRect = from.getBoundingClientRect();
+            const toRect = to.getBoundingClientRect();
+            const containerRect = container.getBoundingClientRect();
+            
+            const x1 = fromRect.left - containerRect.left + fromRect.width / 2;
+            const y1 = fromRect.top - containerRect.top + fromRect.height / 2;
+            const x2 = toRect.left - containerRect.left + toRect.width / 2;
+            const y2 = toRect.top - containerRect.top + toRect.height / 2;
+            
+            const length = Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
+            const angle = Math.atan2(y2 - y1, x2 - x1) * 180 / Math.PI;
+            
+            line.style.width = length + 'px';
+            line.style.left = x1 + 'px';
+            line.style.top = y1 + 'px';
+            line.style.transform = `rotate(${angle}deg)`;
+            
+            container.appendChild(line);
+            return line;
+        }
+        
+        function resetDistributedAnimation() {
+            const container = document.getElementById('distributedAnimation');
+            container.innerHTML = `
+                <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; color: #999;">
+                    <div style="font-size: 18px; margin-bottom: 15px;">Click a button above to compare</div>
+                    <div style="font-size: 14px; margin: 5px 0;">✅ <strong>Distributed:</strong> Auto-sharding, auto-failover, built-in</div>
+                    <div style="font-size: 14px; margin: 5px 0;">⚙️ <strong>PostgreSQL:</strong> Manual setup, strong consistency, full SQL</div>
+                </div>
+            `;
+        }
+        
+        // Initialize with reset state
+        document.addEventListener('DOMContentLoaded', () => {
+            resetShardingAnimation();
+            resetFDWAnimation();
+            resetDistributedAnimation();
+        });
+    </script>
+</body>
+</html>
