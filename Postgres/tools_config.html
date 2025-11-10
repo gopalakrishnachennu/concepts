@@ -1,0 +1,2667 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PostgreSQL Deep Dive</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            text-align: center;
+            color: white;
+            padding: 40px 20px;
+            margin-bottom: 30px;
+            animation: fadeIn 1s ease-in;
+        }
+
+        header h1 {
+            font-size: 3em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .nav-tabs {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 30px;
+        }
+
+        .tab-btn {
+            padding: 15px 30px;
+            background: rgba(255,255,255,0.9);
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .tab-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.2);
+            background: white;
+        }
+
+        .tab-btn.active {
+            background: #4CAF50;
+            color: white;
+            transform: scale(1.05);
+        }
+
+        .tab-content {
+            display: none;
+            animation: slideIn 0.5s ease-out;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .section {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            transition: transform 0.3s ease;
+        }
+
+        .section:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.3);
+        }
+
+        .section h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+            font-size: 2em;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 10px;
+        }
+
+        .section h3 {
+            color: #764ba2;
+            margin: 20px 0 15px 0;
+            font-size: 1.5em;
+        }
+
+        .animation-box {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            border-radius: 10px;
+            padding: 30px;
+            margin: 20px 0;
+            min-height: 300px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .process-flow {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 20px;
+            padding: 20px;
+        }
+
+        .process-node {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            min-width: 150px;
+            text-align: center;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            animation: pulse 2s infinite;
+            position: relative;
+        }
+
+        .process-node::after {
+            content: '→';
+            position: absolute;
+            right: -30px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 2em;
+            color: #667eea;
+            animation: arrow-move 1.5s infinite;
+        }
+
+        .process-node:last-child::after {
+            display: none;
+        }
+
+        .metric-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .metric-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .metric-card:hover {
+            transform: scale(1.05) rotate(2deg);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+        }
+
+        .metric-value {
+            font-size: 2.5em;
+            font-weight: bold;
+            margin: 10px 0;
+            animation: countUp 2s ease-out;
+        }
+
+        .code-block {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 15px 0;
+            overflow-x: auto;
+            font-family: 'Courier New', monospace;
+            position: relative;
+        }
+
+        .code-block::before {
+            content: 'SQL';
+            position: absolute;
+            top: 5px;
+            right: 10px;
+            background: #667eea;
+            color: white;
+            padding: 2px 10px;
+            border-radius: 5px;
+            font-size: 0.8em;
+        }
+
+        .keyword { color: #569cd6; }
+        .function { color: #dcdcaa; }
+        .string { color: #ce9178; }
+        .comment { color: #6a9955; }
+
+        .connection-viz {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 400px;
+            position: relative;
+        }
+
+        .database-icon {
+            width: 120px;
+            height: 120px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3em;
+            color: white;
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.5);
+            animation: rotate 10s linear infinite;
+            position: relative;
+        }
+
+        .connection-line {
+            position: absolute;
+            width: 2px;
+            height: 100px;
+            background: linear-gradient(180deg, #667eea, transparent);
+            animation: pulse-line 2s infinite;
+        }
+
+        .client-node {
+            position: absolute;
+            width: 60px;
+            height: 60px;
+            background: #4CAF50;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            box-shadow: 0 5px 15px rgba(76, 175, 80, 0.5);
+            animation: float 3s ease-in-out infinite;
+        }
+
+        .log-stream {
+            background: #1e1e1e;
+            color: #4CAF50;
+            padding: 20px;
+            border-radius: 10px;
+            font-family: monospace;
+            height: 300px;
+            overflow-y: auto;
+            margin: 20px 0;
+        }
+
+        .log-entry {
+            padding: 5px 0;
+            border-left: 3px solid transparent;
+            padding-left: 10px;
+            animation: logAppear 0.5s ease-out;
+        }
+
+        .log-entry.info { border-color: #4CAF50; }
+        .log-entry.warning { border-color: #ff9800; }
+        .log-entry.error { border-color: #f44336; }
+
+        .catalog-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .catalog-table th {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px;
+            text-align: left;
+        }
+
+        .catalog-table td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .catalog-table tr:hover {
+            background: #f5f5f5;
+            transform: scale(1.01);
+            transition: all 0.2s ease;
+        }
+
+        .config-param {
+            background: #f8f9fa;
+            border-left: 4px solid #667eea;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+            transition: all 0.3s ease;
+        }
+
+        .config-param:hover {
+            background: #e9ecef;
+            border-left-width: 8px;
+            padding-left: 20px;
+        }
+
+        .param-name {
+            font-weight: bold;
+            color: #667eea;
+            font-size: 1.1em;
+        }
+
+        .param-value {
+            color: #764ba2;
+            margin: 5px 0;
+        }
+
+        .interactive-demo {
+            background: white;
+            border: 2px solid #667eea;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .demo-button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 5px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .demo-button:hover {
+            background: #45a049;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.2);
+        }
+
+        .demo-button:active {
+            transform: translateY(0);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(-30px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        @keyframes arrow-move {
+            0%, 100% { transform: translateY(-50%) translateX(0); }
+            50% { transform: translateY(-50%) translateX(10px); }
+        }
+
+        @keyframes countUp {
+            from { opacity: 0; transform: scale(0.5); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        @keyframes rotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+
+        @keyframes pulse-line {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 1; }
+        }
+
+        @keyframes logAppear {
+            from { opacity: 0; transform: translateX(-20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        .performance-chart {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .chart-bar {
+            height: 30px;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            margin: 10px 0;
+            border-radius: 5px;
+            position: relative;
+            animation: expandBar 1.5s ease-out;
+        }
+
+        .chart-label {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: white;
+            font-weight: bold;
+        }
+
+        @keyframes expandBar {
+            from { width: 0; }
+            to { width: 100%; }
+        }
+
+        .tooltip {
+            position: relative;
+            display: inline-block;
+            cursor: help;
+            color: #667eea;
+            font-weight: bold;
+            border-bottom: 2px dotted #667eea;
+        }
+
+        .tooltip:hover::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            bottom: 125%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #333;
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
+            white-space: nowrap;
+            z-index: 1000;
+            font-size: 0.9em;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🐘 PostgreSQL Deep Dive</h1>
+            <p>Interactive Guide to Architecture, Monitoring, and Optimization</p>
+        </header>
+
+        <div class="nav-tabs">
+            <button class="tab-btn active" onclick="showTab('overview')">Overview</button>
+            <button class="tab-btn" onclick="showTab('tools')">Tools (psql, pgAdmin, pgBench)</button>
+            <button class="tab-btn" onclick="showTab('config')">Configuration (postgresql.conf)</button>
+            <button class="tab-btn" onclick="showTab('logs')">Logs & Monitoring</button>
+            <button class="tab-btn" onclick="showTab('catalog')">Catalog System (pg_catalog)</button>
+            <button class="tab-btn" onclick="showTab('metrics')">Default Metrics & Performance</button>
+            <button class="tab-btn" onclick="showTab('pgctl')">pg_ctl Management</button>
+        </div>
+
+        <!-- OVERVIEW TAB -->
+        <div id="overview" class="tab-content active">
+            <div class="section">
+                <h2>PostgreSQL Architecture Overview</h2>
+                
+                <div class="animation-box">
+                    <div class="connection-viz" id="archViz">
+                        <div class="database-icon">⚙️</div>
+                    </div>
+                </div>
+
+                <h3>Core Components</h3>
+                <div class="process-flow">
+                    <div class="process-node">
+                        <strong>Client Applications</strong>
+                        <p>psql, pgAdmin, App Servers</p>
+                    </div>
+                    <div class="process-node">
+                        <strong>Postmaster</strong>
+                        <p>Main Process</p>
+                    </div>
+                    <div class="process-node">
+                        <strong>Backend Processes</strong>
+                        <p>Query Execution</p>
+                    </div>
+                    <div class="process-node">
+                        <strong>Shared Memory</strong>
+                        <p>Buffer Pool, Locks</p>
+                    </div>
+                    <div class="process-node">
+                        <strong>Storage Engine</strong>
+                        <p>MVCC, WAL</p>
+                    </div>
+                </div>
+
+                <h3>Key Processes</h3>
+                <div class="metric-grid">
+                    <div class="metric-card">
+                        <h4>Postmaster</h4>
+                        <div class="metric-value">1</div>
+                        <p>Main daemon process that spawns all other processes</p>
+                    </div>
+                    <div class="metric-card">
+                        <h4>Backend</h4>
+                        <div class="metric-value">N</div>
+                        <p>One per client connection, handles queries</p>
+                    </div>
+                    <div class="metric-card">
+                        <h4>Background Writer</h4>
+                        <div class="metric-value">1</div>
+                        <p>Writes dirty buffers to disk</p>
+                    </div>
+                    <div class="metric-card">
+                        <h4>WAL Writer</h4>
+                        <div class="metric-value">1</div>
+                        <p>Writes WAL records to disk</p>
+                    </div>
+                    <div class="metric-card">
+                        <h4>Autovacuum</h4>
+                        <div class="metric-value">1+</div>
+                        <p>Automatic vacuum and analyze</p>
+                    </div>
+                    <div class="metric-card">
+                        <h4>Checkpointer</h4>
+                        <div class="metric-value">1</div>
+                        <p>Performs checkpoints</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TOOLS TAB -->
+        <div id="tools" class="tab-content">
+            <div class="section">
+                <h2>PostgreSQL Tools</h2>
+
+                <h3>1. psql - Interactive Terminal</h3>
+                <p><span class="tooltip" data-tooltip="PostgreSQL's native command-line interface">psql</span> is the PostgreSQL interactive terminal for running queries and managing databases.</p>
+
+                <div class="code-block">
+<span class="comment">-- Connect to database</span>
+psql -U username -d database_name -h hostname -p 5432
+
+<span class="comment">-- Common psql meta-commands</span>
+\l                    <span class="comment">-- List all databases</span>
+\c database_name      <span class="comment">-- Connect to database</span>
+\dt                   <span class="comment">-- List all tables</span>
+\d table_name         <span class="comment">-- Describe table structure</span>
+\du                   <span class="comment">-- List all users/roles</span>
+\dn                   <span class="comment">-- List all schemas</span>
+\df                   <span class="comment">-- List all functions</span>
+\dv                   <span class="comment">-- List all views</span>
+\di                   <span class="comment">-- List all indexes</span>
+\x                    <span class="comment">-- Toggle expanded output</span>
+\timing               <span class="comment">-- Toggle query timing</span>
+\q                    <span class="comment">-- Quit psql</span>
+
+<span class="comment">-- Execute SQL file</span>
+\i /path/to/file.sql
+
+<span class="comment">-- Output query results to file</span>
+\o /path/to/output.txt
+
+<span class="comment">-- View connection info</span>
+\conninfo
+                </div>
+
+                <h3>2. pgAdmin - GUI Management Tool</h3>
+                <div class="animation-box">
+                    <div class="process-flow">
+                        <div class="process-node">
+                            <strong>Dashboard</strong>
+                            <p>Real-time monitoring</p>
+                        </div>
+                        <div class="process-node">
+                            <strong>Query Tool</strong>
+                            <p>Visual query editor</p>
+                        </div>
+                        <div class="process-node">
+                            <strong>Schema Browser</strong>
+                            <p>Navigate DB objects</p>
+                        </div>
+                        <div class="process-node">
+                            <strong>Backup/Restore</strong>
+                            <p>Data management</p>
+                        </div>
+                    </div>
+                </div>
+
+                <p><strong>Key Features:</strong></p>
+                <ul style="margin-left: 30px; margin-top: 10px;">
+                    <li>Visual database design and management</li>
+                    <li>Query execution with syntax highlighting</li>
+                    <li>Real-time server activity monitoring</li>
+                    <li>Graphical EXPLAIN plans</li>
+                    <li>Backup and restore management</li>
+                    <li>User and role management</li>
+                </ul>
+
+                <h3>3. pgBench - Performance Benchmarking</h3>
+                <p><span class="tooltip" data-tooltip="PostgreSQL's built-in benchmarking tool">pgBench</span> runs benchmark tests to measure database performance under various loads.</p>
+
+                <div class="code-block">
+<span class="comment">-- Initialize benchmark database</span>
+pgbench -i -s 50 database_name
+<span class="comment">-- -i: initialize, -s 50: scaling factor (50x default size)</span>
+
+<span class="comment">-- Run simple benchmark (read-write)</span>
+pgbench -c 10 -j 2 -t 1000 database_name
+<span class="comment">-- -c 10: 10 concurrent clients</span>
+<span class="comment">-- -j 2: 2 worker threads</span>
+<span class="comment">-- -t 1000: 1000 transactions per client</span>
+
+<span class="comment">-- Run for specific duration</span>
+pgbench -c 20 -j 4 -T 60 database_name
+<span class="comment">-- -T 60: run for 60 seconds</span>
+
+<span class="comment">-- Read-only benchmark</span>
+pgbench -c 10 -j 2 -t 1000 -S database_name
+<span class="comment">-- -S: select-only (read-only)</span>
+
+<span class="comment">-- Custom benchmark script</span>
+pgbench -c 10 -j 2 -t 1000 -f custom_script.sql database_name
+
+<span class="comment">-- View detailed progress</span>
+pgbench -c 10 -j 2 -T 60 -P 5 database_name
+<span class="comment">-- -P 5: show progress every 5 seconds</span>
+                </div>
+
+                <div class="interactive-demo">
+                    <h4>Understanding pgBench Output</h4>
+                    <button class="demo-button" onclick="simulateBenchmark()">Run Simulated Benchmark</button>
+                    <div id="benchOutput" style="margin-top: 20px; font-family: monospace; background: #f5f5f5; padding: 15px; border-radius: 5px;"></div>
+                </div>
+
+                <h3>Tool Comparison</h3>
+                <table class="catalog-table">
+                    <thead>
+                        <tr>
+                            <th>Tool</th>
+                            <th>Type</th>
+                            <th>Use Case</th>
+                            <th>Best For</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>psql</strong></td>
+                            <td>CLI</td>
+                            <td>Interactive queries, scripting, admin tasks</td>
+                            <td>Automation, quick queries, power users</td>
+                        </tr>
+                        <tr>
+                            <td><strong>pgAdmin</strong></td>
+                            <td>GUI</td>
+                            <td>Visual management, monitoring, development</td>
+                            <td>Beginners, visual learners, complex admin</td>
+                        </tr>
+                        <tr>
+                            <td><strong>pgBench</strong></td>
+                            <td>CLI</td>
+                            <td>Performance testing, load simulation</td>
+                            <td>Benchmarking, capacity planning, tuning</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- CONFIGURATION TAB -->
+        <div id="config" class="tab-content">
+            <div class="section">
+                <h2>postgresql.conf Configuration</h2>
+                
+                <p>The <span class="tooltip" data-tooltip="Main configuration file for PostgreSQL">postgresql.conf</span> file controls all PostgreSQL server behavior. Changes require reload or restart depending on the parameter.</p>
+
+                <h3>Configuration Hierarchy</h3>
+                <div class="animation-box">
+                    <div class="process-flow">
+                        <div class="process-node">
+                            <strong>postgresql.conf</strong>
+                            <p>Main config file</p>
+                        </div>
+                        <div class="process-node">
+                            <strong>ALTER SYSTEM</strong>
+                            <p>postgresql.auto.conf</p>
+                        </div>
+                        <div class="process-node">
+                            <strong>Session SET</strong>
+                            <p>Session overrides</p>
+                        </div>
+                    </div>
+                </div>
+
+                <h3>Critical Configuration Categories</h3>
+
+                <div class="config-param">
+                    <div class="param-name">1. Memory Settings</div>
+                    <div class="code-block">
+<span class="comment">-- Shared buffer pool (25% of RAM recommended)</span>
+shared_buffers = 4GB
+
+<span class="comment">-- Working memory per operation</span>
+work_mem = 64MB
+
+<span class="comment">-- Maintenance operations memory</span>
+maintenance_work_mem = 512MB
+
+<span class="comment">-- Effective cache size (hint for query planner)</span>
+effective_cache_size = 12GB
+
+<span class="comment">-- Maximum prepared transactions</span>
+max_prepared_transactions = 0
+                    </div>
+                </div>
+
+                <div class="config-param">
+                    <div class="param-name">2. Connection Settings</div>
+                    <div class="code-block">
+<span class="comment">-- Maximum concurrent connections</span>
+max_connections = 100
+
+<span class="comment">-- Superuser reserved connections</span>
+superuser_reserved_connections = 3
+
+<span class="comment">-- Connection timeout</span>
+tcp_keepalives_idle = 60
+tcp_keepalives_interval = 10
+tcp_keepalives_count = 5
+                    </div>
+                </div>
+
+                <div class="config-param">
+                    <div class="param-name">3. WAL (Write-Ahead Log) Settings</div>
+                    <div class="code-block">
+<span class="comment">-- WAL level: minimal, replica, logical</span>
+wal_level = replica
+
+<span class="comment">-- WAL buffer size</span>
+wal_buffers = 16MB
+
+<span class="comment">-- Minimum WAL size to keep</span>
+min_wal_size = 1GB
+max_wal_size = 4GB
+
+<span class="comment">-- WAL writer delay</span>
+wal_writer_delay = 200ms
+
+<span class="comment">-- Synchronous commit mode</span>
+synchronous_commit = on  <span class="comment">-- on, off, remote_write, local, remote_apply</span>
+                    </div>
+                </div>
+
+                <div class="config-param">
+                    <div class="param-name">4. Query Planner Settings</div>
+                    <div class="code-block">
+<span class="comment">-- Enable/disable specific scan types</span>
+enable_seqscan = on
+enable_indexscan = on
+enable_bitmapscan = on
+
+<span class="comment">-- Cost parameters</span>
+random_page_cost = 4.0
+seq_page_cost = 1.0
+cpu_tuple_cost = 0.01
+cpu_index_tuple_cost = 0.005
+
+<span class="comment">-- Parallelism</span>
+max_parallel_workers_per_gather = 4
+max_parallel_workers = 8
+                    </div>
+                </div>
+
+                <div class="config-param">
+                    <div class="param-name">5. Checkpoint Settings</div>
+                    <div class="code-block">
+<span class="comment">-- Maximum time between automatic checkpoints</span>
+checkpoint_timeout = 5min
+
+<span class="comment">-- Checkpoint completion target</span>
+checkpoint_completion_target = 0.9
+
+<span class="comment">-- Warning threshold for checkpoint duration</span>
+checkpoint_warning = 30s
+                    </div>
+                </div>
+
+                <div class="config-param">
+                    <div class="param-name">6. Autovacuum Settings</div>
+                    <div class="code-block">
+<span class="comment">-- Enable autovacuum</span>
+autovacuum = on
+
+<span class="comment">-- Max autovacuum workers</span>
+autovacuum_max_workers = 3
+
+<span class="comment">-- Vacuum delay to avoid overwhelming system</span>
+autovacuum_naptime = 1min
+autovacuum_vacuum_threshold = 50
+autovacuum_analyze_threshold = 50
+autovacuum_vacuum_scale_factor = 0.2
+autovacuum_analyze_scale_factor = 0.1
+                    </div>
+                </div>
+
+                <h3>Managing Configuration</h3>
+                <div class="code-block">
+<span class="comment">-- View current configuration</span>
+<span class="keyword">SELECT</span> name, setting, unit, context 
+<span class="keyword">FROM</span> pg_settings 
+<span class="keyword">WHERE</span> name <span class="keyword">LIKE</span> <span class="string">'%work_mem%'</span>;
+
+<span class="comment">-- Change setting for current session</span>
+<span class="keyword">SET</span> work_mem = <span class="string">'128MB'</span>;
+
+<span class="comment">-- Change setting permanently (requires reload)</span>
+<span class="keyword">ALTER SYSTEM SET</span> shared_buffers = <span class="string">'8GB'</span>;
+
+<span class="comment">-- Reload configuration without restart</span>
+<span class="keyword">SELECT</span> <span class="function">pg_reload_conf</span>();
+
+<span class="comment">-- Check if restart is required for a setting</span>
+<span class="keyword">SELECT</span> name, setting, context 
+<span class="keyword">FROM</span> pg_settings 
+<span class="keyword">WHERE</span> context = <span class="string">'postmaster'</span>;
+
+<span class="comment">-- View pending restart settings</span>
+<span class="keyword">SELECT</span> name, setting, pending_restart 
+<span class="keyword">FROM</span> pg_settings 
+<span class="keyword">WHERE</span> pending_restart = <span class="keyword">true</span>;
+                </div>
+
+                <h3>Configuration Context Types</h3>
+                <table class="catalog-table">
+                    <thead>
+                        <tr>
+                            <th>Context</th>
+                            <th>Change Method</th>
+                            <th>Applies</th>
+                            <th>Example</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>postmaster</strong></td>
+                            <td>Requires server restart</td>
+                            <td>At startup only</td>
+                            <td>shared_buffers, max_connections</td>
+                        </tr>
+                        <tr>
+                            <td><strong>sighup</strong></td>
+                            <td>Reload configuration</td>
+                            <td>Without restart</td>
+                            <td>work_mem, autovacuum settings</td>
+                        </tr>
+                        <tr>
+                            <td><strong>superuser</strong></td>
+                            <td>ALTER SYSTEM or SET</td>
+                            <td>Superuser session</td>
+                            <td>log_statement</td>
+                        </tr>
+                        <tr>
+                            <td><strong>user</strong></td>
+                            <td>SET command</td>
+                            <td>Any user session</td>
+                            <td>statement_timeout</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- LOGS TAB -->
+        <div id="logs" class="tab-content">
+            <div class="section">
+                <h2>PostgreSQL Logging & Monitoring</h2>
+
+                <h3>Log Configuration Parameters</h3>
+
+                <div class="config-param">
+                    <div class="param-name">1. Basic Logging Setup</div>
+                    <div class="code-block">
+<span class="comment">-- Where to log</span>
+log_destination = <span class="string">'stderr'</span>  <span class="comment">-- stderr, csvlog, syslog, eventlog</span>
+
+<span class="comment">-- Logging collector process</span>
+logging_collector = on
+
+<span class="comment">-- Log directory and filenames</span>
+log_directory = <span class="string">'log'</span>
+log_filename = <span class="string">'postgresql-%Y-%m-%d_%H%M%S.log'</span>
+
+<span class="comment">-- Log rotation</span>
+log_rotation_age = 1d        <span class="comment">-- Rotate after 1 day</span>
+log_rotation_size = 100MB    <span class="comment">-- Rotate after 100MB</span>
+log_truncate_on_rotation = off
+                    </div>
+                </div>
+
+                <div class="config-param">
+                    <div class="param-name">2. What to Log</div>
+                    <div class="code-block">
+<span class="comment">-- Log level: DEBUG5, DEBUG1, INFO, NOTICE, WARNING, ERROR, LOG, FATAL, PANIC</span>
+log_min_messages = warning
+log_min_error_statement = error
+
+<span class="comment">-- Log specific events</span>
+log_connections = on
+log_disconnections = on
+log_duration = off
+log_statement = <span class="string">'none'</span>  <span class="comment">-- none, ddl, mod, all</span>
+
+<span class="comment">-- Log slow queries</span>
+log_min_duration_statement = 1000  <span class="comment">-- Log queries over 1 second</span>
+
+<span class="comment">-- Log checkpoints</span>
+log_checkpoints = on
+
+<span class="comment">-- Log lock waits</span>
+log_lock_waits = on
+deadlock_timeout = 1s
+
+<span class="comment">-- Log autovacuum activity</span>
+log_autovacuum_min_duration = 0  <span class="comment">-- Log all autovacuum runs</span>
+
+<span class="comment">-- Log temporary files</span>
+log_temp_files = 0  <span class="comment">-- Log all temp file usage</span>
+                    </div>
+                </div>
+
+                <div class="config-param">
+                    <div class="param-name">3. Log Line Format</div>
+                    <div class="code-block">
+<span class="comment">-- Log line prefix (timestamp, user, database, etc.)</span>
+log_line_prefix = <span class="string">'%t [%p]: [%l-1] user=%u,db=%d,app=%a,client=%h '</span>
+
+<span class="comment">-- Common prefix variables:</span>
+<span class="comment">-- %t = timestamp, %p = process ID, %u = user name</span>
+<span class="comment">-- %d = database, %h = host, %a = application name</span>
+<span class="comment">-- %l = log line number, %m = timestamp with milliseconds</span>
+
+<span class="comment">-- Include error context</span>
+log_error_verbosity = default  <span class="comment">-- terse, default, verbose</span>
+                    </div>
+                </div>
+
+                <h3>Live Log Monitoring Simulation</h3>
+                <div class="interactive-demo">
+                    <button class="demo-button" onclick="startLogStream()">Start Log Stream</button>
+                    <button class="demo-button" onclick="stopLogStream()">Stop Stream</button>
+                    <button class="demo-button" onclick="clearLogs()">Clear Logs</button>
+                    <div class="log-stream" id="logStream"></div>
+                </div>
+
+                <h3>Important Log Queries</h3>
+                <div class="code-block">
+<span class="comment">-- View current logging configuration</span>
+<span class="keyword">SELECT</span> name, setting, short_desc 
+<span class="keyword">FROM</span> pg_settings 
+<span class="keyword">WHERE</span> name <span class="keyword">LIKE</span> <span class="string">'log_%'</span>
+<span class="keyword">ORDER BY</span> name;
+
+<span class="comment">-- Check log file location</span>
+<span class="keyword">SELECT</span> <span class="function">pg_current_logfile</span>();
+
+<span class="comment">-- View recent log entries (if using pg_read_file)</span>
+<span class="keyword">SELECT</span> * <span class="keyword">FROM</span> <span class="function">pg_read_file</span>(<span class="function">pg_current_logfile</span>(), 0, 1000);
+                </div>
+
+                <h3>Log Analysis Best Practices</h3>
+                <div class="metric-grid">
+                    <div class="metric-card">
+                        <h4>Monitor Slow Queries</h4>
+                        <p>Set log_min_duration_statement to catch performance issues</p>
+                    </div>
+                    <div class="metric-card">
+                        <h4>Track Connections</h4>
+                        <p>Enable log_connections to monitor access patterns</p>
+                    </div>
+                    <div class="metric-card">
+                        <h4>Watch Checkpoints</h4>
+                        <p>Log checkpoints to identify I/O bottlenecks</p>
+                    </div>
+                    <div class="metric-card">
+                        <h4>Analyze Locks</h4>
+                        <p>Enable log_lock_waits to find concurrency issues</p>
+                    </div>
+                </div>
+
+                <h3>Log File Tools</h3>
+                <div class="code-block">
+<span class="comment">-- View logs with grep (Linux/Mac)</span>
+grep "ERROR" /var/log/postgresql/postgresql-*.log
+
+<span class="comment">-- Monitor logs in real-time</span>
+tail -f /var/log/postgresql/postgresql-*.log
+
+<span class="comment">-- Count error types</span>
+grep "ERROR" postgresql.log | awk '{print $NF}' | sort | uniq -c
+
+<span class="comment">-- Using pgBadger for log analysis</span>
+pgbadger /var/log/postgresql/postgresql-*.log -o report.html
+                </div>
+            </div>
+        </div>
+
+        <!-- CATALOG TAB -->
+        <div id="catalog" class="tab-content">
+            <div class="section">
+                <h2>PostgreSQL Catalog System (pg_catalog)</h2>
+
+                <p>The <span class="tooltip" data-tooltip="System schema containing all metadata">pg_catalog</span> schema stores all metadata about database objects, providing a complete view of the database structure.</p>
+
+                <h3>Catalog Architecture</h3>
+                <div class="animation-box">
+                    <div class="process-flow">
+                        <div class="process-node">
+                            <strong>pg_database</strong>
+                            <p>Database info</p>
+                        </div>
+                        <div class="process-node">
+                            <strong>pg_class</strong>
+                            <p>Tables, indexes</p>
+                        </div>
+                        <div class="process-node">
+                            <strong>pg_attribute</strong>
+                            <p>Column info</p>
+                        </div>
+                        <div class="process-node">
+                            <strong>pg_stat_*</strong>
+                            <p>Statistics</p>
+                        </div>
+                    </div>
+                </div>
+
+                <h3>Essential Catalog Tables</h3>
+
+                <div class="config-param">
+                    <div class="param-name">1. pg_database - Database Information</div>
+                    <div class="code-block">
+<span class="comment">-- List all databases with size</span>
+<span class="keyword">SELECT</span> 
+    datname <span class="keyword">AS</span> database_name,
+    <span class="function">pg_size_pretty</span>(<span class="function">pg_database_size</span>(datname)) <span class="keyword">AS</span> size,
+    datconnlimit <span class="keyword">AS</span> connection_limit,
+    datallowconn <span class="keyword">AS</span> allow_connections
+<span class="keyword">FROM</span> pg_database
+<span class="keyword">ORDER BY</span> <span class="function">pg_database_size</span>(datname) <span class="keyword">DESC</span>;
+
+<span class="comment">-- Database age (for vacuum monitoring)</span>
+<span class="keyword">SELECT</span> 
+    datname,
+    age(datfrozenxid) <span class="keyword">AS</span> transaction_age
+<span class="keyword">FROM</span> pg_database
+<span class="keyword">ORDER BY</span> age(datfrozenxid) <span class="keyword">DESC</span>;
+                    </div>
+                </div>
+
+                <div class="config-param">
+                    <div class="param-name">2. pg_class - Tables, Indexes, Sequences</div>
+                    <div class="code-block">
+<span class="comment">-- List all tables with sizes</span>
+<span class="keyword">SELECT</span> 
+    schemaname,
+    tablename,
+    <span class="function">pg_size_pretty</span>(<span class="function">pg_total_relation_size</span>(schemaname||<span class="string">'.'</span>||tablename)) <span class="keyword">AS</span> total_size,
+    <span class="function">pg_size_pretty</span>(<span class="function">pg_relation_size</span>(schemaname||<span class="string">'.'</span>||tablename)) <span class="keyword">AS</span> table_size,
+    <span class="function">pg_size_pretty</span>(<span class="function">pg_indexes_size</span>(schemaname||<span class="string">'.'</span>||tablename)) <span class="keyword">AS</span> indexes_size
+<span class="keyword">FROM</span> pg_tables
+<span class="keyword">WHERE</span> schemaname = <span class="string">'public'</span>
+<span class="keyword">ORDER BY</span> <span class="function">pg_total_relation_size</span>(schemaname||<span class="string">'.'</span>||tablename) <span class="keyword">DESC</span>;
+
+<span class="comment">-- Find all indexes for a table</span>
+<span class="keyword">SELECT</span> 
+    indexname,
+    indexdef
+<span class="keyword">FROM</span> pg_indexes
+<span class="keyword">WHERE</span> tablename = <span class="string">'your_table_name'</span>;
+                    </div>
+                </div>
+
+                <div class="config-param">
+                    <div class="param-name">3. pg_stat_activity - Current Activity</div>
+                    <div class="code-block">
+<span class="comment">-- View all active connections and queries</span>
+<span class="keyword">SELECT</span> 
+    pid,
+    usename,
+    application_name,
+    client_addr,
+    state,
+    query_start,
+    state_change,
+    <span class="keyword">LEFT</span>(query, 100) <span class="keyword">AS</span> query
+<span class="keyword">FROM</span> pg_stat_activity
+<span class="keyword">WHERE</span> state != <span class="string">'idle'</span>
+<span class="keyword">ORDER BY</span> query_start;
+
+<span class="comment">-- Find long-running queries</span>
+<span class="keyword">SELECT</span> 
+    pid,
+    now() - query_start <span class="keyword">AS</span> duration,
+    usename,
+    query
+<span class="keyword">FROM</span> pg_stat_activity
+<span class="keyword">WHERE</span> state = <span class="string">'active'</span> 
+    <span class="keyword">AND</span> now() - query_start > interval <span class="string">'5 minutes'</span>
+<span class="keyword">ORDER BY</span> duration <span class="keyword">DESC</span>;
+
+<span class="comment">-- Kill a specific query</span>
+<span class="keyword">SELECT</span> <span class="function">pg_cancel_backend</span>(pid);  <span class="comment">-- Graceful cancel</span>
+<span class="keyword">SELECT</span> <span class="function">pg_terminate_backend</span>(pid);  <span class="comment">-- Force terminate</span>
+                    </div>
+                </div>
+
+                <div class="config-param">
+                    <div class="param-name">4. pg_stat_user_tables - Table Statistics</div>
+                    <div class="code-block">
+<span class="comment">-- Comprehensive table statistics</span>
+<span class="keyword">SELECT</span> 
+    schemaname,
+    relname <span class="keyword">AS</span> table_name,
+    seq_scan,
+    seq_tup_read,
+    idx_scan,
+    idx_tup_fetch,
+    n_tup_ins <span class="keyword">AS</span> inserts,
+    n_tup_upd <span class="keyword">AS</span> updates,
+    n_tup_del <span class="keyword">AS</span> deletes,
+    n_live_tup <span class="keyword">AS</span> live_tuples,
+    n_dead_tup <span class="keyword">AS</span> dead_tuples,
+    last_vacuum,
+    last_autovacuum,
+    last_analyze,
+    last_autoanalyze
+<span class="keyword">FROM</span> pg_stat_user_tables
+<span class="keyword">ORDER BY</span> seq_scan + idx_scan <span class="keyword">DESC</span>;
+
+<span class="comment">-- Tables needing vacuum (high dead tuple ratio)</span>
+<span class="keyword">SELECT</span> 
+    schemaname,
+    relname,
+    n_dead_tup,
+    n_live_tup,
+    <span class="function">ROUND</span>(n_dead_tup * 100.0 / <span class="function">NULLIF</span>(n_live_tup, 0), 2) <span class="keyword">AS</span> dead_ratio
+<span class="keyword">FROM</span> pg_stat_user_tables
+<span class="keyword">WHERE</span> n_dead_tup > 1000
+<span class="keyword">ORDER BY</span> dead_ratio <span class="keyword">DESC</span>;
+                    </div>
+                </div>
+
+                <div class="config-param">
+                    <div class="param-name">5. pg_stat_user_indexes - Index Usage</div>
+                    <div class="code-block">
+<span class="comment">-- Find unused indexes</span>
+<span class="keyword">SELECT</span> 
+    schemaname,
+    tablename,
+    indexname,
+    idx_scan <span class="keyword">AS</span> index_scans,
+    <span class="function">pg_size_pretty</span>(<span class="function">pg_relation_size</span>(indexrelid)) <span class="keyword">AS</span> index_size
+<span class="keyword">FROM</span> pg_stat_user_indexes
+<span class="keyword">WHERE</span> idx_scan = 0
+    <span class="keyword">AND</span> indexrelname <span class="keyword">NOT LIKE</span> <span class="string">'%_pkey'</span>
+<span class="keyword">ORDER BY</span> <span class="function">pg_relation_size</span>(indexrelid) <span class="keyword">DESC</span>;
+
+<span class="comment">-- Most used indexes</span>
+<span class="keyword">SELECT</span> 
+    schemaname,
+    tablename,
+    indexname,
+    idx_scan,
+    idx_tup_read,
+    idx_tup_fetch
+<span class="keyword">FROM</span> pg_stat_user_indexes
+<span class="keyword">ORDER BY</span> idx_scan <span class="keyword">DESC</span>
+<span class="keyword">LIMIT</span> 20;
+                    </div>
+                </div>
+
+                <div class="config-param">
+                    <div class="param-name">6. pg_locks - Lock Information</div>
+                    <div class="code-block">
+<span class="comment">-- View current locks</span>
+<span class="keyword">SELECT</span> 
+    l.locktype,
+    l.database,
+    l.relation::<span class="keyword">regclass</span>,
+    l.page,
+    l.tuple,
+    l.transactionid,
+    l.mode,
+    l.granted,
+    a.usename,
+    a.query,
+    a.query_start
+<span class="keyword">FROM</span> pg_locks l
+<span class="keyword">LEFT JOIN</span> pg_stat_activity a <span class="keyword">ON</span> l.pid = a.pid
+<span class="keyword">WHERE</span> <span class="keyword">NOT</span> l.granted
+<span class="keyword">ORDER BY</span> a.query_start;
+
+<span class="comment">-- Find blocking queries</span>
+<span class="keyword">SELECT</span> 
+    blocked_locks.pid <span class="keyword">AS</span> blocked_pid,
+    blocked_activity.usename <span class="keyword">AS</span> blocked_user,
+    blocking_locks.pid <span class="keyword">AS</span> blocking_pid,
+    blocking_activity.usename <span class="keyword">AS</span> blocking_user,
+    blocked_activity.query <span class="keyword">AS</span> blocked_statement,
+    blocking_activity.query <span class="keyword">AS</span> blocking_statement
+<span class="keyword">FROM</span> pg_catalog.pg_locks blocked_locks
+<span class="keyword">JOIN</span> pg_catalog.pg_stat_activity blocked_activity <span class="keyword">ON</span> blocked_activity.pid = blocked_locks.pid
+<span class="keyword">JOIN</span> pg_catalog.pg_locks blocking_locks 
+    <span class="keyword">ON</span> blocking_locks.locktype = blocked_locks.locktype
+    <span class="keyword">AND</span> blocking_locks.database <span class="keyword">IS NOT DISTINCT FROM</span> blocked_locks.database
+    <span class="keyword">AND</span> blocking_locks.relation <span class="keyword">IS NOT DISTINCT FROM</span> blocked_locks.relation
+    <span class="keyword">AND</span> blocking_locks.pid != blocked_locks.pid
+<span class="keyword">JOIN</span> pg_catalog.pg_stat_activity blocking_activity <span class="keyword">ON</span> blocking_activity.pid = blocking_locks.pid
+<span class="keyword">WHERE NOT</span> blocked_locks.granted;
+                    </div>
+                </div>
+
+                <h3>Key Catalog Tables Reference</h3>
+                <table class="catalog-table">
+                    <thead>
+                        <tr>
+                            <th>Catalog</th>
+                            <th>Purpose</th>
+                            <th>Key Columns</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>pg_database</strong></td>
+                            <td>Database metadata</td>
+                            <td>datname, datdba, encoding, datcollate</td>
+                        </tr>
+                        <tr>
+                            <td><strong>pg_class</strong></td>
+                            <td>Tables, indexes, sequences, views</td>
+                            <td>relname, relkind, reltuples, relpages</td>
+                        </tr>
+                        <tr>
+                            <td><strong>pg_attribute</strong></td>
+                            <td>Table columns</td>
+                            <td>attname, atttypid, attlen, attnum</td>
+                        </tr>
+                        <tr>
+                            <td><strong>pg_index</strong></td>
+                            <td>Index definitions</td>
+                            <td>indexrelid, indrelid, indisunique, indisprimary</td>
+                        </tr>
+                        <tr>
+                            <td><strong>pg_proc</strong></td>
+                            <td>Functions and procedures</td>
+                            <td>proname, prorettype, proargtypes</td>
+                        </tr>
+                        <tr>
+                            <td><strong>pg_namespace</strong></td>
+                            <td>Schemas</td>
+                            <td>nspname, nspowner</td>
+                        </tr>
+                        <tr>
+                            <td><strong>pg_roles</strong></td>
+                            <td>Database roles</td>
+                            <td>rolname, rolsuper, rolinherit, rolcanlogin</td>
+                        </tr>
+                        <tr>
+                            <td><strong>pg_tablespace</strong></td>
+                            <td>Tablespace information</td>
+                            <td>spcname, spcowner, spclocation</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- METRICS TAB -->
+        <!-- <div id="metrics" class="tab-content">
+            <div class="section">
+                <h2>Default Metrics & Performance Monitoring</h2>
+
+                <h3>Real-Time Performance Dashboard</h3>
+                <div class="metric-grid" id="metricsGrid">
+                    <div class="metric-card" onclick="showMetricDetail('connections')">
+                        <h4>🔌 Active Connections</h4>
+                        <div class="metric-value" id="connMetric">87</div>
+                        <p>Current / Max: 100</p>
+                    </div>
+                    <div class="metric-card" onclick="showMetricDetail('transactions')">
+                        <h4>⚡ Transactions/sec</h4>
+                        <div class="metric-value" id="tpsMetric">1,245</div>
+                        <p>Commits + Rollbacks</p>
+                    </div>
+                    <div class="metric-card" onclick="showMetricDetail('cache')">
+                        <h4>💾 Cache Hit Ratio</h4>
+                        <div class="metric-value" id="cacheMetric">98.5%</div>
+                        <p>Buffer cache efficiency</p>
+                    </div>
+                    <div class="metric-card" onclick="showMetricDetail('io')">
+                        <h4>📊 Disk I/O</h4>
+                        <div class="metric-value" id="ioMetric">2.4 GB/s</div>
+                        <p>Read + Write throughput</p>
+                    </div>
+                    <div class="metric-card" onclick="showMetricDetail('queries')">
+                        <h4>🔍 Avg Query Time</h4>
+                        <div class="metric-value" id="queryMetric">45 ms</div>
+                        <p>Mean execution time</p>
+                    </div>
+                    <div class="metric-card" onclick="showMetricDetail('locks')">
+                        <h4>🔒 Lock Waits</h4>
+                        <div class="metric-value" id="lockMetric">3</div>
+                        <p>Currently waiting</p>
+                    </div>
+                </div>
+
+                <div id="metricDetail" style="display:none; margin-top: 30px;"></div>
+
+                <h3>1. Connection Metrics</h3>
+                <div class="config-param">
+                    <div class="code-block">
+<span class="comment">-- Current connection count by state</span>
+<span class="keyword">SELECT</span> 
+    state,
+    <span class="function">COUNT</span>(*) <span class="keyword">AS</span> count
+<span class="keyword">FROM</span> pg_stat_activity
+<span class="keyword">GROUP BY</span> state
+<span class="keyword">ORDER BY</span> count <span class="keyword">DESC</span>;
+
+<span class="comment">-- Connection usage percentage</span>
+<span class="keyword">SELECT</span> 
+    <span class="function">COUNT</span>(*) <span class="keyword">AS</span> current_connections,
+    setting::<span class="keyword">int</span> <span class="keyword">AS</span> max_connections,
+    <span class="function">ROUND</span>(<span class="function">COUNT</span>(*) * 100.0 / setting::<span class="keyword">int</span>, 2) <span class="keyword">AS</span> usage_percent
+<span class="keyword">FROM</span> pg_stat_activity, pg_settings
+<span class="keyword">WHERE</span> name = <span class="string">'max_connections'</span>;
+
+<span class="comment">-- Connections by database</span>
+<span class="keyword">SELECT</span> 
+    datname,
+    <span class="function">COUNT</span>(*) <span class="keyword">AS</span> connections,
+    <span class="function">COUNT</span>(*) <span class="keyword">FILTER</span> (<span class="keyword">WHERE</span> state = <span class="string">'active'</span>) <span class="keyword">AS</span> active
+<span class="keyword">FROM</span> pg_stat_activity
+<span class="keyword">WHERE</span> datname <span class="keyword">IS NOT NULL</span>
+<span class="keyword">GROUP BY</span> datname
+<span class="keyword">ORDER BY</span> connections <span class="keyword">DESC</span>;
+
+<span class="comment">-- Idle connections</span>
+<span class="keyword">SELECT</span> 
+    pid,
+    usename,
+    application_name,
+    client_addr,
+    now() - state_change <span class="keyword">AS</span> idle_time
+<span class="keyword">FROM</span> pg_stat_activity
+<span class="keyword">WHERE</span> state = <span class="string">'idle'</span>
+<span class="keyword">ORDER BY</span> idle_time <span class="keyword">DESC</span>;
+                    </div>
+                </div>
+
+                <h3>2. Transaction Metrics</h3>
+                <div class="config-param">
+                    <div class="code-block">
+<span class="comment">-- Transaction rate per database</span>
+<span class="keyword">SELECT</span> 
+    datname,
+    xact_commit <span class="keyword">AS</span> commits,
+    xact_rollback <span class="keyword">AS</span> rollbacks,
+    xact_commit + xact_rollback <span class="keyword">AS</span> total_transactions,
+    <span class="function">ROUND</span>(xact_rollback * 100.0 / <span class="function">NULLIF</span>(xact_commit + xact_rollback, 0), 2) <span class="keyword">AS</span> rollback_ratio
+<span class="keyword">FROM</span> pg_stat_database
+<span class="keyword">WHERE</span> datname <span class="keyword">IS NOT NULL</span>
+<span class="keyword">ORDER BY</span> total_transactions <span class="keyword">DESC</span>;
+
+<span class="comment">-- Transactions per second (sample over 10 seconds)</span>
+<span class="keyword">WITH</span> t1 <span class="keyword">AS</span> (
+    <span class="keyword">SELECT</span> xact_commit + xact_rollback <span class="keyword">AS</span> total 
+    <span class="keyword">FROM</span> pg_stat_database 
+    <span class="keyword">WHERE</span> datname = <span class="function">current_database</span>()
+),
+t2 <span class="keyword">AS</span> (
+    <span class="keyword">SELECT</span> <span class="function">pg_sleep</span>(10),
+    xact_commit + xact_rollback <span class="keyword">AS</span> total 
+    <span class="keyword">FROM</span> pg_stat_database 
+    <span class="keyword">WHERE</span> datname = <span class="function">current_database</span>()
+)
+<span class="keyword">SELECT</span> (t2.total - t1.total) / 10.0 <span class="keyword">AS</span> tps
+<span class="keyword">FROM</span> t1, t2;
+
+<span class="comment">-- Long-running transactions</span>
+<span class="keyword">SELECT</span> 
+    pid,
+    usename,
+    now() - xact_start <span class="keyword">AS</span> transaction_duration,
+    state,
+    query
+ -->
+
+
+
+
+
+
+    <!-- METRICS TAB -->
+    <div id="metrics" class="tab-content">
+        <div class="section">
+            <h2>Default Metrics & Performance Monitoring</h2>
+
+            <h3>Real-Time Performance Dashboard</h3>
+            <div class="metric-grid" id="metricsGrid">
+                <div class="metric-card" onclick="showMetricDetail('connections')">
+                    <h4>🔌 Active Connections</h4>
+                    <div class="metric-value" id="connMetric">87</div>
+                    <p>Current / Max: 100</p>
+                </div>
+                <div class="metric-card" onclick="showMetricDetail('transactions')">
+                    <h4>⚡ Transactions/sec</h4>
+                    <div class="metric-value" id="tpsMetric">1,245</div>
+                    <p>Commits + Rollbacks</p>
+                </div>
+                <div class="metric-card" onclick="showMetricDetail('cache')">
+                    <h4>💾 Cache Hit Ratio</h4>
+                    <div class="metric-value" id="cacheMetric">98.5%</div>
+                    <p>Buffer cache efficiency</p>
+                </div>
+                <div class="metric-card" onclick="showMetricDetail('io')">
+                    <h4>📊 Disk I/O</h4>
+                    <div class="metric-value" id="ioMetric">2.4 GB/s</div>
+                    <p>Read + Write throughput</p>
+                </div>
+                <div class="metric-card" onclick="showMetricDetail('queries')">
+                    <h4>🔍 Avg Query Time</h4>
+                    <div class="metric-value" id="queryMetric">45 ms</div>
+                    <p>Mean execution time</p>
+                </div>
+                <div class="metric-card" onclick="showMetricDetail('locks')">
+                    <h4>🔒 Lock Waits</h4>
+                    <div class="metric-value" id="lockMetric">3</div>
+                    <p>Currently waiting</p>
+                </div>
+            </div>
+
+            <div id="metricDetail" style="display:none; margin-top: 30px;"></div>
+
+            <h3>1. Connection Metrics</h3>
+            <div class="config-param">
+                <div class="code-block">
+<span class="comment">-- Current connection count by state</span>
+<span class="keyword">SELECT</span> 
+state,
+<span class="function">COUNT</span>(*) <span class="keyword">AS</span> count
+<span class="keyword">FROM</span> pg_stat_activity
+<span class="keyword">GROUP BY</span> state
+<span class="keyword">ORDER BY</span> count <span class="keyword">DESC</span>;
+
+<span class="comment">-- Connection usage percentage</span>
+<span class="keyword">SELECT</span> 
+<span class="function">COUNT</span>(*) <span class="keyword">AS</span> current_connections,
+setting::<span class="keyword">int</span> <span class="keyword">AS</span> max_connections,
+<span class="function">ROUND</span>(<span class="function">COUNT</span>(*) * 100.0 / setting::<span class="keyword">int</span>, 2) <span class="keyword">AS</span> usage_percent
+<span class="keyword">FROM</span> pg_stat_activity, pg_settings
+<span class="keyword">WHERE</span> name = <span class="string">'max_connections'</span>;
+
+<span class="comment">-- Connections by database</span>
+<span class="keyword">SELECT</span> 
+datname,
+<span class="function">COUNT</span>(*) <span class="keyword">AS</span> connections,
+<span class="function">COUNT</span>(*) <span class="keyword">FILTER</span> (<span class="keyword">WHERE</span> state = <span class="string">'active'</span>) <span class="keyword">AS</span> active
+<span class="keyword">FROM</span> pg_stat_activity
+<span class="keyword">WHERE</span> datname <span class="keyword">IS NOT NULL</span>
+<span class="keyword">GROUP BY</span> datname
+<span class="keyword">ORDER BY</span> connections <span class="keyword">DESC</span>;
+
+<span class="comment">-- Idle connections</span>
+<span class="keyword">SELECT</span> 
+pid,
+usename,
+application_name,
+client_addr,
+now() - state_change <span class="keyword">AS</span> idle_time
+<span class="keyword">FROM</span> pg_stat_activity
+<span class="keyword">WHERE</span> state = <span class="string">'idle'</span>
+<span class="keyword">ORDER BY</span> idle_time <span class="keyword">DESC</span>;
+                </div>
+            </div>
+
+            <h3>2. Transaction Metrics</h3>
+            <div class="config-param">
+                <div class="code-block">
+<span class="comment">-- Transaction rate per database</span>
+<span class="keyword">SELECT</span> 
+datname,
+xact_commit <span class="keyword">AS</span> commits,
+xact_rollback <span class="keyword">AS</span> rollbacks,
+xact_commit + xact_rollback <span class="keyword">AS</span> total_transactions,
+<span class="function">ROUND</span>(xact_rollback * 100.0 / <span class="function">NULLIF</span>(xact_commit + xact_rollback, 0), 2) <span class="keyword">AS</span> rollback_ratio
+<span class="keyword">FROM</span> pg_stat_database
+<span class="keyword">WHERE</span> datname <span class="keyword">IS NOT NULL</span>
+<span class="keyword">ORDER BY</span> total_transactions <span class="keyword">DESC</span>;
+
+<span class="comment">-- Transactions per second (sample over 10 seconds)</span>
+<span class="keyword">WITH</span> t1 <span class="keyword">AS</span> (
+<span class="keyword">SELECT</span> xact_commit + xact_rollback <span class="keyword">AS</span> total 
+<span class="keyword">FROM</span> pg_stat_database 
+<span class="keyword">WHERE</span> datname = <span class="function">current_database</span>()
+),
+t2 <span class="keyword">AS</span> (
+<span class="keyword">SELECT</span> <span class="function">pg_sleep</span>(10),
+xact_commit + xact_rollback <span class="keyword">AS</span> total 
+<span class="keyword">FROM</span> pg_stat_database 
+<span class="keyword">WHERE</span> datname = <span class="function">current_database</span>()
+)
+<span class="keyword">SELECT</span> (t2.total - t1.total) / 10.0 <span class="keyword">AS</span> tps
+<span class="keyword">FROM</span> t1, t2;
+
+<span class="comment">-- Long-running transactions</span>
+<span class="keyword">SELECT</span> 
+pid,
+usename,
+now() - xact_start <span class="keyword">AS</span> transaction_duration,
+state,
+query
+<span class="keyword">FROM</span> pg_stat_activity
+<span class="keyword">WHERE</span> xact_start <span class="keyword">IS NOT NULL</span>
+<span class="keyword">AND</span> now() - xact_start > interval <span class="string">'1 minute'</span>
+<span class="keyword">ORDER BY</span> transaction_duration <span class="keyword">DESC</span>;
+                </div>
+            </div>
+
+            <h3>3. Cache Hit Ratio Metrics</h3>
+            <div class="config-param">
+                <div class="code-block">
+<span class="comment">-- Overall cache hit ratio (should be > 99%)</span>
+<span class="keyword">SELECT</span> 
+<span class="function">SUM</span>(heap_blks_read) <span class="keyword">AS</span> heap_read,
+<span class="function">SUM</span>(heap_blks_hit) <span class="keyword">AS</span> heap_hit,
+<span class="function">SUM</span>(heap_blks_hit) / (<span class="function">SUM</span>(heap_blks_hit) + <span class="function">SUM</span>(heap_blks_read)) <span class="keyword">AS</span> ratio
+<span class="keyword">FROM</span> pg_statio_user_tables;
+
+<span class="comment">-- Cache hit ratio per table</span>
+<span class="keyword">SELECT</span> 
+schemaname,
+relname,
+heap_blks_read,
+heap_blks_hit,
+<span class="function">ROUND</span>(heap_blks_hit * 100.0 / <span class="function">NULLIF</span>(heap_blks_hit + heap_blks_read, 0), 2) <span class="keyword">AS</span> cache_hit_ratio
+<span class="keyword">FROM</span> pg_statio_user_tables
+<span class="keyword">WHERE</span> heap_blks_read + heap_blks_hit > 0
+<span class="keyword">ORDER BY</span> heap_blks_read <span class="keyword">DESC</span>
+<span class="keyword">LIMIT</span> 20;
+
+<span class="comment">-- Index cache hit ratio</span>
+<span class="keyword">SELECT</span> 
+schemaname,
+relname,
+indexrelname,
+idx_blks_read,
+idx_blks_hit,
+<span class="function">ROUND</span>(idx_blks_hit * 100.0 / <span class="function">NULLIF</span>(idx_blks_hit + idx_blks_read, 0), 2) <span class="keyword">AS</span> cache_hit_ratio
+<span class="keyword">FROM</span> pg_statio_user_indexes
+<span class="keyword">WHERE</span> idx_blks_read + idx_blks_hit > 0
+<span class="keyword">ORDER BY</span> idx_blks_read <span class="keyword">DESC</span>
+<span class="keyword">LIMIT</span> 20;
+
+<span class="comment">-- Shared buffer statistics</span>
+<span class="keyword">SELECT</span> 
+name,
+setting,
+unit
+<span class="keyword">FROM</span> pg_settings
+<span class="keyword">WHERE</span> name <span class="keyword">IN</span> (<span class="string">'shared_buffers'</span>, <span class="string">'effective_cache_size'</span>);
+                </div>
+            </div>
+
+            <h3>4. I/O Performance Metrics</h3>
+            <div class="config-param">
+                <div class="code-block">
+<span class="comment">-- Disk I/O statistics per table</span>
+<span class="keyword">SELECT</span> 
+schemaname,
+relname,
+heap_blks_read,
+heap_blks_hit,
+idx_blks_read,
+idx_blks_hit,
+toast_blks_read,
+toast_blks_hit,
+tidx_blks_read,
+tidx_blks_hit
+<span class="keyword">FROM</span> pg_statio_user_tables
+<span class="keyword">ORDER BY</span> heap_blks_read + idx_blks_read <span class="keyword">DESC</span>
+<span class="keyword">LIMIT</span> 20;
+
+<span class="comment">-- WAL statistics</span>
+<span class="keyword">SELECT</span> 
+<span class="function">pg_current_wal_lsn</span>(),
+<span class="function">pg_walfile_name</span>(<span class="function">pg_current_wal_lsn</span>());
+
+<span class="comment">-- Database-wide I/O statistics</span>
+<span class="keyword">SELECT</span> 
+datname,
+blks_read,
+blks_hit,
+tup_returned,
+tup_fetched,
+tup_inserted,
+tup_updated,
+tup_deleted
+<span class="keyword">FROM</span> pg_stat_database
+<span class="keyword">WHERE</span> datname <span class="keyword">IS NOT NULL</span>
+<span class="keyword">ORDER BY</span> blks_read <span class="keyword">DESC</span>;
+
+<span class="comment">-- Temporary file usage</span>
+<span class="keyword">SELECT</span> 
+datname,
+temp_files,
+<span class="function">pg_size_pretty</span>(temp_bytes) <span class="keyword">AS</span> temp_size
+<span class="keyword">FROM</span> pg_stat_database
+<span class="keyword">WHERE</span> temp_files > 0
+<span class="keyword">ORDER BY</span> temp_bytes <span class="keyword">DESC</span>;
+                </div>
+            </div>
+
+            <h3>5. Query Performance Metrics</h3>
+            <div class="config-param">
+                <div class="code-block">
+<span class="comment">-- Requires pg_stat_statements extension</span>
+<span class="keyword">CREATE EXTENSION IF NOT EXISTS</span> pg_stat_statements;
+
+<span class="comment">-- Top 20 slowest queries by total time</span>
+<span class="keyword">SELECT</span> 
+<span class="function">ROUND</span>(total_exec_time::numeric, 2) <span class="keyword">AS</span> total_time,
+calls,
+<span class="function">ROUND</span>(mean_exec_time::numeric, 2) <span class="keyword">AS</span> mean_time,
+<span class="function">ROUND</span>(stddev_exec_time::numeric, 2) <span class="keyword">AS</span> stddev_time,
+<span class="function">LEFT</span>(query, 100) <span class="keyword">AS</span> query
+<span class="keyword">FROM</span> pg_stat_statements
+<span class="keyword">ORDER BY</span> total_exec_time <span class="keyword">DESC</span>
+<span class="keyword">LIMIT</span> 20;
+
+<span class="comment">-- Queries with highest average execution time</span>
+<span class="keyword">SELECT</span> 
+<span class="function">ROUND</span>(mean_exec_time::numeric, 2) <span class="keyword">AS</span> avg_time,
+calls,
+<span class="function">LEFT</span>(query, 100) <span class="keyword">AS</span> query
+<span class="keyword">FROM</span> pg_stat_statements
+<span class="keyword">WHERE</span> calls > 10
+<span class="keyword">ORDER BY</span> mean_exec_time <span class="keyword">DESC</span>
+<span class="keyword">LIMIT</span> 20;
+
+<span class="comment">-- Most frequently executed queries</span>
+<span class="keyword">SELECT</span> 
+calls,
+<span class="function">ROUND</span>(total_exec_time::numeric, 2) <span class="keyword">AS</span> total_time,
+<span class="function">ROUND</span>(mean_exec_time::numeric, 2) <span class="keyword">AS</span> mean_time,
+<span class="function">LEFT</span>(query, 100) <span class="keyword">AS</span> query
+<span class="keyword">FROM</span> pg_stat_statements
+<span class="keyword">ORDER BY</span> calls <span class="keyword">DESC</span>
+<span class="keyword">LIMIT</span> 20;
+
+<span class="comment">-- Queries with most rows returned</span>
+<span class="keyword">SELECT</span> 
+calls,
+rows,
+<span class="function">ROUND</span>(rows::numeric / calls, 2) <span class="keyword">AS</span> rows_per_call,
+<span class="function">LEFT</span>(query, 100) <span class="keyword">AS</span> query
+<span class="keyword">FROM</span> pg_stat_statements
+<span class="keyword">WHERE</span> calls > 0
+<span class="keyword">ORDER BY</span> rows <span class="keyword">DESC</span>
+<span class="keyword">LIMIT</span> 20;
+                </div>
+            </div>
+
+            <h3>6. Lock and Blocking Metrics</h3>
+            <div class="config-param">
+                <div class="code-block">
+<span class="comment">-- Current lock count by type</span>
+<span class="keyword">SELECT</span> 
+locktype,
+mode,
+<span class="function">COUNT</span>(*) <span class="keyword">AS</span> lock_count
+<span class="keyword">FROM</span> pg_locks
+<span class="keyword">GROUP BY</span> locktype, mode
+<span class="keyword">ORDER BY</span> lock_count <span class="keyword">DESC</span>;
+
+<span class="comment">-- Locks waiting to be granted</span>
+<span class="keyword">SELECT</span> 
+l.pid,
+l.locktype,
+l.relation::<span class="keyword">regclass</span>,
+l.mode,
+l.granted,
+a.usename,
+a.query_start,
+now() - a.query_start <span class="keyword">AS</span> wait_time
+<span class="keyword">FROM</span> pg_locks l
+<span class="keyword">JOIN</span> pg_stat_activity a <span class="keyword">ON</span> l.pid = a.pid
+<span class="keyword">WHERE NOT</span> l.granted
+<span class="keyword">ORDER BY</span> wait_time <span class="keyword">DESC</span>;
+
+<span class="comment">-- Blocked and blocking query pairs</span>
+<span class="keyword">SELECT</span> 
+blocked.pid <span class="keyword">AS</span> blocked_pid,
+blocked.usename <span class="keyword">AS</span> blocked_user,
+blocking.pid <span class="keyword">AS</span> blocking_pid,
+blocking.usename <span class="keyword">AS</span> blocking_user,
+now() - blocked.query_start <span class="keyword">AS</span> blocked_duration,
+<span class="function">LEFT</span>(blocked.query, 80) <span class="keyword">AS</span> blocked_query,
+<span class="function">LEFT</span>(blocking.query, 80) <span class="keyword">AS</span> blocking_query
+<span class="keyword">FROM</span> pg_stat_activity <span class="keyword">AS</span> blocked
+<span class="keyword">JOIN</span> pg_locks <span class="keyword">AS</span> blocked_locks <span class="keyword">ON</span> blocked.pid = blocked_locks.pid
+<span class="keyword">JOIN</span> pg_locks <span class="keyword">AS</span> blocking_locks <span class="keyword">ON</span> blocking_locks.locktype = blocked_locks.locktype
+<span class="keyword">AND</span> blocking_locks.database <span class="keyword">IS NOT DISTINCT FROM</span> blocked_locks.database
+<span class="keyword">AND</span> blocking_locks.relation <span class="keyword">IS NOT DISTINCT FROM</span> blocked_locks.relation
+<span class="keyword">AND</span> blocking_locks.pid != blocked_locks.pid
+<span class="keyword">JOIN</span> pg_stat_activity <span class="keyword">AS</span> blocking <span class="keyword">ON</span> blocking.pid = blocking_locks.pid
+<span class="keyword">WHERE NOT</span> blocked_locks.granted
+<span class="keyword">AND</span> blocking_locks.granted;
+                </div>
+            </div>
+
+            <h3>Critical Metrics Thresholds</h3>
+            <table class="catalog-table">
+                <thead>
+                    <tr>
+                        <th>Metric</th>
+                        <th>Healthy Range</th>
+                        <th>Warning</th>
+                        <th>Critical</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Cache Hit Ratio</strong></td>
+                        <td>> 99%</td>
+                        <td>95-99%</td>
+                        <td>< 95%</td>
+                        <td>Increase shared_buffers</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Connection Usage</strong></td>
+                        <td>< 70%</td>
+                        <td>70-85%</td>
+                        <td>> 85%</td>
+                        <td>Increase max_connections or use pooling</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Transaction Rollback Ratio</strong></td>
+                        <td>< 5%</td>
+                        <td>5-10%</td>
+                        <td>> 10%</td>
+                        <td>Investigate application logic</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Dead Tuple Ratio</strong></td>
+                        <td>< 10%</td>
+                        <td>10-20%</td>
+                        <td>> 20%</td>
+                        <td>Tune autovacuum or run manual VACUUM</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Lock Wait Time</strong></td>
+                        <td>< 100ms</td>
+                        <td>100ms-1s</td>
+                        <td>> 1s</td>
+                        <td>Analyze blocking queries, optimize transactions</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Temp File Usage</strong></td>
+                        <td>Minimal</td>
+                        <td>Occasional</td>
+                        <td>Frequent/Large</td>
+                        <td>Increase work_mem</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>Performance Monitoring Animation</h3>
+            <div class="animation-box">
+                <div id="performanceChart" style="height: 400px; position: relative;">
+                    <canvas id="metricsCanvas" width="1200" height="350"></canvas>
+                </div>
+                <div style="text-align: center; margin-top: 20px;">
+                    <button class="demo-button" onclick="startMetricsAnimation()">Start Monitoring</button>
+                    <button class="demo-button" onclick="stopMetricsAnimation()">Stop</button>
+                    <button class="demo-button" onclick="resetMetricsAnimation()">Reset</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- PG_CTL TAB -->
+    <div id="pgctl" class="tab-content">
+        <div class="section">
+            <h2>pg_ctl - PostgreSQL Server Management</h2>
+
+            <p><span class="tooltip" data-tooltip="PostgreSQL control utility">pg_ctl</span> is the command-line utility for controlling PostgreSQL server instances including start, stop, restart, and status operations.</p>
+
+            <h3>Server Lifecycle Animation</h3>
+            <div class="animation-box">
+                <div id="serverLifecycle" style="min-height: 350px; display: flex; flex-direction: column; justify-content: center; align-items: center;">
+                    <div id="serverState" style="font-size: 2em; margin: 20px; padding: 30px; background: white; border-radius: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.2);">
+                        Server: <span id="stateText" style="color: #667eea; font-weight: bold;">STOPPED</span>
+                    </div>
+                    <div style="display: flex; gap: 10px; margin: 20px;">
+                        <button class="demo-button" onclick="simulateStart()">Start</button>
+                        <button class="demo-button" onclick="simulateStop()">Stop</button>
+                        <button class="demo-button" onclick="simulateRestart()">Restart</button>
+                        <button class="demo-button" onclick="simulateReload()">Reload</button>
+                    </div>
+                    <div id="lifecycleLog" class="log-stream" style="width: 90%; height: 200px; margin-top: 20px;"></div>
+                </div>
+            </div>
+
+            <h3>Basic pg_ctl Commands</h3>
+            <div class="config-param">
+                <div class="param-name">1. Starting the Server</div>
+                <div class="code-block">
+<span class="comment">-- Start PostgreSQL server</span>
+pg_ctl start -D /path/to/data/directory
+
+<span class="comment">-- Start with specific log file</span>
+pg_ctl start -D /var/lib/postgresql/data -l /var/log/postgresql/server.log
+
+<span class="comment">-- Start with options</span>
+pg_ctl start -D /var/lib/postgresql/data -o "-c config_file=/etc/postgresql/postgresql.conf"
+
+<span class="comment">-- Start and wait for completion</span>
+pg_ctl start -D /var/lib/postgresql/data -w -t 60
+
+<span class="comment">-- Start in different modes</span>
+pg_ctl start -D /var/lib/postgresql/data -m smart    <span class="comment"># Default</span>
+pg_ctl start -D /var/lib/postgresql/data -m fast     <span class="comment"># Fast shutdown recovery</span>
+pg_ctl start -D /var/lib/postgresql/data -m immediate <span class="comment"># Immediate recovery</span>
+                </div>
+            </div>
+
+            <div class="config-param">
+                <div class="param-name">2. Stopping the Server</div>
+                <div class="code-block">
+<span class="comment">-- Smart shutdown (wait for clients to disconnect)</span>
+pg_ctl stop -D /var/lib/postgresql/data -m smart
+
+<span class="comment">-- Fast shutdown (disconnect clients, rollback transactions)</span>
+pg_ctl stop -D /var/lib/postgresql/data -m fast
+
+<span class="comment">-- Immediate shutdown (abort all processes, requires crash recovery)</span>
+pg_ctl stop -D /var/lib/postgresql/data -m immediate
+
+<span class="comment">-- Stop with timeout</span>
+pg_ctl stop -D /var/lib/postgresql/data -t 30 -m fast
+
+<span class="comment">-- Stop and wait for completion</span>
+pg_ctl stop -D /var/lib/postgresql/data -w
+                </div>
+            </div>
+
+            <div class="config-param">
+                <div class="param-name">3. Server Status and Information</div>
+                <div class="code-block">
+<span class="comment">-- Check server status</span>
+pg_ctl status -D /var/lib/postgresql/data
+
+<span class="comment">-- Output example:</span>
+<span class="comment">-- pg_ctl: server is running (PID: 12345)</span>
+<span class="comment">-- /usr/pgsql-14/bin/postgres "-D" "/var/lib/postgresql/data"</span>
+
+<span class="comment">-- Check if server is ready to accept connections</span>
+pg_isready -h localhost -p 5432
+
+<span class="comment">-- Get detailed status with psql</span>
+psql -U postgres -c "SELECT version();"
+psql -U postgres -c "SELECT pg_postmaster_start_time();"
+                </div>
+            </div>
+
+            <div class="config-param">
+                <div class="param-name">4. Restart and Reload Operations</div>
+                <div class="code-block">
+<span class="comment">-- Restart server (stop + start)</span>
+pg_ctl restart -D /var/lib/postgresql/data -m fast
+
+<span class="comment">-- Restart with new options</span>
+pg_ctl restart -D /var/lib/postgresql/data -o "-c shared_buffers=4GB"
+
+<span class="comment">-- Reload configuration without restart</span>
+pg_ctl reload -D /var/lib/postgresql/data
+
+<span class="comment">-- Or from SQL</span>
+<span class="keyword">SELECT</span> <span class="function">pg_reload_conf</span>();
+
+<span class="comment">-- Promote standby to primary (replication)</span>
+pg_ctl promote -D /var/lib/postgresql/data
+                </div>
+            </div>
+
+            <div class="config-param">
+                <div class="param-name">5. Advanced Operations</div>
+                <div class="code-block">
+<span class="comment">-- Initialize a new database cluster</span>
+pg_ctl init -D /var/lib/postgresql/data
+
+<span class="comment">-- Or use initdb directly</span>
+initdb -D /var/lib/postgresql/data --encoding=UTF8 --locale=en_US.UTF-8
+
+<span class="comment">-- Register PostgreSQL as a service (Windows)</span>
+pg_ctl register -N "PostgreSQL" -D "C:\PostgreSQL\data"
+
+<span class="comment">-- Unregister service</span>
+pg_ctl unregister -N "PostgreSQL"
+
+<span class="comment">-- Kill specific backend process</span>
+pg_ctl kill TERM 12345  <span class="comment"># Graceful termination</span>
+pg_ctl kill INT 12345   <span class="comment"># Fast shutdown</span>
+pg_ctl kill QUIT 12345  <span class="comment"># Immediate shutdown</span>
+                </div>
+            </div>
+
+            <h3>Shutdown Mode Comparison</h3>
+            <table class="catalog-table">
+                <thead>
+                    <tr>
+                        <th>Mode</th>
+                        <th>Behavior</th>
+                        <th>Wait for Clients</th>
+                        <th>Recovery Needed</th>
+                        <th>Use Case</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>smart</strong></td>
+                        <td>Wait for all clients to disconnect</td>
+                        <td>Yes</td>
+                        <td>No</td>
+                        <td>Graceful maintenance, can take long</td>
+                    </tr>
+                    <tr>
+                        <td><strong>fast</strong></td>
+                        <td>Disconnect clients, rollback transactions</td>
+                        <td>No</td>
+                        <td>No</td>
+                        <td>Standard shutdown (recommended)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>immediate</strong></td>
+                        <td>Abort all processes immediately</td>
+                        <td>No</td>
+                        <td>Yes</td>
+                        <td>Emergency only, requires crash recovery</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>Service Management</h3>
+            <div class="metric-grid">
+                <div class="metric-card">
+                    <h4>systemd (Linux)</h4>
+                    <div class="code-block">
+<span class="comment">-- Start service</span>
+systemctl start postgresql
+
+<span class="comment">-- Stop service</span>
+systemctl stop postgresql
+
+<span class="comment">-- Restart service</span>
+systemctl restart postgresql
+
+<span class="comment">-- Reload config</span>
+systemctl reload postgresql
+
+<span class="comment">-- Enable auto-start</span>
+systemctl enable postgresql
+
+<span class="comment">-- Check status</span>
+systemctl status postgresql
+                    </div>
+                </div>
+                <div class="metric-card">
+                    <h4>SysV Init (Older Linux)</h4>
+                    <div class="code-block">
+<span class="comment">-- Start service</span>
+service postgresql start
+
+<span class="comment">-- Stop service</span>
+service postgresql stop
+
+<span class="comment">-- Restart service</span>
+service postgresql restart
+
+<span class="comment">-- Reload config</span>
+service postgresql reload
+
+<span class="comment">-- Check status</span>
+service postgresql status
+                    </div>
+                </div>
+            </div>
+
+            <h3>Startup Troubleshooting</h3>
+            <div class="config-param">
+                <div class="code-block">
+<span class="comment">-- Check if port is already in use</span>
+netstat -an | grep 5432
+lsof -i :5432
+
+<span class="comment">-- Check data directory permissions</span>
+ls -la /var/lib/postgresql/data
+
+<span class="comment">-- View server log during startup</span>
+tail -f /var/log/postgresql/postgresql-*.log
+
+<span class="comment">-- Verify postmaster.pid doesn't exist (if startup fails)</span>
+rm /var/lib/postgresql/data/postmaster.pid
+
+<span class="comment">-- Check configuration syntax</span>
+postgres -D /var/lib/postgresql/data -C shared_buffers
+
+<span class="comment">-- Test configuration file</span>
+postgres --check -D /var/lib/postgresql/data
+                </div>
+            </div>
+
+            <h3>Common pg_ctl Options</h3>
+            <table class="catalog-table">
+                <thead>
+                    <tr>
+                        <th>Option</th>
+                        <th>Description</th>
+                        <th>Example</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>-D directory</strong></td>
+                        <td>Data directory location</td>
+                        <td>-D /var/lib/postgresql/data</td>
+                    </tr>
+                    <tr>
+                        <td><strong>-l filename</strong></td>
+                        <td>Log file location</td>
+                        <td>-l /var/log/postgresql/server.log</td>
+                    </tr>
+                    <tr>
+                        <td><strong>-m mode</strong></td>
+                        <td>Shutdown mode (smart/fast/immediate)</td>
+                        <td>-m fast</td>
+                    </tr>
+                    <tr>
+                        <td><strong>-w</strong></td>
+                        <td>Wait for operation to complete</td>
+                        <td>pg_ctl start -w</td>
+                    </tr>
+                    <tr>
+                        <td><strong>-t seconds</strong></td>
+                        <td>Timeout for wait operations</td>
+                        <td>-t 60</td>
+                    </tr>
+                    <tr>
+                        <td><strong>-o options</strong></td>
+                        <td>Pass options to postgres command</td>
+                        <td>-o "-c shared_buffers=4GB"</td>
+                    </tr>
+                    <tr>
+                        <td><strong>-c</strong></td>
+                        <td>Kill specified backend</td>
+                        <td>pg_ctl kill TERM 12345</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Tab switching
+    function showTab(tabName) {
+        const tabs = document.querySelectorAll('.tab-content');
+        const buttons = document.querySelectorAll('.tab-btn');
+        
+        tabs.forEach(tab => tab.classList.remove('active'));
+        buttons.forEach(btn => btn.classList.remove('active'));
+        
+        document.getElementById(tabName).classList.add('active');
+        event.target.classList.add('active');
+    }
+
+    // Architecture visualization
+    function initArchViz() {
+        const viz = document.getElementById('archViz');
+        const positions = [
+            {top: '20%', left: '20%'},
+            {top: '20%', right: '20%'},
+            {top: '60%', left: '15%'},
+            {top: '60%', right: '15%'}
+        ];
+        
+        positions.forEach((pos, i) => {
+            const client = document.createElement('div');
+            client.className = 'client-node';
+            client.textContent = `C${i+1}`;
+            client.style.position = 'absolute';
+            client.style.animationDelay = `${i * 0.3}s`;
+            Object.assign(client.style, pos);
+            viz.appendChild(client);
+        });
+    }
+
+    // Benchmark simulation
+    function simulateBenchmark() {
+        const output = document.getElementById('benchOutput');
+        const results = `transaction type: <select only>
+scaling factor: 50
+query mode: simple
+number of clients: 10
+number of threads: 2
+number of transactions per client: 1000
+number of transactions actually processed: 10000/10000
+latency average = 12.543 ms
+latency stddev = 8.234 ms
+tps = 797.234 (including connections establishing)
+tps = 798.432 (excluding connections establishing)`;
+        
+        output.textContent = results;
+    }
+
+    // Log stream simulation
+    let logInterval;
+    const logTypes = [
+        {class: 'info', messages: [
+            'Connection received: user=postgres database=mydb',
+            'Query executed successfully in 45ms',
+            'Checkpoint starting: time',
+            'Autovacuum started on table public.users'
+        ]},
+        {class: 'warning', messages: [
+            'Slow query detected: duration 5234ms',
+            'Connection pool nearly full: 85/100',
+            'Table bloat detected: public.orders'
+        ]},
+        {class: 'error', messages: [
+            'Lock timeout on table: public.products',
+            'Connection limit reached',
+            'Deadlock detected'
+        ]}
+    ];
+
+    function startLogStream() {
+        const stream = document.getElementById('logStream');
+        let logCount = 0;
+        
+        logInterval = setInterval(() => {
+            const typeGroup = logTypes[Math.floor(Math.random() * logTypes.length)];
+            const message = typeGroup.messages[Math.floor(Math.random() * typeGroup.messages.length)];
+            const timestamp = new Date().toISOString();
+            
+            const entry = document.createElement('div');
+            entry.className = `log-entry ${typeGroup.class}`;
+            entry.textContent = `[${timestamp}] ${message}`;
+            
+            stream.appendChild(entry);
+            logCount++;
+            
+            if (logCount > 50) {
+                stream.removeChild(stream.firstChild);
+            }
+            
+            stream.scrollTop = stream.scrollHeight;
+        }, 1500);
+    }
+
+    function stopLogStream() {
+        if (logInterval) {
+            clearInterval(logInterval);
+        }
+    }
+
+    function clearLogs() {
+        document.getElementById('logStream').innerHTML = '';
+    }
+
+    // Metric detail display
+    const metricDetails = {
+        connections: {
+            title: 'Connection Metrics Deep Dive',
+            content: `
+                <div class="config-param">
+                    <h3>Connection States</h3>
+                    <div class="performance-chart">
+                        <div class="chart-bar" style="width: 45%;">
+                            <span class="chart-label">Active: 45</span>
+                        </div>
+                        <div class="chart-bar" style="width: 30%;">
+                            <span class="chart-label">Idle: 30</span>
+                        </div>
+                        <div class="chart-bar" style="width: 12%;">
+                            <span class="chart-label">Idle in Transaction: 12</span>
+                        </div>
+                    </div>
+                    <p style="margin-top: 20px;"><strong>Analysis:</strong> Connection pool is healthy. Active connections represent ongoing queries. Monitor idle connections for potential leaks.</p>
+                </div>
+            `
+        },
+        transactions: {
+            title: 'Transaction Throughput Analysis',
+            content: `
+                <div class="config-param">
+                    <h3>Transaction Breakdown</h3>
+                    <div class="metric-grid">
+                        <div class="metric-card">
+                            <h4>Commits</h4>
+                            <div class="metric-value">1,198</div>
+                            <p>96.2% success rate</p>
+                        </div>
+                        <div class="metric-card">
+                            <h4>Rollbacks</h4>
+                            <div class="metric-value">47</div>
+                            <p>3.8% of transactions</p>
+                        </div>
+                    </div>
+                    <p style="margin-top: 20px;"><strong>Health:</strong> Low rollback ratio indicates stable application logic. High TPS shows good performance.</p>
+                </div>
+            `
+        },
+        cache: {
+            title: 'Buffer Cache Performance',
+            content: `
+                <div class="config-param">
+                    <h3>Cache Efficiency</h3>
+                    <div class="performance-chart">
+                        <div class="chart-bar" style="width: 98.5%;">
+                            <span class="chart-label">Hits: 98.5%</span>
+                        </div>
+                        <div class="chart-bar" style="width: 1.5%; background: linear-gradient(90deg, #f44336 0%, #e91e63 100%);">
+                            <span class="chart-label">Misses: 1.5%</span>
+                        </div>
+                    </div>
+                    <p style="margin-top: 20px;"><strong>Excellent:</strong> Cache hit ratio above 98% indicates optimal shared_buffers configuration. Most data served from memory.</p>
+                </div>
+            `
+        },
+        io: {
+            title: 'Disk I/O Analysis',
+            content: `
+                <div class="config-param">
+                    <h3>I/O Operations</h3>
+                    <div class="metric-grid">
+                        <div class="metric-card">
+                            <h4>Read Throughput</h4>
+                            <div class="metric-value">1.8 GB/s</div>
+                            <p>Sequential + Random</p>
+                        </div>
+                        <div class="metric-card">
+                            <h4>Write Throughput</h4>
+                            <div class="metric-value">0.6 GB/s</div>
+                            <p>WAL + Data files</p>
+                        </div>
+                    </div>
+                    <p style="margin-top: 20px;"><strong>Performance:</strong> Read-heavy workload typical for OLTP. WAL writes are efficient.</p>
+                </div>
+            `
+        },
+        queries: {
+            title: 'Query Performance Metrics',
+            content: `
+                <div class="config-param">
+                    <h3>Query Execution Times</h3>
+                    <div class="performance-chart">
+                        <div class="chart-bar" style="width: 70%;">
+                            <span class="chart-label">< 50ms: 70%</span>
+                        </div>
+                        <div class="chart-bar" style="width: 20%;">
+                            <span class="chart-label">50-500ms: 20%</span>
+                        </div>
+                        <div class="chart-bar" style="width: 10%; background: linear-gradient(90deg, #ff9800 0%, #ff5722 100%);">
+                            <span class="chart-label">> 500ms: 10%</span>
+                        </div>
+                    </div>
+                    <p style="margin-top: 20px;"><strong>Optimization:</strong> Most queries are fast. Focus on optimizing the 10% slow queries using EXPLAIN ANALYZE.</p>
+                </div>
+            `
+        },
+        locks: {
+            title: 'Lock Contention Analysis',
+            content: `
+                <div class="config-param">
+                    <h3>Lock Types</h3>
+                    <table class="catalog-table">
+                        <tr>
+                            <td><strong>AccessShareLock</strong></td>
+                            <td>124 granted</td>
+                            <td>0 waiting</td>
+                        </tr>
+                        <tr>
+                            <td><strong>RowExclusiveLock</strong></td>
+                            <td>45 granted</td>
+                            <td>2 waiting</td>
+                        </tr>
+                        <tr>
+                            <td><strong>ExclusiveLock</strong></td>
+                            <td>3 granted</td>
+                            <td>1 waiting</td>
+                        </tr>
+                    </table>
+                    <p style="margin-top: 20px;"><strong>Action:</strong> Minimal lock contention. Monitor waiting locks and optimize long-running transactions.</p>
+                </div>
+            `
+        }
+    };
+
+    function showMetricDetail(metric) {
+        const detail = document.getElementById('metricDetail');
+        const info = metricDetails[metric];
+        
+        detail.style.display = 'block';
+        detail.innerHTML = `
+            <div class="section">
+                <h2>${info.title}</h2>
+                ${info.content}
+            </div>
+        `;
+        
+        detail.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+
+    // Real-time metrics animation
+    let metricsAnimationInterval;
+    let canvas, ctx;
+    let dataPoints = {
+        tps: [],
+        cache: [],
+        connections: [],
+        io: []
+    };
+    let maxPoints = 60;
+
+    function initMetricsCanvas() {
+        canvas = document.getElementById('metricsCanvas');
+        if (!canvas) return;
+        ctx = canvas.getContext('2d');
+    }
+
+    function startMetricsAnimation() {
+        if (!ctx) initMetricsCanvas();
+        
+        metricsAnimationInterval = setInterval(() => {
+            // Generate random but realistic data
+            dataPoints.tps.push(1200 + Math.random() * 200 - 100);
+            dataPoints.cache.push(97 + Math.random() * 2);
+            dataPoints.connections.push(70 + Math.random() * 30);
+            dataPoints.io.push(2 + Math.random() * 1);
+            
+            // Keep only last maxPoints
+            Object.keys(dataPoints).forEach(key => {
+                if (dataPoints[key].length > maxPoints) {
+                    dataPoints[key].shift();
+                }
+            });
+            
+            drawMetricsChart();
+            updateMetricCards();
+        }, 1000);
+    }
+
+    function stopMetricsAnimation() {
+        if (metricsAnimationInterval) {
+            clearInterval(metricsAnimationInterval);
+        }
+    }
+
+    function resetMetricsAnimation() {
+        stopMetricsAnimation();
+        dataPoints = { tps: [], cache: [], connections: [], io: [] };
+        if (ctx) {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }
+    }
+
+    function drawMetricsChart() {
+        if (!ctx) return;
+        
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        const padding = 40;
+        const chartWidth = canvas.width - padding * 2;
+        const chartHeight = canvas.height - padding * 2;
+        
+        // Draw grid
+        ctx.strokeStyle = '#e0e0e0';
+        ctx.lineWidth = 1;
+        for (let i = 0; i <= 5; i++) {
+            const y = padding + (chartHeight / 5) * i;
+            ctx.beginPath();
+            ctx.moveTo(padding, y);
+            ctx.lineTo(canvas.width - padding, y);
+            ctx.stroke();
+        }
+        
+        // Draw axes labels
+        ctx.fillStyle = '#666';
+        ctx.font = '12px Arial';
+        ctx.fillText('Time (seconds)', canvas.width / 2, canvas.height - 10);
+        ctx.save();
+        ctx.translate(15, canvas.height / 2);
+        ctx.rotate(-Math.PI / 2);
+        ctx.fillText('Normalized Metrics', 0, 0);
+        ctx.restore();
+        
+        // Draw TPS line (normalized to 0-100 scale)
+        if (dataPoints.tps.length > 1) {
+            ctx.strokeStyle = '#667eea';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            
+            dataPoints.tps.forEach((value, index) => {
+                const x = padding + (chartWidth / maxPoints) * index;
+                const normalizedValue = ((value - 1000) / 500) * 100; // Normalize 1000-1500 to 0-100
+                const y = padding + chartHeight - (normalizedValue / 100) * chartHeight;
+                
+                if (index === 0) {
+                    ctx.moveTo(x, y);
+                } else {
+                    ctx.lineTo(x, y);
+                }
+            });
+            ctx.stroke();
+        }
+        
+        // Draw cache hit ratio line
+        if (dataPoints.cache.length > 1) {
+            ctx.strokeStyle = '#4CAF50';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            
+            dataPoints.cache.forEach((value, index) => {
+                const x = padding + (chartWidth / maxPoints) * index;
+                const y = padding + chartHeight - ((value - 95) / 5) * chartHeight; // 95-100 range
+                
+                if (index === 0) {
+                    ctx.moveTo(x, y);
+                } else {
+                    ctx.lineTo(x, y);
+                }
+            });
+            ctx.stroke();
+        }
+        
+        // Draw connections line
+        if (dataPoints.connections.length > 1) {
+            ctx.strokeStyle = '#ff9800';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            
+            dataPoints.connections.forEach((value, index) => {
+                const x = padding + (chartWidth / maxPoints) * index;
+                const y = padding + chartHeight - (value / 100) * chartHeight;
+                
+                if (index === 0) {
+                    ctx.moveTo(x, y);
+                } else {
+                    ctx.lineTo(x, y);
+                }
+            });
+            ctx.stroke();
+        }
+        
+        // Draw legend
+        const legends = [
+            { color: '#667eea', label: 'TPS' },
+            { color: '#4CAF50', label: 'Cache Hit %' },
+            { color: '#ff9800', label: 'Connections' }
+        ];
+        
+        legends.forEach((legend, index) => {
+            const x = padding + index * 120;
+            const y = 20;
+            
+            ctx.fillStyle = legend.color;
+            ctx.fillRect(x, y, 15, 15);
+            ctx.fillStyle = '#333';
+            ctx.fillText(legend.label, x + 20, y + 12);
+        });
+    }
+
+    function updateMetricCards() {
+        if (dataPoints.tps.length > 0) {
+            const latest = dataPoints.tps[dataPoints.tps.length - 1];
+            document.getElementById('tpsMetric').textContent = Math.round(latest).toLocaleString();
+        }
+        
+        if (dataPoints.cache.length > 0) {
+            const latest = dataPoints.cache[dataPoints.cache.length - 1];
+            document.getElementById('cacheMetric').textContent = latest.toFixed(1) + '%';
+        }
+        
+        if (dataPoints.connections.length > 0) {
+            const latest = dataPoints.connections[dataPoints.connections.length - 1];
+            document.getElementById('connMetric').textContent = Math.round(latest);
+        }
+    }
+
+    // Server lifecycle simulation
+    let serverState = 'stopped';
+    
+    function updateServerState(state, message) {
+        serverState = state;
+        const stateText = document.getElementById('stateText');
+        const lifecycleLog = document.getElementById('lifecycleLog');
+        
+        const stateColors = {
+            'stopped': '#f44336',
+            'starting': '#ff9800',
+            'running': '#4CAF50',
+            'stopping': '#ff9800',
+            'reloading': '#2196F3'
+        };
+        
+        stateText.textContent = state.toUpperCase();
+        stateText.style.color = stateColors[state] || '#667eea';
+        
+        if (message) {
+            const logEntry = document.createElement('div');
+            logEntry.className = 'log-entry info';
+            logEntry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            lifecycleLog.appendChild(logEntry);
+            lifecycleLog.scrollTop = lifecycleLog.scrollHeight;
+        }
+    }
+
+    function simulateStart() {
+        if (serverState !== 'stopped') {
+            alert('Server is not stopped');
+            return;
+        }
+        
+        updateServerState('starting', 'pg_ctl: starting server...');
+        
+        setTimeout(() => {
+            updateServerState('starting', 'Initializing shared memory...');
+        }, 500);
+        
+        setTimeout(() => {
+            updateServerState('starting', 'Starting background writer process...');
+        }, 1000);
+        
+        setTimeout(() => {
+            updateServerState('starting', 'Starting WAL writer process...');
+        }, 1500);
+        
+        setTimeout(() => {
+            updateServerState('starting', 'Starting autovacuum launcher...');
+        }, 2000);
+        
+        setTimeout(() => {
+            updateServerState('running', 'Database system is ready to accept connections');
+        }, 2500);
+    }
+
+    function simulateStop() {
+        if (serverState === 'stopped') {
+            alert('Server is already stopped');
+            return;
+        }
+        
+        updateServerState('stopping', 'pg_ctl: stopping server (fast mode)...');
+        
+        setTimeout(() => {
+            updateServerState('stopping', 'Disconnecting clients...');
+        }, 500);
+        
+        setTimeout(() => {
+            updateServerState('stopping', 'Shutting down background processes...');
+        }, 1000);
+        
+        setTimeout(() => {
+            updateServerState('stopping', 'Performing checkpoint...');
+        }, 1500);
+        
+        setTimeout(() => {
+            updateServerState('stopped', 'Server stopped successfully');
+        }, 2500);
+    }
+
+    function simulateRestart() {
+        if (serverState === 'stopped') {
+            simulateStart();
+        } else {
+            updateServerState('stopping', 'pg_ctl: restarting server...');
+            setTimeout(() => {
+                updateServerState('stopped', 'Server stopped for restart');
+                setTimeout(() => {
+                    simulateStart();
+                }, 500);
+            }, 2000);
+        }
+    }
+
+    function simulateReload() {
+        if (serverState !== 'running') {
+            alert('Server must be running to reload configuration');
+            return;
+        }
+        
+        updateServerState('reloading', 'pg_ctl: reloading configuration...');
+        
+        setTimeout(() => {
+            updateServerState('reloading', 'Reading postgresql.conf...');
+        }, 300);
+        
+        setTimeout(() => {
+            updateServerState('reloading', 'Applying SIGHUP parameters...');
+        }, 600);
+        
+        setTimeout(() => {
+            updateServerState('running', 'Configuration reloaded successfully');
+        }, 1000);
+    }
+
+    // Initialize on page load
+    window.addEventListener('load', () => {
+        initArchViz();
+        initMetricsCanvas();
+        updateServerState('stopped', 'Server is currently stopped');
+    });
+
+    // Update metrics periodically for demo
+    setInterval(() => {
+        const metrics = ['connMetric', 'tpsMetric', 'cacheMetric', 'ioMetric', 'queryMetric', 'lockMetric'];
+        const values = [
+            Math.floor(70 + Math.random() * 25),
+            Math.floor(1100 + Math.random() * 300),
+            (97 + Math.random() * 2).toFixed(1) + '%',
+            (2 + Math.random() * 1).toFixed(1) + ' GB/s',
+            Math.floor(35 + Math.random() * 25) + ' ms',
+            Math.floor(Math.random() * 6)
+        ];
+        
+        metrics.forEach((id, index) => {
+            const element = document.getElementById(id);
+            if (element && !metricsAnimationInterval) {
+                element.textContent = values[index];
+            }
+        });
+    }, 3000);
+</script>
+</body>
+</html>
