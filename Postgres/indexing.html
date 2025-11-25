@@ -1,0 +1,1392 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Advanced Insurance Database Indexing Guide</title>
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="text/babel">
+    const { Play, Pause, RotateCcw, ChevronRight, Database, Zap, AlertCircle, TrendingUp, 
+            Clock, HardDrive, Activity, Shield, Search, FileText, BarChart3, Settings,
+            CheckCircle, XCircle, Info, ArrowRight, GitCompare } = lucide;
+
+    const InsuranceIndexingGuide = () => {
+      const [activeSection, setActiveSection] = React.useState('intro');
+      const [animationStep, setAnimationStep] = React.useState(0);
+      const [isPlaying, setIsPlaying] = React.useState(false);
+      const [searchValue, setSearchValue] = React.useState('');
+      const [btreeStep, setBtreeStep] = React.useState(0);
+      const [selectedQueryPlan, setSelectedQueryPlan] = React.useState(null);
+      const [showComparison, setShowComparison] = React.useState(false);
+      const [indexSimulation, setIndexSimulation] = React.useState('none');
+      const maxBtreeSteps = 6;
+
+      React.useEffect(() => {
+        let interval;
+        if (isPlaying && activeSection === 'btree') {
+          interval = setInterval(() => {
+            setBtreeStep(prev => (prev + 1) % maxBtreeSteps);
+          }, 2000);
+        }
+        return () => clearInterval(interval);
+      }, [isPlaying, activeSection]);
+
+      const insuranceData = [
+        { id: 'P001', name: 'John Smith', policy: 'AUTO-2024-001', premium: 1200, status: 'ACTIVE', date: '2024-01-15' },
+        { id: 'P015', name: 'Sarah Johnson', policy: 'HOME-2024-015', premium: 850, status: 'ACTIVE', date: '2024-02-20' },
+        { id: 'P027', name: 'Mike Williams', policy: 'AUTO-2024-027', premium: 1500, status: 'PENDING', date: '2024-03-10' },
+        { id: 'P033', name: 'Emma Brown', policy: 'LIFE-2024-033', premium: 2200, status: 'ACTIVE', date: '2024-04-05' },
+        { id: 'P045', name: 'David Lee', policy: 'AUTO-2024-045', premium: 980, status: 'EXPIRED', date: '2023-12-30' },
+        { id: 'P058', name: 'Lisa Chen', policy: 'HOME-2024-058', premium: 1100, status: 'ACTIVE', date: '2024-05-12' },
+      ];
+
+      const BTreeVisualization = () => {
+        const highlights = {
+          0: [],
+          1: ['P027'],
+          2: ['P027', 'P033'],
+          3: ['P027'],
+          4: ['P015'],
+          5: ['P027'],
+        };
+
+        const descriptions = [
+          "Initial B-Tree structure with policy IDs sorted",
+          "Searching for P027: Start at root node",
+          "P027 > P033, go left subtree",
+          "Found P027 in 2 comparisons! (vs 6 in full scan)",
+          "Searching P015: Different path",
+          "B-Tree adapts to balance as data grows"
+        ];
+
+        return (
+          <div className="space-y-4">
+            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-lg border-2 border-blue-200">
+              <h3 className="font-bold text-lg mb-4 text-gray-800">B-Tree Index on Policy_ID</h3>
+              
+              <div className="flex flex-col items-center space-y-8">
+                <div className={`px-6 py-3 bg-white border-2 rounded-lg font-mono text-sm transition-all duration-500 ${
+                  highlights[btreeStep]?.includes('P033') ? 'border-green-500 shadow-lg scale-110' : 'border-gray-300'
+                }`}>
+                  P033
+                </div>
+
+                <div className="flex gap-32">
+                  <div className={`px-4 py-2 bg-white border-2 rounded-lg font-mono text-xs transition-all duration-500 ${
+                    highlights[btreeStep]?.includes('P015') ? 'border-green-500 shadow-lg scale-110' : 'border-gray-300'
+                  }`}>
+                    P015
+                  </div>
+                  <div className={`px-4 py-2 bg-white border-2 rounded-lg font-mono text-xs transition-all duration-500 ${
+                    highlights[btreeStep]?.includes('P045') ? 'border-green-500 shadow-lg scale-110' : 'border-gray-300'
+                  }`}>
+                    P045
+                  </div>
+                </div>
+
+                <div className="flex gap-8">
+                  <div className="px-3 py-2 bg-blue-100 border rounded font-mono text-xs">P001</div>
+                  <div className={`px-3 py-2 bg-blue-100 border rounded font-mono text-xs transition-all duration-500 ${
+                    highlights[btreeStep]?.includes('P015') ? 'border-green-500 shadow-lg' : ''
+                  }`}>P015</div>
+                  <div className={`px-3 py-2 bg-blue-100 border rounded font-mono text-xs transition-all duration-500 ${
+                    highlights[btreeStep]?.includes('P027') ? 'border-green-500 shadow-lg' : ''
+                  }`}>P027</div>
+                  <div className="px-3 py-2 bg-blue-100 border rounded font-mono text-xs">P045</div>
+                  <div className="px-3 py-2 bg-blue-100 border rounded font-mono text-xs">P058</div>
+                </div>
+              </div>
+
+              <div className="mt-6 p-4 bg-white rounded-lg border border-blue-300">
+                <p className="text-sm text-gray-700">{descriptions[btreeStep]}</p>
+              </div>
+
+              <div className="flex gap-2 mt-4">
+                <button
+                  onClick={() => setIsPlaying(!isPlaying)}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2"
+                >
+                  {isPlaying ? <Pause size={16} /> : <Play size={16} />}
+                  {isPlaying ? 'Pause' : 'Play'}
+                </button>
+                <button
+                  onClick={() => setBtreeStep(0)}
+                  className="px-4 py-2 bg-gray-200 rounded-lg hover:bg-gray-300 flex items-center gap-2"
+                >
+                  <RotateCcw size={16} />
+                  Reset
+                </button>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="bg-red-50 p-4 rounded-lg border-2 border-red-300">
+                <h4 className="font-bold text-red-800 mb-2">❌ Without Index</h4>
+                <div className="text-sm space-y-1">
+                  <p>• Scans ALL rows: 1-6 comparisons</p>
+                  <p>• Time: O(n) - Linear</p>
+                  <p>• 1M policies = 1M comparisons</p>
+                </div>
+              </div>
+              <div className="bg-green-50 p-4 rounded-lg border-2 border-green-300">
+                <h4 className="font-bold text-green-800 mb-2">✅ With B-Tree Index</h4>
+                <div className="text-sm space-y-1">
+                  <p>• Scans 2-3 nodes only</p>
+                  <p>• Time: O(log n) - Logarithmic</p>
+                  <p>• 1M policies = ~20 comparisons</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      };
+
+      const QueryPlanAnalyzer = () => {
+        const queryPlans = [
+          {
+            query: "SELECT * FROM policies WHERE customer_id = 98765",
+            withoutIndex: {
+              plan: "Seq Scan on policies",
+              cost: "0.00..25000.00",
+              rows: 1000000,
+              time: "8500ms",
+              operations: ["Full Table Scan", "Filter Rows", "Return Results"]
+            },
+            withIndex: {
+              plan: "Index Scan using idx_customer_id",
+              cost: "0.42..8.44",
+              rows: 50,
+              time: "15ms",
+              operations: ["Index Lookup", "Retrieve Rows", "Return Results"]
+            }
+          },
+          {
+            query: "SELECT * FROM claims WHERE claim_date BETWEEN '2024-01-01' AND '2024-12-31'",
+            withoutIndex: {
+              plan: "Seq Scan on claims",
+              cost: "0.00..50000.00",
+              rows: 5000000,
+              time: "12000ms",
+              operations: ["Full Table Scan", "Date Filter", "Return Results"]
+            },
+            withIndex: {
+              plan: "Index Range Scan using idx_claim_date",
+              cost: "0.56..125.30",
+              rows: 365000,
+              time: "250ms",
+              operations: ["Index Range Scan", "Retrieve Matching Rows", "Return Results"]
+            }
+          },
+          {
+            query: "SELECT policy_id, premium FROM policies WHERE customer_id = 98765",
+            withoutIndex: {
+              plan: "Seq Scan on policies",
+              cost: "0.00..25000.00",
+              rows: 1000000,
+              time: "7800ms",
+              operations: ["Full Table Scan", "Filter & Project", "Return Results"]
+            },
+            withIndex: {
+              plan: "Index Only Scan using idx_covering",
+              cost: "0.28..4.50",
+              rows: 50,
+              time: "8ms",
+              operations: ["Index Only Scan (No Table Access!)", "Return Results"]
+            }
+          }
+        ];
+
+        return (
+          <div className="space-y-4">
+            <div className="bg-gradient-to-r from-purple-50 to-pink-50 p-4 rounded-lg border-2 border-purple-300">
+              <h3 className="font-bold text-lg mb-2">🔍 Query Plan Analyzer</h3>
+              <p className="text-sm text-gray-700">Compare execution plans with and without indexes</p>
+            </div>
+
+            {queryPlans.map((plan, idx) => (
+              <div key={idx} className="bg-white p-4 rounded-lg border-2 border-gray-300">
+                <div className="mb-3">
+                  <div className="flex items-center justify-between mb-2">
+                    <h4 className="font-bold text-gray-800">Query {idx + 1}:</h4>
+                    <button
+                      onClick={() => setSelectedQueryPlan(selectedQueryPlan === idx ? null : idx)}
+                      className="px-3 py-1 bg-blue-600 text-white rounded text-xs hover:bg-blue-700"
+                    >
+                      {selectedQueryPlan === idx ? 'Hide Details' : 'Show Details'}
+                    </button>
+                  </div>
+                  <code className="text-xs bg-gray-800 text-green-400 p-2 rounded block">
+                    {plan.query}
+                  </code>
+                </div>
+
+                {selectedQueryPlan === idx && (
+                  <div className="grid grid-cols-2 gap-4 mt-3">
+                    <div className="bg-red-50 p-3 rounded-lg border border-red-300">
+                      <h5 className="font-bold text-red-800 text-sm mb-2">❌ Without Index</h5>
+                      <div className="space-y-2 text-xs">
+                        <div>
+                          <span className="font-semibold">Plan:</span> {plan.withoutIndex.plan}
+                        </div>
+                        <div>
+                          <span className="font-semibold">Cost:</span> {plan.withoutIndex.cost}
+                        </div>
+                        <div>
+                          <span className="font-semibold">Rows Scanned:</span> {plan.withoutIndex.rows.toLocaleString()}
+                        </div>
+                        <div>
+                          <span className="font-semibold text-red-700">Time:</span> <span className="font-bold text-red-700">{plan.withoutIndex.time}</span>
+                        </div>
+                        <div className="mt-2 pt-2 border-t border-red-200">
+                          <span className="font-semibold">Operations:</span>
+                          <ol className="ml-4 mt-1 space-y-1">
+                            {plan.withoutIndex.operations.map((op, i) => (
+                              <li key={i}>{i + 1}. {op}</li>
+                            ))}
+                          </ol>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="bg-green-50 p-3 rounded-lg border border-green-300">
+                      <h5 className="font-bold text-green-800 text-sm mb-2">✅ With Index</h5>
+                      <div className="space-y-2 text-xs">
+                        <div>
+                          <span className="font-semibold">Plan:</span> {plan.withIndex.plan}
+                        </div>
+                        <div>
+                          <span className="font-semibold">Cost:</span> {plan.withIndex.cost}
+                        </div>
+                        <div>
+                          <span className="font-semibold">Rows Scanned:</span> {plan.withIndex.rows.toLocaleString()}
+                        </div>
+                        <div>
+                          <span className="font-semibold text-green-700">Time:</span> <span className="font-bold text-green-700">{plan.withIndex.time}</span>
+                        </div>
+                        <div className="mt-2 pt-2 border-t border-green-200">
+                          <span className="font-semibold">Operations:</span>
+                          <ol className="ml-4 mt-1 space-y-1">
+                            {plan.withIndex.operations.map((op, i) => (
+                              <li key={i}>{i + 1}. {op}</li>
+                            ))}
+                          </ol>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                <div className="mt-3 p-2 bg-blue-50 rounded text-center">
+                  <span className="text-sm font-bold text-blue-800">
+                    ⚡ Speed Improvement: {Math.round(parseInt(plan.withoutIndex.time) / parseInt(plan.withIndex.time))}x faster
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        );
+      };
+
+      const IndexMaintenanceGuide = () => {
+        return (
+          <div className="space-y-4">
+            <div className="bg-gradient-to-r from-orange-50 to-red-50 p-4 rounded-lg border-2 border-orange-300">
+              <h3 className="font-bold text-lg mb-2">🔧 Index Maintenance & Monitoring</h3>
+              <p className="text-sm text-gray-700">Keep your indexes healthy and performant</p>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="bg-white p-4 rounded-lg border-2 border-blue-300">
+                <h4 className="font-bold text-blue-800 mb-3 flex items-center gap-2">
+                  <Activity size={18} />
+                  Daily Monitoring
+                </h4>
+                <div className="space-y-3">
+                  <div className="bg-blue-50 p-3 rounded">
+                    <p className="text-xs font-semibold mb-1">Check Index Usage</p>
+                    <code className="text-xs bg-gray-800 text-green-400 p-2 rounded block">
+                      SELECT schemaname, tablename, indexname, idx_scan<br/>
+                      FROM pg_stat_user_indexes<br/>
+                      WHERE idx_scan = 0;
+                    </code>
+                    <p className="text-xs text-gray-600 mt-1">Find unused indexes to remove</p>
+                  </div>
+
+                  <div className="bg-blue-50 p-3 rounded">
+                    <p className="text-xs font-semibold mb-1">Monitor Query Performance</p>
+                    <code className="text-xs bg-gray-800 text-green-400 p-2 rounded block">
+                      SELECT query, mean_time, calls<br/>
+                      FROM pg_stat_statements<br/>
+                      ORDER BY mean_time DESC LIMIT 10;
+                    </code>
+                    <p className="text-xs text-gray-600 mt-1">Identify slow queries needing indexes</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-white p-4 rounded-lg border-2 border-green-300">
+                <h4 className="font-bold text-green-800 mb-3 flex items-center gap-2">
+                  <Clock size={18} />
+                  Weekly Tasks
+                </h4>
+                <div className="space-y-3">
+                  <div className="bg-green-50 p-3 rounded">
+                    <p className="text-xs font-semibold mb-1">Update Statistics</p>
+                    <code className="text-xs bg-gray-800 text-green-400 p-2 rounded block">
+                      ANALYZE policies;<br/>
+                      ANALYZE claims;<br/>
+                      ANALYZE customers;
+                    </code>
+                    <p className="text-xs text-gray-600 mt-1">Keep query planner informed</p>
+                  </div>
+
+                  <div className="bg-green-50 p-3 rounded">
+                    <p className="text-xs font-semibold mb-1">Check Index Bloat</p>
+                    <code className="text-xs bg-gray-800 text-green-400 p-2 rounded block">
+                      SELECT schemaname, tablename,<br/>
+                      pg_size_pretty(pg_relation_size(indexrelid))<br/>
+                      FROM pg_stat_user_indexes;
+                    </code>
+                    <p className="text-xs text-gray-600 mt-1">Monitor index size growth</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-white p-4 rounded-lg border-2 border-purple-300">
+                <h4 className="font-bold text-purple-800 mb-3 flex items-center gap-2">
+                  <Settings size={18} />
+                  Monthly Maintenance
+                </h4>
+                <div className="space-y-3">
+                  <div className="bg-purple-50 p-3 rounded">
+                    <p className="text-xs font-semibold mb-1">Rebuild Fragmented Indexes</p>
+                    <code className="text-xs bg-gray-800 text-green-400 p-2 rounded block">
+                      REINDEX INDEX CONCURRENTLY<br/>
+                      idx_policies_customer_id;
+                    </code>
+                    <p className="text-xs text-gray-600 mt-1">Reduce bloat, improve performance</p>
+                  </div>
+
+                  <div className="bg-purple-50 p-3 rounded">
+                    <p className="text-xs font-semibold mb-1">Vacuum Tables</p>
+                    <code className="text-xs bg-gray-800 text-green-400 p-2 rounded block">
+                      VACUUM ANALYZE policies;
+                    </code>
+                    <p className="text-xs text-gray-600 mt-1">Reclaim space, update stats</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-white p-4 rounded-lg border-2 border-yellow-300">
+                <h4 className="font-bold text-yellow-800 mb-3 flex items-center gap-2">
+                  <Shield size={18} />
+                  Quarterly Review
+                </h4>
+                <div className="space-y-3">
+                  <div className="bg-yellow-50 p-3 rounded">
+                    <p className="text-xs font-semibold mb-1">Review Index Strategy</p>
+                    <ul className="text-xs space-y-1 ml-4 mt-2">
+                      <li>• Remove unused indexes (0 scans)</li>
+                      <li>• Add indexes for new query patterns</li>
+                      <li>• Consolidate duplicate indexes</li>
+                      <li>• Review composite index order</li>
+                    </ul>
+                  </div>
+
+                  <div className="bg-yellow-50 p-3 rounded">
+                    <p className="text-xs font-semibold mb-1">Capacity Planning</p>
+                    <ul className="text-xs space-y-1 ml-4 mt-2">
+                      <li>• Project storage growth</li>
+                      <li>• Plan for table partitioning</li>
+                      <li>• Consider archival strategies</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-red-50 p-4 rounded-lg border-2 border-red-400">
+              <h4 className="font-bold text-red-800 mb-2">⚠️ Warning Signs</h4>
+              <div className="grid grid-cols-3 gap-3 text-xs">
+                <div>
+                  <p className="font-semibold">Slow Queries</p>
+                  <p className="text-gray-700">Queries taking &gt;100ms</p>
+                  <p className="text-red-700 mt-1">→ Check missing indexes</p>
+                </div>
+                <div>
+                  <p className="font-semibold">Index Bloat</p>
+                  <p className="text-gray-700">Index &gt;2x table size</p>
+                  <p className="text-red-700 mt-1">→ REINDEX needed</p>
+                </div>
+                <div>
+                  <p className="font-semibold">Low Hit Ratio</p>
+                  <p className="text-gray-700">Cache hit &lt;95%</p>
+                  <p className="text-red-700 mt-1">→ Need more indexes or RAM</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      };
+
+      const PartitioningGuide = () => {
+        return (
+          <div className="space-y-4">
+            <div className="bg-gradient-to-r from-indigo-50 to-purple-50 p-4 rounded-lg border-2 border-indigo-300">
+              <h3 className="font-bold text-lg mb-2">📊 Table Partitioning + Indexing</h3>
+              <p className="text-sm text-gray-700">Scale to billions of rows with partitioning strategies</p>
+            </div>
+
+            <div className="bg-white p-4 rounded-lg border-2 border-blue-300">
+              <h4 className="font-bold text-blue-800 mb-3">Range Partitioning by Date</h4>
+              <div className="bg-gray-50 p-3 rounded mb-3">
+                <code className="text-xs bg-gray-800 text-green-400 p-2 rounded block whitespace-pre">
+{`CREATE TABLE claims (
+  claim_id BIGINT,
+  customer_id INT,
+  claim_date DATE,
+  amount DECIMAL(10,2)
+) PARTITION BY RANGE (claim_date);
+
+-- Create yearly partitions
+CREATE TABLE claims_2024 PARTITION OF claims
+  FOR VALUES FROM ('2024-01-01') TO ('2025-01-01');
+
+CREATE TABLE claims_2023 PARTITION OF claims
+  FOR VALUES FROM ('2023-01-01') TO ('2024-01-01');
+
+-- Index each partition
+CREATE INDEX idx_claims_2024_customer ON claims_2024(customer_id);
+CREATE INDEX idx_claims_2023_customer ON claims_2023(customer_id);`}
+                </code>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="bg-green-50 p-3 rounded">
+                  <p className="text-xs font-semibold text-green-800 mb-1">✅ Benefits:</p>
+                  <ul className="text-xs space-y-1 ml-4">
+                    <li>• Query only relevant partitions</li>
+                    <li>• Drop old partitions instantly</li>
+                    <li>• Smaller indexes = faster scans</li>
+                    <li>• Parallel partition scanning</li>
+                  </ul>
+                </div>
+                <div className="bg-blue-50 p-3 rounded">
+                  <p className="text-xs font-semibold text-blue-800 mb-1">📈 Use Cases:</p>
+                  <ul className="text-xs space-y-1 ml-4">
+                    <li>• Claims by year/month</li>
+                    <li>• Policies by effective date</li>
+                    <li>• Audit logs by timestamp</li>
+                    <li>• Historical data archival</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white p-4 rounded-lg border-2 border-purple-300">
+              <h4 className="font-bold text-purple-800 mb-3">Hash Partitioning by Customer</h4>
+              <div className="bg-gray-50 p-3 rounded mb-3">
+                <code className="text-xs bg-gray-800 text-green-400 p-2 rounded block whitespace-pre">
+{`CREATE TABLE policies (
+  policy_id BIGINT,
+  customer_id INT,
+  policy_type VARCHAR(50)
+) PARTITION BY HASH (customer_id);
+
+-- Create hash partitions (distribute evenly)
+CREATE TABLE policies_p0 PARTITION OF policies
+  FOR VALUES WITH (MODULUS 4, REMAINDER 0);
+  
+CREATE TABLE policies_p1 PARTITION OF policies
+  FOR VALUES WITH (MODULUS 4, REMAINDER 1);
+
+-- Continue for p2, p3...
+
+-- Index each partition
+CREATE INDEX idx_policies_p0_customer ON policies_p0(customer_id);`}
+                </code>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="bg-green-50 p-3 rounded">
+                  <p className="text-xs font-semibold text-green-800 mb-1">✅ Benefits:</p>
+                  <ul className="text-xs space-y-1 ml-4">
+                    <li>• Even data distribution</li>
+                    <li>• Parallel inserts/updates</li>
+                    <li>• No hot partitions</li>
+                    <li>• Good for high-write tables</li>
+                  </ul>
+                </div>
+                <div className="bg-purple-50 p-3 rounded">
+                  <p className="text-xs font-semibold text-purple-800 mb-1">📊 Performance:</p>
+                  <ul className="text-xs space-y-1 ml-4">
+                    <li>• 50M rows → 4 x 12.5M</li>
+                    <li>• Faster index lookups</li>
+                    <li>• Reduced lock contention</li>
+                    <li>• Better maintenance windows</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-yellow-50 p-4 rounded-lg border-2 border-yellow-400">
+              <h4 className="font-bold text-yellow-800 mb-2">🎯 Partitioning Strategy Decision</h4>
+              <div className="grid grid-cols-3 gap-3 text-xs">
+                <div className="bg-white p-3 rounded border border-yellow-300">
+                  <p className="font-semibold mb-1">Range (Date/Number)</p>
+                  <p className="text-gray-700 mb-2">When: Time-series data, natural ranges</p>
+                  <p className="text-green-700">✓ Easy archival</p>
+                  <p className="text-green-700">✓ Query pruning</p>
+                  <p className="text-red-700">✗ Hot partitions</p>
+                </div>
+                <div className="bg-white p-3 rounded border border-yellow-300">
+                  <p className="font-semibold mb-1">Hash (ID/Key)</p>
+                  <p className="text-gray-700 mb-2">When: Even distribution needed</p>
+                  <p className="text-green-700">✓ No hot spots</p>
+                  <p className="text-green-700">✓ Parallel writes</p>
+                  <p className="text-red-700">✗ No archival</p>
+                </div>
+                <div className="bg-white p-3 rounded border border-yellow-300">
+                  <p className="font-semibold mb-1">List (Category)</p>
+                  <p className="text-gray-700 mb-2">When: Clear categories</p>
+                  <p className="text-green-700">✓ Logical separation</p>
+                  <p className="text-red-700">✗ Uneven sizes</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      };
+
+      const IndexTypesComparison = () => {
+        const indexTypes = [
+          {
+            name: 'B-Tree',
+            icon: '🌲',
+            useCase: 'Policy lookups, date ranges',
+            example: 'WHERE policy_id = "AUTO-2024-001"',
+            pros: 'Range queries, sorting, general purpose',
+            cons: 'Write overhead on high-traffic tables',
+            visual: 'Tree structure with sorted keys',
+            insuranceExample: 'Finding policies by ID, claims by date range',
+            complexity: 'O(log n)',
+            storage: 'Medium'
+          },
+          {
+            name: 'Hash',
+            icon: '🔑',
+            useCase: 'Exact customer ID matches',
+            example: 'WHERE customer_id = 12345',
+            pros: 'Fastest for exact matches',
+            cons: 'No range queries, no sorting',
+            visual: 'Hash bucket lookup',
+            insuranceExample: 'Customer portal login, session lookups',
+            complexity: 'O(1)',
+            storage: 'Low'
+          },
+          {
+            name: 'Bitmap',
+            icon: '🎯',
+            useCase: 'Policy status, claim type filters',
+            example: 'WHERE status="ACTIVE" AND type="AUTO"',
+            pros: 'Perfect for low-cardinality columns',
+            cons: 'Slow writes, Oracle/data warehouse only',
+            visual: 'Bit arrays per value',
+            insuranceExample: 'Filtering by status (Active/Expired/Pending)',
+            complexity: 'O(n/bits)',
+            storage: 'Very Low'
+          },
+          {
+            name: 'Composite',
+            icon: '🔗',
+            useCase: 'Multi-column queries',
+            example: 'WHERE customer_id=? AND policy_date > ?',
+            pros: 'Covers multiple predicates, can be covering',
+            cons: 'Column order matters (leftmost rule)',
+            visual: 'Multi-level sorted tree',
+            insuranceExample: 'Customer + Policy Date queries',
+            complexity: 'O(log n)',
+            storage: 'Medium-High'
+          },
+          {
+            name: 'Full-Text (GIN)',
+            icon: '🔍',
+            useCase: 'Search claim descriptions',
+            example: 'WHERE claim_notes @@ "water damage"',
+            pros: 'Natural language search, ranking',
+            cons: 'Large storage, slower writes',
+            visual: 'Inverted word index',
+            insuranceExample: 'Searching claim notes, policy documents',
+            complexity: 'O(k log n)',
+            storage: 'High'
+          },
+          {
+            name: 'BRIN',
+            icon: '📊',
+            useCase: 'Large claims history tables',
+            example: 'WHERE claim_date BETWEEN ... (millions of rows)',
+            pros: 'Tiny size, great for time-series',
+            cons: 'Only good if data physically sorted',
+            visual: 'Min/max per block',
+            insuranceExample: 'Historical claims (sorted by date)',
+            complexity: 'O(blocks)',
+            storage: 'Very Low'
+          }
+        ];
+
+        return (
+          <div className="space-y-4">
+            {indexTypes.map((type, idx) => (
+              <div key={idx} className="bg-white p-4 rounded-lg border-2 border-gray-300 hover:border-blue-400 transition-all">
+                <div className="flex items-start gap-4">
+                  <div className="text-4xl">{type.icon}</div>
+                  <div className="flex-1">
+                    <div className="flex justify-between items-start mb-2">
+                      <h3 className="font-bold text-lg text-gray-800">{type.name} Index</h3>
+                      <div className="flex gap-2 text-xs">
+                        <span className="px-2 py-1 bg-blue-100 rounded">{type.complexity}</span>
+                        <span className="px-2 py-1 bg-purple-100 rounded">Storage: {type.storage}</span>
+                      </div>
+                    </div>
+                    <p className="text-sm text-gray-600 mb-2">{type.visual}</p>
+                    
+                    <div className="grid grid-cols-2 gap-4 mt-3">
+                      <div>
+                        <p className="text-xs font-semibold text-blue-700 mb-1">Insurance Use Case:</p>
+                        <p className="text-sm text-gray-700">{type.insuranceExample}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs font-semibold text-green-700 mb-1">SQL Example:</p>
+                        <code className="text-xs bg-gray-100 p-2 rounded block">{type.example}</code>
+                      </div>
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-4 mt-3">
+                      <div className="bg-green-50 p-2 rounded">
+                        <p className="text-xs font-semibold text-green-800">✅ Pros:</p>
+                        <p className="text-xs text-gray-700">{type.pros}</p>
+                      </div>
+                      <div className="bg-red-50 p-2 rounded">
+                        <p className="text-xs font-semibold text-red-800">❌ Cons:</p>
+                        <p className="text-xs text-gray-700">{type.cons}</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        );
+      };
+
+      const InteractiveSimulator = () => {
+        const [simulationRunning, setSimulationRunning] = React.useState(false);
+        const [currentRow, setCurrentRow] = React.useState(0);
+        const [searchId, setSearchId] = React.useState('P027');
+
+        const runSimulation = () => {
+          setSimulationRunning(true);
+          setCurrentRow(0);
+          
+          if (indexSimulation === 'none') {
+            let row = 0;
+            const interval = setInterval(() => {
+              setCurrentRow(row);
+              row++;
+              if (row >= insuranceData.length || insuranceData[row - 1].id === searchId) {
+                clearInterval(interval);
+                setSimulationRunning(false);
+              }
+            }, 500);
+          } else {
+            setTimeout(() => {
+              setCurrentRow(insuranceData.findIndex(d => d.id === searchId));
+              setSimulationRunning(false);
+            }, 800);
+          }
+        };
+
+        return (
+          <div className="space-y-4">
+            <div className="bg-gradient-to-r from-cyan-50 to-blue-50 p-4 rounded-lg border-2 border-cyan-300">
+              <h3 className="font-bold text-lg mb-2">🎮 Interactive Query Simulator</h3>
+              <p className="text-sm text-gray-700">Watch how indexes change query execution in real-time</p>
+            </div>
+
+            <div className="bg-white p-4 rounded-lg border-2 border-gray-300">
+              <div className="grid grid-cols-2 gap-4 mb-4">
+                <div>
+                  <label className="text-sm font-semibold mb-2 block">Search For Policy:</label>
+                  <select 
+                    value={searchId}
+                    onChange={(e) => setSearchId(e.target.value)}
+                    className="w-full p-2 border rounded"
+                  >
+                    {insuranceData.map(d => (
+                      <option key={d.id} value={d.id}>{d.id} - {d.name}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="text-sm font-semibold mb-2 block">Index Strategy:</label>
+                  <select 
+                    value={indexSimulation}
+                    onChange={(e) => setIndexSimulation(e.target.value)}
+                    className="w-full p-2 border rounded"
+                  >
+                    <option value="none">No Index (Sequential Scan)</option>
+                    <option value="btree">B-Tree Index</option>
+                    <option value="hash">Hash Index</option>
+                  </select>
+                </div>
+              </div>
+
+              <button
+                onClick={runSimulation}
+                disabled={simulationRunning}
+                className="w-full py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 font-semibold"
+              >
+                {simulationRunning ? '⏳ Running...' : '▶️ Run Query Simulation'}
+              </button>
+
+              <div className="mt-4 overflow-x-auto">
+                <table className="w-full text-xs border">
+                  <thead className="bg-gray-800 text-white">
+                    <tr>
+                      <th className="p-2">Policy ID</th>
+                      <th className="p-2">Name</th>
+                      <th className="p-2">Policy</th>
+                      <th className="p-2">Premium</th>
+                      <th className="p-2">Status</th>
+                      <th className="p-2">Scanned?</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {insuranceData.map((row, idx) => {
+                      const isScanned = simulationRunning && idx <= currentRow;
+                      const isFound = row.id === searchId && isScanned;
+                      
+                      return (
+                        <tr key={row.id} className={`
+                          ${isFound ? 'bg-green-200 font-bold' : ''}
+                          ${isScanned && !isFound ? 'bg-yellow-100' : ''}
+                          ${!isScanned ? 'bg-white' : ''}
+                        `}>
+                          <td className="p-2 border">{row.id}</td>
+                          <td className="p-2 border">{row.name}</td>
+                          <td className="p-2 border">{row.policy}</td>
+                          <td className="p-2 border">${row.premium}</td>
+                          <td className="p-2 border">{row.status}</td>
+                          <td className="p-2 border text-center">
+                            {isFound && '✅ FOUND'}
+                            {isScanned && !isFound && '👁️ Checked'}
+                            {!isScanned && '⏸️'}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+
+              {!simulationRunning && currentRow > 0 && (
+                <div className="mt-4 p-4 bg-blue-50 rounded-lg border border-blue-300">
+                  <h4 className="font-bold text-blue-800 mb-2">Results:</h4>
+                  <div className="grid grid-cols-3 gap-3 text-sm">
+                    <div>
+                      <p className="text-xs text-gray-600">Rows Scanned:</p>
+                      <p className="font-bold text-lg">{indexSimulation === 'none' ? currentRow + 1 : 1}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-600">Scan Type:</p>
+                      <p className="font-bold text-lg">
+                        {indexSimulation === 'none' ? 'Sequential' : indexSimulation.toUpperCase()}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-600">Efficiency:</p>
+                      <p className="font-bold text-lg">
+                        {indexSimulation === 'none' ? '❌ Slow' : '✅ Fast'}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        );
+      };
+
+      const CostBenefitAnalysis = () => {
+        return (
+          <div className="space-y-4">
+            <div className="bg-gradient-to-r from-green-50 to-emerald-50 p-4 rounded-lg border-2 border-green-300">
+              <h3 className="font-bold text-lg mb-2">💰 Cost-Benefit Analysis</h3>
+              <p className="text-sm text-gray-700">Understanding the trade-offs of indexing</p>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="bg-white p-4 rounded-lg border-2 border-green-300">
+                <h4 className="font-bold text-green-800 mb-3 flex items-center gap-2">
+                  <TrendingUp size={18} />
+                  Benefits (Why Index)
+                </h4>
+                <div className="space-y-3">
+                  <div className="bg-green-50 p-3 rounded">
+                    <p className="font-semibold text-sm mb-1">⚡ Query Performance</p>
+                    <ul className="text-xs space-y-1 ml-4">
+                      <li>• 100-1000x faster lookups</li>
+                      <li>• Sub-millisecond response times</li>
+                      <li>• Better user experience</li>
+                    </ul>
+                  </div>
+                  <div className="bg-green-50 p-3 rounded">
+                    <p className="font-semibold text-sm mb-1">💼 Business Impact</p>
+                    <ul className="text-xs space-y-1 ml-4">
+                      <li>• Higher customer satisfaction</li>
+                      <li>• More concurrent users supported</li>
+                      <li>• Reduced support tickets</li>
+                      <li>• Competitive advantage</li>
+                    </ul>
+                  </div>
+                  <div className="bg-green-50 p-3 rounded">
+                    <p className="font-semibold text-sm mb-1">🖥️ Infrastructure Savings</p>
+                    <ul className="text-xs space-y-1 ml-4">
+                      <li>• Lower CPU usage (75% reduction)</li>
+                      <li>• Reduced memory pressure</li>
+                      <li>• Fewer database servers needed</li>
+                      <li>• Lower cloud costs</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-white p-4 rounded-lg border-2 border-red-300">
+                <h4 className="font-bold text-red-800 mb-3 flex items-center gap-2">
+                  <HardDrive size={18} />
+                  Costs (Trade-offs)
+                </h4>
+                <div className="space-y-3">
+                  <div className="bg-red-50 p-3 rounded">
+                    <p className="font-semibold text-sm mb-1">💾 Storage Overhead</p>
+                    <ul className="text-xs space-y-1 ml-4">
+                      <li>• 10-30% additional disk space</li>
+                      <li>• B-Tree: ~20% of table size</li>
+                      <li>• GIN: 50-200% of column size</li>
+                      <li>• Cost: $0.10/GB/month (cloud)</li>
+                    </ul>
+                  </div>
+                  <div className="bg-red-50 p-3 rounded">
+                    <p className="font-semibold text-sm mb-1">⏱️ Write Performance</p>
+                    <ul className="text-xs space-y-1 ml-4">
+                      <li>• INSERT/UPDATE 10-30% slower</li>
+                      <li>• Each index must be updated</li>
+                      <li>• More locks during writes</li>
+                      <li>• Trade-off for read speed</li>
+                    </ul>
+                  </div>
+                  <div className="bg-red-50 p-3 rounded">
+                    <p className="font-semibold text-sm mb-1">🔧 Maintenance Burden</p>
+                    <ul className="text-xs space-y-1 ml-4">
+                      <li>• Monthly REINDEX operations</li>
+                      <li>• Monitor for bloat</li>
+                      <li>• Track unused indexes</li>
+                      <li>• Update statistics regularly</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-yellow-50 p-4 rounded-lg border-2 border-yellow-400">
+              <h4 className="font-bold text-yellow-800 mb-3">📊 ROI Calculator Example</h4>
+              <div className="grid grid-cols-4 gap-4 text-xs">
+                <div className="bg-white p-3 rounded">
+                  <p className="font-semibold mb-1">Scenario</p>
+                  <p className="text-gray-700">1M policy table</p>
+                  <p className="text-gray-700">10K queries/day</p>
+                </div>
+                <div className="bg-white p-3 rounded">
+                  <p className="font-semibold mb-1">Without Index</p>
+                  <p className="text-red-700">500ms/query</p>
+                  <p className="text-red-700">5000 CPU seconds/day</p>
+                </div>
+                <div className="bg-white p-3 rounded">
+                  <p className="font-semibold mb-1">With Index</p>
+                  <p className="text-green-700">5ms/query</p>
+                  <p className="text-green-700">50 CPU seconds/day</p>
+                  <p className="text-gray-700">+200MB storage</p>
+                </div>
+                <div className="bg-white p-3 rounded">
+                  <p className="font-semibold mb-1">Savings</p>
+                  <p className="text-green-700">99% CPU reduction</p>
+                  <p className="text-green-700">$500/month saved</p>
+                  <p className="text-gray-700">Cost: $0.02/month</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      };
+
+      const AdvancedTechniques = () => {
+        return (
+          <div className="space-y-4">
+            <div className="bg-gradient-to-r from-pink-50 to-purple-50 p-4 rounded-lg border-2 border-pink-300">
+              <h3 className="font-bold text-lg mb-2">🚀 Advanced Indexing Techniques</h3>
+              <p className="text-sm text-gray-700">Expert strategies for large-scale systems</p>
+            </div>
+
+            <div className="bg-white p-4 rounded-lg border-2 border-purple-300">
+              <h4 className="font-bold text-purple-800 mb-3">1. Covering Indexes (Index-Only Scans)</h4>
+              <div className="bg-gray-50 p-3 rounded mb-2">
+                <code className="text-xs bg-gray-800 text-green-400 p-2 rounded block whitespace-pre">
+{`-- Traditional index: requires table lookup
+CREATE INDEX idx_customer ON policies(customer_id);
+
+-- Covering index: all data in index!
+CREATE INDEX idx_customer_covering ON policies(customer_id)
+INCLUDE (policy_number, premium_amount, status, policy_date);
+
+-- This query NEVER touches the table:
+SELECT policy_number, premium_amount, status
+FROM policies
+WHERE customer_id = 12345;
+
+-- Result: 5x faster (no table I/O)`}
+                </code>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="bg-green-50 p-2 rounded text-xs">
+                  <p className="font-semibold text-green-800">When to Use:</p>
+                  <ul className="ml-4 mt-1 space-y-1">
+                    <li>• Frequent SELECT queries</li>
+                    <li>• Few columns selected</li>
+                    <li>• Read-heavy workloads</li>
+                  </ul>
+                </div>
+                <div className="bg-red-50 p-2 rounded text-xs">
+                  <p className="font-semibold text-red-800">Watch Out:</p>
+                  <ul className="ml-4 mt-1 space-y-1">
+                    <li>• Larger index size</li>
+                    <li>• Slower writes</li>
+                    <li>• Don't include large columns</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white p-4 rounded-lg border-2 border-blue-300">
+              <h4 className="font-bold text-blue-800 mb-3">2. Partial Indexes (Filtered)</h4>
+              <div className="bg-gray-50 p-3 rounded mb-2">
+                <code className="text-xs bg-gray-800 text-green-400 p-2 rounded block whitespace-pre">
+{`-- Only index active policies (not expired)
+CREATE INDEX idx_active_policies ON policies(customer_id)
+WHERE status = 'ACTIVE';
+
+-- Only index recent claims (last 2 years)
+CREATE INDEX idx_recent_claims ON claims(customer_id, claim_date)
+WHERE claim_date >= '2023-01-01';
+
+-- Benefits:
+-- • 50-80% smaller index
+-- • Faster to scan
+-- • Less maintenance
+-- • Reduced bloat`}
+                </code>
+              </div>
+              <p className="text-xs text-gray-700 mt-2 bg-blue-50 p-2 rounded">
+                <strong>Insurance Use Case:</strong> If 90% of queries are for active policies, 
+                why index expired ones? Partial indexes save space and improve performance!
+              </p>
+            </div>
+
+            <div className="bg-white p-4 rounded-lg border-2 border-green-300">
+              <h4 className="font-bold text-green-800 mb-3">3. Expression Indexes (Functional)</h4>
+              <div className="bg-gray-50 p-3 rounded mb-2">
+                <code className="text-xs bg-gray-800 text-green-400 p-2 rounded block whitespace-pre">
+{`-- Index on computed value
+CREATE INDEX idx_email_lower ON customers(LOWER(email));
+
+-- Now this uses the index:
+SELECT * FROM customers WHERE LOWER(email) = 'john@example.com';
+
+-- Index on date part
+CREATE INDEX idx_claim_year ON claims(EXTRACT(YEAR FROM claim_date));
+
+-- Index on JSON field
+CREATE INDEX idx_policy_metadata ON policies((metadata->>'risk_score'));`}
+                </code>
+              </div>
+              <p className="text-xs text-gray-700 mt-2 bg-green-50 p-2 rounded">
+                <strong>Pro Tip:</strong> Expression indexes are perfect for case-insensitive searches,
+                date parts, JSON fields, and calculated values!
+              </p>
+            </div>
+
+            <div className="bg-white p-4 rounded-lg border-2 border-yellow-300">
+              <h4 className="font-bold text-yellow-800 mb-3">4. Parallel Index Creation</h4>
+              <div className="bg-gray-50 p-3 rounded mb-2">
+                <code className="text-xs bg-gray-800 text-green-400 p-2 rounded block whitespace-pre">
+{`-- Build index without locking table (PostgreSQL)
+CREATE INDEX CONCURRENTLY idx_customer_id ON policies(customer_id);
+
+-- Set parallel workers for faster build
+SET max_parallel_workers_per_gather = 4;
+CREATE INDEX idx_large_table ON huge_claims_table(customer_id);
+
+-- On 100M row table:
+-- Sequential build: 2 hours
+-- Parallel (4 workers): 30 minutes
+-- CONCURRENTLY: 45 min (but no locks!)`}
+                </code>
+              </div>
+            </div>
+
+            <div className="bg-white p-4 rounded-lg border-2 border-orange-300">
+              <h4 className="font-bold text-orange-800 mb-3">5. Index Hints & Query Optimization</h4>
+              <div className="bg-gray-50 p-3 rounded mb-2">
+                <code className="text-xs bg-gray-800 text-green-400 p-2 rounded block whitespace-pre">
+{`-- Force index usage (MySQL)
+SELECT * FROM policies USE INDEX (idx_customer_id)
+WHERE customer_id = 12345;
+
+-- Prevent index usage (testing)
+SELECT * FROM policies IGNORE INDEX (idx_customer_id)
+WHERE customer_id = 12345;
+
+-- PostgreSQL: analyze query plan
+EXPLAIN ANALYZE
+SELECT * FROM policies WHERE customer_id = 12345;
+
+-- Look for "Index Scan" vs "Seq Scan"`}
+                </code>
+              </div>
+            </div>
+
+            <div className="bg-gradient-to-r from-red-50 to-orange-50 p-4 rounded-lg border-2 border-red-300 mt-4">
+              <h4 className="font-bold text-red-800 mb-2">⚠️ Common Anti-Patterns to Avoid</h4>
+              <div className="grid grid-cols-2 gap-3 text-xs">
+                <div>
+                  <p className="font-semibold mb-1">❌ Over-Indexing</p>
+                  <p className="text-gray-700">Creating 15+ indexes on one table kills INSERT/UPDATE performance</p>
+                </div>
+                <div>
+                  <p className="font-semibold mb-1">❌ Wrong Column Order</p>
+                  <p className="text-gray-700">Index (status, customer_id) won't help "WHERE customer_id = ?"</p>
+                </div>
+                <div>
+                  <p className="font-semibold mb-1">❌ Indexing Everything</p>
+                  <p className="text-gray-700">"Better safe than sorry" = wasted space and slow writes</p>
+                </div>
+                <div>
+                  <p className="font-semibold mb-1">❌ Never Rebuilding</p>
+                  <p className="text-gray-700">Indexes bloat over time - REINDEX monthly!</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      };
+
+      const RealWorldExample = () => {
+        return (
+          <div className="space-y-4">
+            <div className="bg-gradient-to-r from-green-50 to-teal-50 p-6 rounded-lg border-2 border-green-300">
+              <h3 className="font-bold text-xl mb-4">🏢 Real Insurance Company Scenario</h3>
+              
+              <div className="space-y-4">
+                <div className="bg-white p-4 rounded-lg border-2 border-gray-300">
+                  <h4 className="font-bold text-lg mb-2">Problem:</h4>
+                  <p className="text-sm">Customer service reps complain: "Policy lookup takes 5-10 seconds during peak hours"</p>
+                  <div className="mt-2 p-3 bg-red-50 rounded">
+                    <p className="text-xs font-mono">SELECT * FROM policies WHERE customer_id = 98765;</p>
+                    <p className="text-xs text-red-700 mt-1">Execution time: 8.5 seconds ❌</p>
+                  </div>
+                </div>
+
+                <div className="bg-white p-4 rounded-lg border-2 border-gray-300">
+                  <h4 className="font-bold text-lg mb-2">Analysis:</h4>
+                  <ul className="text-sm space-y-1 ml-4">
+                    <li>• Table: 15 million policies</li>
+                    <li>• No index on customer_id</li>
+                    <li>• Full table scan on every query</li>
+                    <li>• 500 queries per minute during peak</li>
+                  </ul>
+                </div>
+
+                <div className="bg-white p-4 rounded-lg border-2 border-green-500">
+                  <h4 className="font-bold text-lg mb-2 text-green-700">Solution:</h4>
+                  <div className="space-y-2">
+                    <div className="p-3 bg-gray-50 rounded">
+                      <p className="text-xs font-mono">CREATE INDEX idx_policies_customer_id ON policies(customer_id);</p>
+                    </div>
+                    <div className="p-3 bg-green-50 rounded">
+                      <p className="text-xs font-mono">SELECT * FROM policies WHERE customer_id = 98765;</p>
+                      <p className="text-xs text-green-700 mt-1">Execution time: 0.015 seconds ✅</p>
+                      <p className="text-xs font-bold text-green-800 mt-1">🚀 560x faster!</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-white p-4 rounded-lg border-2 border-blue-500">
+                  <h4 className="font-bold text-lg mb-2 text-blue-700">Impact:</h4>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-xs font-semibold mb-1">Business Metrics:</p>
+                      <ul className="text-xs space-y-1 ml-4">
+                        <li>• Customer satisfaction ↑ 40%</li>
+                        <li>• Call handling time ↓ 30%</li>
+                        <li>• Support tickets ↓ 65%</li>
+                      </ul>
+                    </div>
+                    <div>
+                      <p className="text-xs font-semibold mb-1">Technical Metrics:</p>
+                      <ul className="text-xs space-y-1 ml-4">
+                        <li>• CPU usage ↓ 75%</li>
+                        <li>• Database locks ↓ 90%</li>
+                        <li>• Cost: +200MB storage</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-yellow-50 p-4 rounded-lg border-2 border-yellow-400">
+          <h4 className="font-bold text-lg mb-2">⚠️ Common Pitfalls to Avoid:</h4>
+          <div className="space-y-2 text-sm">
+            <div className="flex items-start gap-2">
+              <span className="text-red-600 font-bold">❌</span>
+              <div>
+                <p className="font-semibold">Over-indexing:</p>
+                <p className="text-xs">Don't create 20 indexes on a table with heavy writes (claims submissions)</p>
+              </div>
+            </div>
+            <div className="flex items-start gap-2">
+              <span className="text-red-600 font-bold">❌</span>
+              <div>
+                <p className="font-semibold">Wrong column order in composite:</p>
+                <p className="text-xs">Index (status, customer_id) won't help "WHERE customer_id = ?"</p>
+              </div>
+            </div>
+            <div className="flex items-start gap-2">
+              <span className="text-red-600 font-bold">❌</span>
+              <div>
+                <p className="font-semibold">Ignoring maintenance:</p>
+                <p className="text-xs">Indexes bloat over time - schedule REINDEX monthly</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const sections = [
+    { id: 'intro', name: 'Introduction', icon: Database },
+    { id: 'btree', name: 'B-Tree Animation', icon: Play },
+    { id: 'types', name: 'Index Types', icon: Zap },
+    { id: 'query-plans', name: 'Query Plans', icon: Search },
+    { id: 'simulator', name: 'Interactive Simulator', icon: Activity },
+    { id: 'advanced', name: 'Advanced Techniques', icon: Settings },
+    { id: 'maintenance', name: 'Maintenance', icon: Clock },
+    { id: 'partitioning', name: 'Partitioning', icon: Database },
+    { id: 'cost-benefit', name: 'Cost-Benefit', icon: TrendingUp },
+    { id: 'example', name: 'Real Example', icon: ChevronRight },
+  ];
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-blue-100 via-purple-50 to-pink-100 p-6">
+      <div className="max-w-6xl mx-auto">
+        {/* Header */}
+        <div className="bg-white rounded-xl shadow-2xl p-6 mb-6 border-4 border-blue-500">
+          <h1 className="text-4xl font-bold text-gray-800 mb-2">🏦 Advanced Insurance Database Indexing Guide</h1>
+          <p className="text-gray-600">Interactive visual learning for large-scale enterprise systems</p>
+        </div>
+
+        {/* Navigation */}
+        <div className="bg-white rounded-xl shadow-lg p-4 mb-6">
+          <div className="flex flex-wrap gap-2">
+            {sections.map(section => {
+              const IconComponent = section.icon;
+              return (
+                <button
+                  key={section.id}
+                  onClick={() => {
+                    setActiveSection(section.id);
+                    setIsPlaying(false);
+                    setBtreeStep(0);
+                  }}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-lg font-semibold transition-all ${
+                    activeSection === section.id
+                      ? 'bg-blue-600 text-white shadow-lg scale-105'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+                >
+                  <IconComponent size={20} />
+                  {section.name}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Content Area */}
+        <div className="bg-white rounded-xl shadow-2xl p-6">
+          {activeSection === 'intro' && (
+            <div className="space-y-4">
+              <h2 className="text-2xl font-bold text-gray-800 mb-4">What is Database Indexing?</h2>
+              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-lg border-2 border-blue-300">
+                <p className="text-lg mb-4">Think of an index like a phone book 📖</p>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="bg-red-50 p-4 rounded-lg border-2 border-red-300">
+                    <h3 className="font-bold text-red-800 mb-2">Without Index:</h3>
+                    <p className="text-sm">Like reading every page to find "Smith, John"</p>
+                    <p className="text-xs text-gray-600 mt-2">Database scans EVERY row</p>
+                  </div>
+                  <div className="bg-green-50 p-4 rounded-lg border-2 border-green-300">
+                    <h3 className="font-bold text-green-800 mb-2">With Index:</h3>
+                    <p className="text-sm">Jump directly to the "S" section</p>
+                    <p className="text-xs text-gray-600 mt-2">Database uses sorted structure</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-purple-50 p-6 rounded-lg border-2 border-purple-300 mt-4">
+                <h3 className="font-bold text-lg mb-3">Why Insurance Companies NEED Indexes:</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="font-semibold text-purple-800 mb-2">Typical Queries:</p>
+                    <ul className="text-sm space-y-1 ml-4">
+                      <li>• Find customer's active policies</li>
+                      <li>• List all claims in date range</li>
+                      <li>• Calculate premium totals by agent</li>
+                      <li>• Search policy by number</li>
+                    </ul>
+                  </div>
+                  <div>
+                    <p className="font-semibold text-purple-800 mb-2">Scale Challenges:</p>
+                    <ul className="text-sm space-y-1 ml-4">
+                      <li>• 10M+ customers</li>
+                      <li>• 50M+ policies (active + expired)</li>
+                      <li>• 100M+ claims history</li>
+                      <li>• 1000s of concurrent users</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-yellow-50 p-4 rounded-lg border-2 border-yellow-400 mt-4">
+                <p className="font-bold text-yellow-800 mb-2">⚡ The Performance Problem:</p>
+                <p className="text-sm">Without proper indexes, a simple "find my policies" query could scan 50 million rows, taking 10-30 seconds. With indexes? 0.01 seconds!</p>
+              </div>
+            </div>
+          )}
+
+          {activeSection === 'btree' && <BTreeVisualization />}
+          {activeSection === 'types' && <IndexTypesComparison />}
+          {activeSection === 'query-plans' && <QueryPlanAnalyzer />}
+          {activeSection === 'simulator' && <InteractiveSimulator />}
+          {activeSection === 'advanced' && <AdvancedTechniques />}
+          {activeSection === 'maintenance' && <IndexMaintenanceGuide />}
+          {activeSection === 'partitioning' && <PartitioningGuide />}
+          {activeSection === 'cost-benefit' && <CostBenefitAnalysis />}
+          {activeSection === 'example' && <RealWorldExample />}
+
+        </div>
+
+{/* Quick Reference Card */}
+<div className="bg-gradient-to-r from-gray-800 to-gray-900 text-white rounded-xl shadow-2xl p-6 mt-6">
+  <h3 className="text-xl font-bold mb-4">🎯 Quick Decision Guide</h3>
+  <div className="grid grid-cols-3 gap-4 text-sm">
+    <div className="bg-gray-700 p-3 rounded-lg">
+      <p className="font-bold mb-2">Always Index:</p>
+      <ul className="space-y-1 text-xs">
+        <li>✅ Primary keys</li>
+        <li>✅ Foreign keys</li>
+        <li>✅ Frequent WHERE columns</li>
+        <li>✅ JOIN columns</li>
+      </ul>
+    </div>
+    <div className="bg-gray-700 p-3 rounded-lg">
+      <p className="font-bold mb-2">Avoid Indexing:</p>
+      <ul className="space-y-1 text-xs">
+        <li>❌ Small tables (&lt;10K rows)</li>
+        <li>❌ Low cardinality (few unique)</li>
+        <li>❌ Rarely queried columns</li>
+        <li>❌ Frequently updated columns</li>
+      </ul>
+    </div>
+    <div className="bg-gray-700 p-3 rounded-lg">
+      <p className="font-bold mb-2">Index Types:</p>
+      <ul className="space-y-1 text-xs">
+        <li>🌲 B-Tree: 95% of cases</li>
+        <li>🔑 Hash: Exact matches only</li>
+        <li>🎯 Bitmap: Low cardinality</li>
+        <li>🔍 GIN: Text search</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+{/* Metrics Dashboard */}
+<div className="bg-white rounded-xl shadow-2xl p-6 mt-6">
+  <h3 className="text-xl font-bold mb-4 text-gray-800">📊 Key Metrics to Monitor</h3>
+  <div className="grid grid-cols-4 gap-4">
+    <div className="bg-blue-50 p-4 rounded-lg border-2 border-blue-300 text-center">
+      <p className="text-3xl font-bold text-blue-600">98%+</p>
+      <p className="text-xs text-gray-600 mt-1">Index Hit Ratio</p>
+      <p className="text-xs text-gray-500 mt-2">Target: Queries use indexes</p>
+    </div>
+    <div className="bg-green-50 p-4 rounded-lg border-2 border-green-300 text-center">
+      <p className="text-3xl font-bold text-green-600">&lt;50ms</p>
+      <p className="text-xs text-gray-600 mt-1">P95 Query Time</p>
+      <p className="text-xs text-gray-500 mt-2">Target: Fast response</p>
+    </div>
+    <div className="bg-yellow-50 p-4 rounded-lg border-2 border-yellow-300 text-center">
+      <p className="text-3xl font-bold text-yellow-600">&lt;20%</p>
+      <p className="text-xs text-gray-600 mt-1">Storage Overhead</p>
+      <p className="text-xs text-gray-500 mt-2">Target: Index size vs table</p>
+    </div>
+    <div className="bg-purple-50 p-4 rounded-lg border-2 border-purple-300 text-center">
+      <p className="text-3xl font-bold text-purple-600">Monthly</p>
+      <p className="text-xs text-gray-600 mt-1">Maintenance</p>
+      <p className="text-xs text-gray-500 mt-2">Target: REINDEX schedule</p>
+    </div>
+  </div>
+</div>
+
+{/* Footer */}
+<div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl shadow-2xl p-6 mt-6 text-center">
+  <h3 className="text-2xl font-bold mb-2">🎓 Key Takeaways for Insurance DBAs</h3>
+  <div className="grid grid-cols-3 gap-4 mt-4 text-sm">
+    <div className="bg-white bg-opacity-20 p-3 rounded-lg">
+      <p className="font-bold mb-1">Start Simple</p>
+      <p className="text-xs">B-Tree indexes on foreign keys first</p>
+    </div>
+    <div className="bg-white bg-opacity-20 p-3 rounded-lg">
+      <p className="font-bold mb-1">Measure Impact</p>
+      <p className="text-xs">Track query times before & after</p>
+    </div>
+    <div className="bg-white bg-opacity-20 p-3 rounded-lg">
+      <p className="font-bold mb-1">Maintain Regularly</p>
+      <p className="text-xs">Monthly REINDEX & ANALYZE</p>
+    </div>
+  </div>
+</div>
+</div>
+</div>
+);
+};
+
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(<InsuranceIndexingGuide />);
+</script>
+</body>
+</html>
