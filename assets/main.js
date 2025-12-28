@@ -2,8 +2,8 @@
 // CONFIGURATION - UPDATE THESE VALUES
 // ============================================
 const CONFIG = {
-    githubUsername: 'Sarany1947',  // Change this to your GitHub username
-    repoName: 'getFitApp ',              // Change this to your repo name
+    githubUsername: 'gopalakrishnachennu',  // Change this to your GitHub username
+    repoName: 'concepts',              // Change this to your repo name
     branch: 'main',                          // or 'master' depending on your default branch
     excludeFolders: ['assets', '.github', 'node_modules', '.git'], // Folders to ignore
     // excludeFiles: ['index.html', 'viewer.html', 'README.md', 'LICENSE']  // Files to ignore
@@ -280,7 +280,9 @@ async function getFilesInFolder(folderName) {
             path: file.path,
             size: file.size,
             icon: getFileIcon(file.name),
-            url: file.html_url.replace('github.com', 'raw.githubusercontent.com').replace('/blob/', '/'),
+            url: file.name.endsWith('.html') ? 
+                `https://${CONFIG.githubUsername}.github.io/${CONFIG.repoName}/${file.path}` : 
+                file.html_url.replace('github.com', 'raw.githubusercontent.com').replace('/blob/', '/'),
             downloadUrl: file.download_url,
             isHtml: file.name.endsWith('.html'),
             clicks: analytics.clicks[file.path] || 0,
