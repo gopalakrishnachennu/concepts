@@ -269,7 +269,10 @@ async function getFilesInFolder(folderName) {
         const contents = await fetchGitHubContents(folderName);
         const files = contents.filter(item => 
             item.type === 'file' && 
-            !CONFIG.excludeFiles.includes(item.name)
+            !CONFIG.excludeFiles.includes(item.name) &&
+            !item.name.endsWith('.js') &&
+            !item.name.endsWith('.css') &&
+            !item.name.endsWith('.map')
         );
         
         const filesWithMeta = files.map(file => ({
