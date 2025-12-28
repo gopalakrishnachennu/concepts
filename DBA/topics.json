@@ -1,0 +1,99 @@
+{
+  "version": "1.0.0",
+  "topics": [
+    {
+      "id": "os-tuning",
+      "title": "OS Tuning for PostgreSQL",
+      "icon": "⚙️",
+      "description": "Optimize operating system parameters for maximum database performance",
+      "difficulty": "intermediate",
+      "estimatedTime": "2 hours",
+      "order": 1,
+      "tags": ["performance", "system", "kernel", "memory"],
+      "prerequisites": [],
+      "enabled": true
+    },
+    {
+      "id": "backup-recovery",
+      "title": "Backup & Recovery",
+      "icon": "💾",
+      "description": "Master backup strategies, point-in-time recovery, and disaster recovery planning",
+      "difficulty": "beginner",
+      "estimatedTime": "1.5 hours",
+      "order": 2,
+      "tags": ["backup", "recovery", "disaster-recovery", "PITR"],
+      "prerequisites": [],
+      "enabled": true
+    },
+    {
+      "id": "performance-tuning",
+      "title": "Performance Tuning",
+      "icon": "🚀",
+      "description": "Query optimization, index strategies, and performance analysis",
+      "difficulty": "advanced",
+      "estimatedTime": "3 hours",
+      "order": 3,
+      "tags": ["performance", "queries", "indexes", "optimization"],
+      "prerequisites": ["os-tuning"],
+      "enabled": true
+    },
+    {
+      "id": "replication-ha",
+      "title": "Replication & High Availability",
+      "icon": "🔄",
+      "description": "Streaming replication, logical replication, and HA architectures",
+      "difficulty": "advanced",
+      "estimatedTime": "2.5 hours",
+      "order": 4,
+      "tags": ["replication", "high-availability", "failover", "clustering"],
+      "prerequisites": ["backup-recovery"],
+      "enabled": false
+    },
+    {
+      "id": "security",
+      "title": "Security & Access Control",
+      "icon": "🔒",
+      "description": "Authentication, authorization, encryption, and security best practices",
+      "difficulty": "intermediate",
+      "estimatedTime": "2 hours",
+      "order": 5,
+      "tags": ["security", "authentication", "encryption", "rbac"],
+      "prerequisites": [],
+      "enabled": false
+    },
+    {
+      "id": "monitoring",
+      "title": "Monitoring & Alerting",
+      "icon": "📊",
+      "description": "Monitoring tools, metrics collection, and proactive alerting",
+      "difficulty": "intermediate",
+      "estimatedTime": "2 hours",
+      "order": 6,
+      "tags": ["monitoring", "metrics", "alerting", "observability"],
+      "prerequisites": [],
+      "enabled": false
+    }
+  ],
+  "categories": [
+    {
+      "id": "fundamentals",
+      "name": "Fundamentals",
+      "topics": ["backup-recovery"]
+    },
+    {
+      "id": "performance",
+      "name": "Performance",
+      "topics": ["os-tuning", "performance-tuning"]
+    },
+    {
+      "id": "operations",
+      "name": "Operations",
+      "topics": ["monitoring", "replication-ha"]
+    },
+    {
+      "id": "security",
+      "name": "Security",
+      "topics": ["security"]
+    }
+  ]
+}

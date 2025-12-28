@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kubernetes Deep Dive - Advanced Learning Platform</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="logo">
+                <span class="logo-icon">☸️</span>
+                <span class="logo-text">K8s Deep Dive</span>
+            </div>
+            <button class="sidebar-toggle" onclick="toggleSidebar()">✕</button>
+        </div>
+
+        <nav class="sidebar-nav">
+            <!-- Architecture Section -->
+            <div class="nav-section">
+                <div class="nav-section-title" onclick="toggleSection(this)">
+                    <span>🏗️ Architecture</span>
+                    <span class="chevron">▼</span>
+                </div>
+                <div class="nav-section-content">
+                    <div class="nav-subsection">
+                        <div class="nav-subsection-title">🧠 Control Plane</div>
+                        <a href="#api-server" class="nav-link" onclick="loadContent('api-server')">API Server</a>
+                        <a href="#etcd" class="nav-link" onclick="loadContent('etcd')">etcd</a>
+                        <a href="#scheduler" class="nav-link" onclick="loadContent('scheduler')">Scheduler</a>
+                        <a href="#controller-manager" class="nav-link"
+                            onclick="loadContent('controller-manager')">Controller Manager</a>
+                        <a href="#ccm" class="nav-link" onclick="loadContent('ccm')">Cloud Controller</a>
+                    </div>
+                    <div class="nav-subsection">
+                        <div class="nav-subsection-title">⚙️ Worker Nodes</div>
+                        <a href="#kubelet" class="nav-link" onclick="loadContent('kubelet')">Kubelet</a>
+                        <a href="#kube-proxy" class="nav-link" onclick="loadContent('kube-proxy')">Kube-proxy</a>
+                        <a href="#container-runtime" class="nav-link"
+                            onclick="loadContent('container-runtime')">Container Runtime</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Workloads Section -->
+            <div class="nav-section">
+                <div class="nav-section-title" onclick="toggleSection(this)">
+                    <span>📦 Workloads</span>
+                    <span class="chevron">▼</span>
+                </div>
+                <div class="nav-section-content">
+                    <a href="#pod" class="nav-link" onclick="loadContent('pod')">Pod</a>
+                    <a href="#deployment" class="nav-link" onclick="loadContent('deployment')">Deployment</a>
+                    <a href="#replicaset" class="nav-link" onclick="loadContent('replicaset')">ReplicaSet</a>
+                    <a href="#statefulset" class="nav-link" onclick="loadContent('statefulset')">StatefulSet</a>
+                    <a href="#daemonset" class="nav-link" onclick="loadContent('daemonset')">DaemonSet</a>
+                    <a href="#job" class="nav-link" onclick="loadContent('job')">Job/CronJob</a>
+                </div>
+            </div>
+
+            <!-- Networking Section -->
+            <div class="nav-section">
+                <div class="nav-section-title" onclick="toggleSection(this)">
+                    <span>🌐 Networking</span>
+                    <span class="chevron">▼</span>
+                </div>
+                <div class="nav-section-content">
+                    <a href="#services" class="nav-link" onclick="loadContent('services')">Services</a>
+                    <a href="#ingress" class="nav-link" onclick="loadContent('ingress')">Ingress</a>
+                    <a href="#cni" class="nav-link" onclick="loadContent('cni')">CNI Plugins</a>
+                    <a href="#dns" class="nav-link" onclick="loadContent('dns')">DNS/CoreDNS</a>
+                    <a href="#network-policy" class="nav-link" onclick="loadContent('network-policy')">Network
+                        Policies</a>
+                </div>
+            </div>
+
+            <!-- Storage Section -->
+            <div class="nav-section">
+                <div class="nav-section-title" onclick="toggleSection(this)">
+                    <span>💾 Storage</span>
+                    <span class="chevron">▼</span>
+                </div>
+                <div class="nav-section-content">
+                    <a href="#volumes" class="nav-link" onclick="loadContent('volumes')">Volumes</a>
+                    <a href="#pv" class="nav-link" onclick="loadContent('pv')">PersistentVolume</a>
+                    <a href="#pvc" class="nav-link" onclick="loadContent('pvc')">PersistentVolumeClaim</a>
+                    <a href="#storage-class" class="nav-link" onclick="loadContent('storage-class')">StorageClass</a>
+                </div>
+            </div>
+
+            <!-- Fundamentals Section -->
+            <div class="nav-section">
+                <div class="nav-section-title" onclick="toggleSection(this)">
+                    <span>📚 Fundamentals</span>
+                    <span class="chevron">▼</span>
+                </div>
+                <div class="nav-section-content">
+                    <a href="#containers" class="nav-link" onclick="loadContent('containers')">Containers vs VMs</a>
+                    <a href="#multi-container" class="nav-link" onclick="loadContent('multi-container')">Multi-Container
+                        Patterns</a>
+                    <a href="#pod-lifecycle" class="nav-link" onclick="loadContent('pod-lifecycle')">Pod Lifecycle</a>
+                    <a href="#probes" class="nav-link" onclick="loadContent('probes')">Health Probes</a>
+                </div>
+            </div>
+
+            <!-- Advanced Section -->
+            <div class="nav-section">
+                <div class="nav-section-title" onclick="toggleSection(this)">
+                    <span>🧠 Advanced Topics</span>
+                    <span class="chevron">▼</span>
+                </div>
+                <div class="nav-section-content">
+                    <div class="nav-subsection">
+                        <div class="nav-subsection-title">📦 Resources</div>
+                        <a href="#namespace" class="nav-link" onclick="loadContent('namespace')">Namespace</a>
+                        <a href="#resource-quota" class="nav-link"
+                            onclick="loadContent('resource-quota')">ResourceQuota</a>
+                        <a href="#limit-range" class="nav-link" onclick="loadContent('limit-range')">LimitRange</a>
+                        <a href="#labels" class="nav-link" onclick="loadContent('labels')">Labels & Selectors</a>
+                    </div>
+                    <div class="nav-subsection">
+                        <div class="nav-subsection-title">🔐 Security</div>
+                        <a href="#rbac" class="nav-link" onclick="loadContent('rbac')">RBAC</a>
+                        <a href="#service-account" class="nav-link"
+                            onclick="loadContent('service-account')">ServiceAccount</a>
+                        <a href="#configmap" class="nav-link" onclick="loadContent('configmap')">ConfigMap</a>
+                        <a href="#secret" class="nav-link" onclick="loadContent('secret')">Secret</a>
+                    </div>
+                    <div class="nav-subsection">
+                        <div class="nav-subsection-title">🎯 Scheduling</div>
+                        <a href="#taints" class="nav-link" onclick="loadContent('taints')">Taints & Tolerations</a>
+                        <a href="#affinity" class="nav-link" onclick="loadContent('affinity')">Node/Pod Affinity</a>
+                    </div>
+                    <div class="nav-subsection">
+                        <div class="nav-subsection-title">📈 Autoscaling</div>
+                        <a href="#hpa" class="nav-link" onclick="loadContent('hpa')">HPA (Horizontal)</a>
+                        <a href="#vpa" class="nav-link" onclick="loadContent('vpa')">VPA (Vertical)</a>
+                        <a href="#cluster-autoscaler" class="nav-link"
+                            onclick="loadContent('cluster-autoscaler')">Cluster Autoscaler</a>
+                        <a href="#karpenter" class="nav-link" onclick="loadContent('karpenter')">Karpenter</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Deployment & GitOps -->
+            <div class="nav-section">
+                <div class="nav-section-title" onclick="toggleSection(this)">
+                    <span>🚀 Deployment & GitOps</span>
+                    <span class="chevron">▼</span>
+                </div>
+                <div class="nav-section-content">
+                    <a href="#deployment-strategies" class="nav-link"
+                        onclick="loadContent('deployment-strategies')">Deployment Strategies</a>
+                    <a href="#helm" class="nav-link" onclick="loadContent('helm')">Helm</a>
+                    <a href="#kustomize" class="nav-link" onclick="loadContent('kustomize')">Kustomize</a>
+                    <a href="#gitops" class="nav-link" onclick="loadContent('gitops')">GitOps</a>
+                    <a href="#argocd" class="nav-link" onclick="loadContent('argocd')">Argo CD</a>
+                </div>
+            </div>
+
+            <!-- Reliability Section -->
+            <div class="nav-section">
+                <div class="nav-section-title" onclick="toggleSection(this)">
+                    <span>🏗️ Reliability</span>
+                    <span class="chevron">▼</span>
+                </div>
+                <div class="nav-section-content">
+                    <a href="#crds" class="nav-link" onclick="loadContent('crds')">CRDs</a>
+                    <a href="#operators" class="nav-link" onclick="loadContent('operators')">Operators</a>
+                    <a href="#ha" class="nav-link" onclick="loadContent('ha')">High Availability</a>
+                    <a href="#monitoring" class="nav-link" onclick="loadContent('monitoring')">Monitoring</a>
+                    <a href="#backup" class="nav-link" onclick="loadContent('backup')">Backup & DR</a>
+                </div>
+            </div>
+
+            <!-- Troubleshooting Section -->
+            <div class="nav-section">
+                <div class="nav-section-title" onclick="toggleSection(this)">
+                    <span>🔧 Troubleshooting</span>
+                    <span class="chevron">▼</span>
+                </div>
+                <div class="nav-section-content">
+                    <a href="#troubleshooting" class="nav-link" onclick="loadContent('troubleshooting')">Debug
+                        Scenarios</a>
+                </div>
+            </div>
+
+            <!-- Interactive Learning Section -->
+            <div class="nav-section">
+                <div class="nav-section-title" onclick="toggleSection(this)">
+                    <span>🎮 Interactive Learning</span>
+                    <span class="chevron">▼</span>
+                </div>
+                <div class="nav-section-content">
+                    <a href="#scenarios" class="nav-link" onclick="loadContent('scenarios')">🚨 Real-World Scenarios</a>
+                    <a href="#playground" class="nav-link" onclick="loadContent('playground')">💻 kubectl Playground</a>
+                    <a href="#comparisons" class="nav-link" onclick="loadContent('comparisons')">⚖️ Comparison
+                        Tables</a>
+                </div>
+            </div>
+
+            <!-- Quick Search -->
+            <div style="padding: 15px; border-top: 1px solid rgba(255,255,255,0.1);">
+                <button onclick="openSearch()"
+                    style="width: 100%; padding: 12px; background: rgba(50, 108, 229, 0.2); border: 1px solid rgba(50, 108, 229, 0.3); border-radius: 8px; color: var(--text-secondary); cursor: pointer; display: flex; align-items: center; justify-content: space-between;">
+                    <span>🔍 Quick Search...</span>
+                    <kbd
+                        style="background: rgba(255,255,255,0.1); padding: 2px 6px; border-radius: 4px; font-size: 0.8em;">/</kbd>
+                </button>
+            </div>
+        </nav>
+    </aside>
+
+    <!-- Mobile Header -->
+    <header class="mobile-header">
+        <button class="menu-btn" onclick="toggleSidebar()">☰</button>
+        <span class="header-title">☸️ Kubernetes Deep Dive</span>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="main-content" id="main-content">
+        <!-- Hero Section (Default View) -->
+        <section class="hero-section" id="hero">
+            <div class="hero-background">
+                <div class="gradient-orb orb-1"></div>
+                <div class="gradient-orb orb-2"></div>
+                <div class="gradient-orb orb-3"></div>
+                <div class="floating-icons">
+                    <span class="float-icon" style="--delay: 0s; --x: 10%; --y: 20%;">🐳</span>
+                    <span class="float-icon" style="--delay: 1s; --x: 80%; --y: 15%;">⚙️</span>
+                    <span class="float-icon" style="--delay: 2s; --x: 70%; --y: 70%;">📦</span>
+                    <span class="float-icon" style="--delay: 3s; --x: 20%; --y: 80%;">🌐</span>
+                    <span class="float-icon" style="--delay: 4s; --x: 50%; --y: 40%;">☸️</span>
+                </div>
+            </div>
+            <div class="hero-content">
+                <h1 class="hero-title">
+                    <span class="title-line">Master Kubernetes</span>
+                    <span class="title-line gradient-text">Architecture Deep Dive</span>
+                </h1>
+                <p class="hero-subtitle">
+                    An advanced, animated learning platform covering every micro-concept of Kubernetes—from kernel
+                    primitives to orchestration patterns.
+                </p>
+                <div class="hero-stats">
+                    <div class="stat-item">
+                        <span class="stat-number">50+</span>
+                        <span class="stat-label">Concepts</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-number">100+</span>
+                        <span class="stat-label">Animations</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-number">∞</span>
+                        <span class="stat-label">Deep Dives</span>
+                    </div>
+                </div>
+                <button class="cta-button" onclick="loadContent('api-server')">
+                    <span>Start Learning</span>
+                    <span class="cta-arrow">→</span>
+                </button>
+            </div>
+        </section>
+
+        <!-- Dynamic Content Container -->
+        <div class="content-container" id="content-container" style="display: none;"></div>
+    </main>
+
+    <script src="diagram-engine-v2.js"></script>
+    <script src="app.js"></script>
+</body>
+
+</html>

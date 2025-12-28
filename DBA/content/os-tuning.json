@@ -1,0 +1,98 @@
+{
+    "id": "os-tuning",
+    "sections": [
+        {
+            "id": "overview",
+            "title": "What is OS Tuning?",
+            "content": [
+                {
+                    "type": "cards",
+                    "items": [
+                        {
+                            "icon": "🎯",
+                            "title": "Concept",
+                            "text": "OS Tuning involves optimizing operating system parameters, resources, and configurations to maximize database performance. The OS is the foundation layer that provides CPU, memory, I/O, and network resources to the database."
+                        },
+                        {
+                            "icon": "🏢",
+                            "title": "On-Premises",
+                            "text": "Direct control over kernel parameters, system resources, and hardware configurations. Requires coordination between DBA, System Admin, and Storage teams."
+                        },
+                        {
+                            "icon": "☁️",
+                            "title": "Cloud (AWS RDS)",
+                            "text": "Managed service with limited OS access. Optimization through instance classes, parameter groups, and storage types. Provider handles kernel-level tuning."
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "id": "on-premises",
+            "title": "On-Premises OS Tuning",
+            "hasAnimation": true,
+            "workflow": {
+                "type": "on-prem",
+                "steps": [
+                    {
+                        "number": 1,
+                        "title": "IDENTIFY PROBLEM",
+                        "description": "Application reports slow queries",
+                        "details": "Users complain about performance degradation",
+                        "icon": "🔍",
+                        "codeExamples": [
+                            {
+                                "title": "Check Application Logs",
+                                "language": "bash",
+                                "code": "# Review application error logs\ntail -f /var/log/application/app.log | grep -i \"slow\\|timeout\\|error\"\n\n# Check for specific slow query patterns\ngrep \"execution time\" /var/log/application/app.log | awk '{if($NF>1000)print}'"
+                            },
+                            {
+                                "title": "Quick Database Connection Test",
+                                "language": "bash",
+                                "code": "# Test database connectivity and response time\ntime psql -h prod-db-01 -U dbuser -d production -c \"SELECT 1;\"\n\n# Check active connections\npsql -h prod-db-01 -U dbuser -d production -c \"SELECT count(*) FROM pg_stat_activity;\""
+                            }
+                        ]
+                    },
+                    {
+                        "number": 2,
+                        "title": "ANALYZE",
+                        "description": "DBA investigates server metrics",
+                        "details": "Use top, vmstat, iostat, free -m, sysctl -a",
+                        "icon": "📊",
+                        "codeExamples": [
+                            {
+                                "title": "System Resource Analysis",
+                                "language": "bash",
+                                "code": "# Check CPU and memory usage\ntop -b -n 1 | head -20\n\n# Memory statistics\nfree -m\n\n# Check swap usage (high swap = memory pressure)\nvmstat 1 5"
+                            },
+                            {
+                                "title": "I/O Performance Check",
+                                "language": "bash",
+                                "code": "# Disk I/O statistics\niostat -x 2 5\n\n# Check for I/O wait\nsar -u 1 10\n\n# Identify processes causing I/O\niotop -o -b -n 3"
+                            }
+                        ]
+                    },
+                    {
+                        "number": 3,
+                        "title": "DIAGNOSE",
+                        "description": "Identify root cause",
+                        "details": "kernel.shmmax=32MB (Need 16GB)",
+                        "icon": "🎯",
+                        "codeExamples": [
+                            {
+                                "title": "Identify Memory Bottleneck",
+                                "language": "bash",
+                                "code": "# Check current shared memory limits\nipcs -lm\n\n# Output shows:\n# max seg size (kbytes) = 32768  # Only 32MB!\n\n# Check what PostgreSQL is requesting\ngrep shared_buffers /etc/postgresql/14/main/postgresql.conf"
+                            },
+                            {
+                                "title": "Calculate Required Memory",
+                                "language": "bash",
+                                "code": "# Server has 64GB RAM\n# PostgreSQL best practice: 25% for shared_buffers\n# Required: 64GB * 0.25 = 16GB\n\n# Convert to bytes for shmmax\necho \"16 * 1024 * 1024 * 1024\" | bc\n# Result: 17179869184\n\n# Convert to pages for shmall (page size = 4096)\necho \"17179869184 / 4096\" | bc\n# Result: 4194304"
+                            }
+                        ]
+                    }
+                ]
+            }
+        }
+    ]
+}

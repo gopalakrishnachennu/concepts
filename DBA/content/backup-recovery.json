@@ -1,0 +1,15 @@
+{
+    "id": "backup-recovery",
+    "sections": [
+        {
+            "id": "overview",
+            "title": "Backup & Recovery Fundamentals",
+            "content": [
+                {
+                    "type": "placeholder",
+                    "message": "This topic is currently under development. Check back soon for comprehensive content on backup strategies, PITR, and disaster recovery!"
+                }
+            ]
+        }
+    ]
+}

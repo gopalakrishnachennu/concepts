@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DBA Learning Hub</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="sidebar-styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap"
+        rel="stylesheet">
+</head>
+
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-brand">
+                <span class="brand-icon">🗄️</span>
+                <span class="brand-text" id="courseTitle">DBA Learning Hub</span>
+            </div>
+            <div class="nav-controls">
+                <button class="control-btn" onclick="toggleSidebar()">
+                    <span class="icon">📚</span>
+                    <span>Topics</span>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Container -->
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside id="sidebar" class="sidebar">
+            <div class="sidebar-header">
+                <h3>📚 Course Topics</h3>
+                <button class="close-btn" onclick="toggleSidebar()">✕</button>
+            </div>
+            <div id="topicList" class="topic-list">
+                <!-- Populated by JavaScript -->
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Hero Section -->
+            <section class="hero">
+                <div class="hero-background">
+                    <div class="gradient-orb orb-1"></div>
+                    <div class="gradient-orb orb-2"></div>
+                    <div class="gradient-orb orb-3"></div>
+                </div>
+                <div class="hero-content">
+                    <h1 class="hero-title">
+                        <span class="title-line">Master PostgreSQL</span>
+                        <span class="title-line gradient-text">Database Administration</span>
+                    </h1>
+                    <p class="hero-subtitle" id="courseDescription">
+                        Comprehensive course covering OS tuning, backup strategies, performance optimization, and more
+                    </p>
+                    <button class="cta-button" onclick="startLearning()">
+                        <span>Start Learning</span>
+                        <span class="cta-arrow">→</span>
+                    </button>
+                </div>
+            </section>
+
+            <!-- Dynamic Content Area -->
+            <div id="contentArea" class="content-area">
+                <!-- Content loaded dynamically -->
+            </div>
+        </main>
+    </div>
+
+    <!-- Include the engine script -->
+    <script>
+        // Global state
+        const AppState = {
+            course: null,
+            topics: [],
+            currentTopic: null,
+            currentContent: null
+        };
+
+        // Initialize app
+        async function initApp() {
+            try {
+                // Load course structure
+                const response = await fetch('course.json');
+                const data = await response.json();
+
+                AppState.course = data.course;
+                AppState.topics = data.topics.filter(t => t.enabled);
+
+                // Update UI
+                document.getElementById('courseTitle').textContent = data.course.title;
+                document.getElementById('courseDescription').textContent = data.course.description;
+
+                // Render topic sidebar
+                renderTopicList();
+
+                // Load first topic or from URL
+                const urlParams = new URLSearchParams(window.location.search);
+                const topicId = urlParams.get('topic') || AppState.topics[0].id;
+                await loadTopic(topicId);
+
+            } catch (error) {
+                console.error('Failed to initialize app:', error);
+                showError('Failed to load course. Please refresh the page.');
+            }
+        }
+
+        // Render topic list in sidebar
+        function renderTopicList() {
+            const container = document.getElementById('topicList');
+            let html = '';
+
+            AppState.topics.forEach(topic => {
+                const isActive = AppState.currentTopic === topic.id;
+                html += `
+                    <div class="topic-card ${isActive ? 'active' : ''}" onclick="loadTopic('${topic.id}')">
+                        <div class="topic-icon">${topic.icon}</div>
+                        <div class="topic-info">
+                            <div class="topic-title">${topic.title}</div>
+                            <div class="topic-meta">
+                                <span class="difficulty ${topic.difficulty}">${topic.difficulty}</span>
+                                <span class="duration">${topic.duration}</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html;
+        }
+
+        // Load topic content
+        async function loadTopic(topicId) {
+            try {
+                const topic = AppState.topics.find(t => t.id === topicId);
+                if (!topic) return;
+
+                AppState.currentTopic = topicId;
+
+                // Update URL
+                const url = new URL(window.location);
+                url.searchParams.set('topic', topicId);
+                window.history.pushState({}, '', url);
+
+                // Update sidebar
+                renderTopicList();
+
+                // Load content
+                const response = await fetch(`content/${topic.contentFile}`);
+                const content = await response.json();
+                AppState.currentContent = content;
+
+                // Render content
+                renderContent(content, topic);
+
+                // Close sidebar on mobile
+                if (window.innerWidth < 768) {
+                    toggleSidebar();
+                }
+
+            } catch (error) {
+                console.error('Failed to load topic:', error);
+                showError('Failed to load topic content.');
+            }
+        }
+
+        // Render content
+        function renderContent(content, topic) {
+            const container = document.getElementById('contentArea');
+            let html = '';
+
+            content.sections.forEach(section => {
+                html += `<section class="content-section" id="${section.id}">`;
+                html += `<h2 class="section-title">${section.title}</h2>`;
+
+                section.content.forEach(item => {
+                    if (item.type === 'cards') {
+                        html += '<div class="content-grid">';
+                        item.items.forEach(card => {
+                            html += `
+                                <div class="info-card glass-card">
+                                    <div class="card-icon">${card.icon}</div>
+                                    <h3>${card.title}</h3>
+                                    <p>${card.text}</p>
+                                </div>
+                            `;
+                        });
+                        html += '</div>';
+                    } else if (item.type === 'placeholder') {
+                        html += `
+                            <div class="placeholder-message glass-card">
+                                <div class="placeholder-icon">${topic.icon}</div>
+                                <h3>🚧 Coming Soon!</h3>
+                                <p>${item.message}</p>
+                            </div>
+                        `;
+                    }
+                });
+
+                // Render workflow if exists
+                if (section.workflow) {
+                    html += renderWorkflow(section.workflow);
+                }
+
+                html += '</section>';
+            });
+
+            container.innerHTML = html;
+        }
+
+        // Render workflow
+        function renderWorkflow(workflow) {
+            let html = '<div class="workflow-container glass-card">';
+
+            workflow.steps.forEach((step, index) => {
+                html += `
+                    <div class="workflow-step">
+                        <div class="step-number">${step.number}</div>
+                        <div class="step-icon">${step.icon}</div>
+                        <div class="step-content">
+                            <div class="step-title">${step.title}</div>
+                            <div class="step-description">${step.description}</div>
+                            <div class="step-details">${step.details}</div>
+                `;
+
+                // Add code examples if they exist
+                if (step.codeExamples && step.codeExamples.length > 0) {
+                    html += `
+                        <button class="show-code-btn" onclick="toggleCode(${step.number})">
+                            💻 View ${step.codeExamples.length} Code Example${step.codeExamples.length > 1 ? 's' : ''}
+                        </button>
+                        <div id="code-${step.number}" class="code-examples" style="display: none;">
+                    `;
+
+                    step.codeExamples.forEach(example => {
+                        html += `
+                            <div class="code-example-item">
+                                <div class="code-header">
+                                    <span class="code-title">${example.title}</span>
+                                    <button class="copy-btn" onclick="copyCode(this)">📋 Copy</button>
+                                </div>
+                                <pre><code class="language-${example.language}">${escapeHtml(example.code)}</code></pre>
+                            </div>
+                        `;
+                    });
+
+                    html += '</div>';
+                }
+
+                html += '</div>';
+                if (index < workflow.steps.length - 1) {
+                    html += '<div class="step-arrow">↓</div>';
+                }
+                html += '</div>';
+            });
+
+            html += '</div>';
+            return html;
+        }
+
+        // Toggle code examples
+        function toggleCode(stepNumber) {
+            const codeDiv = document.getElementById(`code-${stepNumber}`);
+            if (codeDiv) {
+                codeDiv.style.display = codeDiv.style.display === 'none' ? 'block' : 'none';
+            }
+        }
+
+        // Copy code to clipboard
+        function copyCode(button) {
+            const code = button.closest('.code-example-item').querySelector('code').textContent;
+            navigator.clipboard.writeText(code).then(() => {
+                const original = button.innerHTML;
+                button.innerHTML = '✅ Copied!';
+                button.style.background = 'var(--accent-green)';
+                setTimeout(() => {
+                    button.innerHTML = original;
+                    button.style.background = '';
+                }, 2000);
+            });
+        }
+
+        // Toggle sidebar
+        function toggleSidebar() {
+            document.getElementById('sidebar').classList.toggle('open');
+        }
+
+        // Start learning (scroll to content)
+        function startLearning() {
+            document.getElementById('contentArea').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // Escape HTML
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Show error
+        function showError(message) {
+            alert(message);
+        }
+
+        // Initialize when DOM is ready
+        document.addEventListener('DOMContentLoaded', initApp);
+    </script>
+</body>
+
+</html>

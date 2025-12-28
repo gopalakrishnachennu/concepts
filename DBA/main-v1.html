@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DBA OS Tuning - Interactive Learning</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-brand">
+                <span class="brand-icon">🗄️</span>
+                <span class="brand-text">DBA Learning Hub</span>
+            </div>
+            <div class="nav-menu">
+                <a href="#overview" class="nav-link active">Overview</a>
+                <a href="#on-premises" class="nav-link">On-Premises</a>
+                <a href="#cloud" class="nav-link">Cloud (AWS RDS)</a>
+                <a href="#comparison" class="nav-link">Comparison</a>
+                <a href="#scenarios" class="nav-link">Real Scenarios</a>
+                <a href="#tips" class="nav-link">Tips & Tricks</a>
+            </div>
+            <div class="nav-controls">
+                <button class="control-btn" id="themeToggle" title="Toggle Theme">
+                    <span class="icon">🌙</span>
+                </button>
+                <button class="control-btn" id="progressBtn" title="View Progress">
+                    <span class="icon">📊</span>
+                    <span class="progress-badge">0%</span>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-background">
+            <div class="gradient-orb orb-1"></div>
+            <div class="gradient-orb orb-2"></div>
+            <div class="gradient-orb orb-3"></div>
+        </div>
+        <div class="hero-content">
+            <h1 class="hero-title">
+                <span class="title-line">Master OS Tuning</span>
+                <span class="title-line gradient-text">for Database Performance</span>
+            </h1>
+            <p class="hero-subtitle">
+                Interactive learning experience covering on-premises and cloud database optimization
+            </p>
+            <div class="hero-stats">
+                <div class="stat-card">
+                    <div class="stat-number">9</div>
+                    <div class="stat-label">On-Prem Steps</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">9</div>
+                    <div class="stat-label">Cloud Steps</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">15+</div>
+                    <div class="stat-label">Code Examples</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">∞</div>
+                    <div class="stat-label">Insights</div>
+                </div>
+            </div>
+            <button class="cta-button" onclick="scrollToSection('overview')">
+                <span>Start Learning</span>
+                <span class="cta-arrow">→</span>
+            </button>
+        </div>
+    </section>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        
+        <!-- Overview Section -->
+        <section id="overview" class="content-section">
+            <div class="section-header">
+                <h2 class="section-title">What is OS Tuning?</h2>
+                <div class="section-progress">
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: 0%"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="content-grid">
+                <div class="info-card glass-card">
+                    <div class="card-icon">🎯</div>
+                    <h3>Concept</h3>
+                    <p>OS Tuning involves optimizing operating system parameters, resources, and configurations to maximize database performance. The OS is the foundation layer that provides CPU, memory, I/O, and network resources to the database.</p>
+                </div>
+
+                <div class="info-card glass-card">
+                    <div class="card-icon">🏢</div>
+                    <h3>On-Premises</h3>
+                    <p>Direct control over kernel parameters, system resources, and hardware configurations. Requires coordination between DBA, System Admin, and Storage teams.</p>
+                </div>
+
+                <div class="info-card glass-card">
+                    <div class="card-icon">☁️</div>
+                    <h3>Cloud (AWS RDS)</h3>
+                    <p>Managed service with limited OS access. Optimization through instance classes, parameter groups, and storage types. Provider handles kernel-level tuning.</p>
+                </div>
+            </div>
+
+            <div class="architecture-diagram glass-card">
+                <h3>Resource Hierarchy</h3>
+                <div id="resourceHierarchy" class="diagram-container"></div>
+            </div>
+        </section>
+
+        <!-- On-Premises Section -->
+        <section id="on-premises" class="content-section">
+            <div class="section-header">
+                <h2 class="section-title">On-Premises OS Tuning</h2>
+                <button class="animate-btn" onclick="OsTuning.animateOnPremFlow()">
+                    <span class="icon">▶️</span> Animate Workflow
+                </button>
+            </div>
+
+            <div class="workflow-container glass-card">
+                <div id="onPremWorkflow" class="workflow-diagram"></div>
+            </div>
+
+            <div class="team-structure glass-card">
+                <h3>Team Structure & Responsibilities</h3>
+                <div class="team-grid">
+                    <div class="team-card">
+                        <div class="team-icon">👨‍💻</div>
+                        <h4>DBA Team</h4>
+                        <ul>
+                            <li>Identify performance bottlenecks</li>
+                            <li>Analyze OS-level metrics</li>
+                            <li>Recommend changes</li>
+                            <li>Validate improvements</li>
+                        </ul>
+                    </div>
+                    <div class="team-card">
+                        <div class="team-icon">⚙️</div>
+                        <h4>System Admins</h4>
+                        <ul>
+                            <li>Implement OS-level changes</li>
+                            <li>Modify kernel parameters</li>
+                            <li>Manage change requests</li>
+                            <li>Ensure system stability</li>
+                        </ul>
+                    </div>
+                    <div class="team-card">
+                        <div class="team-icon">💾</div>
+                        <h4>Storage Team</h4>
+                        <ul>
+                            <li>Configure disk subsystems</li>
+                            <li>Optimize I/O performance</li>
+                            <li>Manage RAID configurations</li>
+                            <li>Monitor disk health</li>
+                        </ul>
+                    </div>
+                    <div class="team-card">
+                        <div class="team-icon">🌐</div>
+                        <h4>Network Team</h4>
+                        <ul>
+                            <li>Optimize network parameters</li>
+                            <li>Configure TCP/IP settings</li>
+                            <li>Manage bandwidth allocation</li>
+                            <li>Monitor network latency</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Cloud Section -->
+        <section id="cloud" class="content-section">
+            <div class="section-header">
+                <h2 class="section-title">Cloud (AWS RDS) OS Tuning</h2>
+                <button class="animate-btn" onclick="OsTuning.animateCloudFlow()">
+                    <span class="icon">▶️</span> Animate Workflow
+                </button>
+            </div>
+
+            <div class="workflow-container glass-card">
+                <div id="cloudWorkflow" class="workflow-diagram"></div>
+            </div>
+
+            <div class="key-differences glass-card">
+                <h3>Key Differences from On-Premises</h3>
+                <div class="differences-grid">
+                    <div class="diff-item">
+                        <div class="diff-label">OS Access</div>
+                        <div class="diff-comparison">
+                            <span class="on-prem">✅ Full SSH access</span>
+                            <span class="cloud">❌ No OS access (managed)</span>
+                        </div>
+                    </div>
+                    <div class="diff-item">
+                        <div class="diff-label">Kernel Tuning</div>
+                        <div class="diff-comparison">
+                            <span class="on-prem">✅ Direct sysctl commands</span>
+                            <span class="cloud">❌ Parameter groups only</span>
+                        </div>
+                    </div>
+                    <div class="diff-item">
+                        <div class="diff-label">Scaling</div>
+                        <div class="diff-comparison">
+                            <span class="on-prem">⚠️ Hardware procurement</span>
+                            <span class="cloud">✅ Instance class change</span>
+                        </div>
+                    </div>
+                    <div class="diff-item">
+                        <div class="diff-label">Configuration</div>
+                        <div class="diff-comparison">
+                            <span class="on-prem">⚙️ Manual file edits</span>
+                            <span class="cloud">🔧 API/Console/IaC</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Comparison Section -->
+        <section id="comparison" class="content-section">
+            <div class="section-header">
+                <h2 class="section-title">Side-by-Side Comparison</h2>
+            </div>
+
+            <div class="comparison-container">
+                <div class="comparison-table glass-card">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Aspect</th>
+                                <th class="on-prem-col">On-Premises</th>
+                                <th class="cloud-col">Cloud (AWS RDS)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="comparisonTableBody">
+                            <!-- Populated by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- Real Scenarios Section -->
+        <section id="scenarios" class="content-section">
+            <div class="section-header">
+                <h2 class="section-title">Real-World Scenarios</h2>
+            </div>
+
+            <div class="scenario-selector">
+                <button class="scenario-tab active" data-scenario="on-prem-memory">
+                    On-Prem: Memory Tuning
+                </button>
+                <button class="scenario-tab" data-scenario="cloud-scaling">
+                    Cloud: Instance Scaling
+                </button>
+            </div>
+
+            <div class="scenario-content glass-card">
+                <div id="scenarioDisplay"></div>
+            </div>
+        </section>
+
+        <!-- Tips & Tricks Section -->
+        <section id="tips" class="content-section">
+            <div class="section-header">
+                <h2 class="section-title">Tips & Tricks for DBAs</h2>
+            </div>
+
+            <div class="tips-grid">
+                <div class="tip-card glass-card">
+                    <div class="tip-icon">📊</div>
+                    <h3>Always Baseline First</h3>
+                    <p>Create performance baselines before making any changes. This gives you a reference point to measure improvements.</p>
+                    <div class="code-example">
+                        <pre><code class="language-bash">./capture_baseline.sh > baseline_$(date +%F).log</code></pre>
+                    </div>
+                </div>
+
+                <div class="tip-card glass-card">
+                    <div class="tip-icon">🧪</div>
+                    <h3>Test in Lower Environments</h3>
+                    <p>Follow the progression: Dev → QA → Staging → Production. Validate changes for 48 hours in each environment.</p>
+                    <div class="code-example">
+                        <pre><code class="language-bash">ssh dev-db-01
+# Apply changes, monitor 48 hours
+# Then proceed to QA</code></pre>
+                    </div>
+                </div>
+
+                <div class="tip-card glass-card">
+                    <div class="tip-icon">🔄</div>
+                    <h3>Keep Rollback Scripts Ready</h3>
+                    <p>Always have a tested rollback procedure before implementing changes in production.</p>
+                    <div class="code-example">
+                        <pre><code class="language-bash">#!/bin/bash
+# rollback_shmmax.sh
+sysctl -w kernel.shmmax=33554432
+systemctl restart postgresql</code></pre>
+                    </div>
+                </div>
+
+                <div class="tip-card glass-card">
+                    <div class="tip-icon">📝</div>
+                    <h3>Document Everything</h3>
+                    <p>Maintain detailed change logs with before/after metrics, reasons, and rollback procedures.</p>
+                    <div class="code-example">
+                        <pre><code class="language-markdown">## Change Log
+- Date: 2024-12-02
+- Server: prod-db-01
+- Change: Increased kernel.shmmax
+- Rollback: sysctl -w kernel.shmmax=33554432</code></pre>
+                    </div>
+                </div>
+
+                <div class="tip-card glass-card">
+                    <div class="tip-icon">💰</div>
+                    <h3>Monitor Cloud Costs</h3>
+                    <p>Track RDS costs and use reserved instances for production workloads to save ~30%.</p>
+                    <div class="code-example">
+                        <pre><code class="language-bash">aws ce get-cost-and-usage \
+  --time-period Start=2024-12-01,End=2024-12-02 \
+  --granularity DAILY \
+  --metrics UnblendedCost</code></pre>
+                    </div>
+                </div>
+
+                <div class="tip-card glass-card">
+                    <div class="tip-icon">🏗️</div>
+                    <h3>Use Infrastructure as Code</h3>
+                    <p>Define cloud resources in Terraform or CloudFormation for version control and repeatability.</p>
+                    <div class="code-example">
+                        <pre><code class="language-hcl">resource "aws_db_instance" "production" {
+  instance_class = "db.r5.xlarge"
+  parameter_group_name = aws_db_parameter_group.optimized.name
+}</code></pre>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-content">
+            <p>DBA Learning Hub - Interactive OS Tuning Guide</p>
+            <p class="footer-meta">Built with ❤️ for Database Administrators</p>
+        </div>
+    </footer>
+
+    <!-- Progress Modal -->
+    <div id="progressModal" class="modal">
+        <div class="modal-content glass-card">
+            <div class="modal-header">
+                <h3>Your Learning Progress</h3>
+                <button class="close-btn" onclick="closeModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="progress-stats">
+                    <div class="stat-item">
+                        <div class="stat-value" id="sectionsCompleted">0/6</div>
+                        <div class="stat-label">Sections Completed</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="timeSpent">0m</div>
+                        <div class="stat-label">Time Spent</div>
+                    </div>
+                </div>
+                <div class="section-checklist" id="sectionChecklist"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="OsTuning.js"></script>
+    <script>
+        // Initialize the application
+        document.addEventListener('DOMContentLoaded', () => {
+            OsTuning.init();
+        });
+
+        // Smooth scrolling
+        function scrollToSection(sectionId) {
+            const section = document.getElementById(sectionId);
+            if (section) {
+                section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        }
+
+        // Modal controls
+        function closeModal() {
+            document.getElementById('progressModal').style.display = 'none';
+        }
+
+        document.getElementById('progressBtn').addEventListener('click', () => {
+            document.getElementById('progressModal').style.display = 'flex';
+            OsTuning.updateProgressModal();
+        });
+
+        // Close modal on outside click
+        window.addEventListener('click', (e) => {
+            const modal = document.getElementById('progressModal');
+            if (e.target === modal) {
+                closeModal();
+            }
+        });
+
+        // Navigation active state
+        const navLinks = document.querySelectorAll('.nav-link');
+        const sections = document.querySelectorAll('.content-section');
+
+        window.addEventListener('scroll', () => {
+            let current = '';
+            sections.forEach(section => {
+                const sectionTop = section.offsetTop;
+                const sectionHeight = section.clientHeight;
+                if (scrollY >= sectionTop - 200) {
+                    current = section.getAttribute('id');
+                }
+            });
+
+            navLinks.forEach(link => {
+                link.classList.remove('active');
+                if (link.getAttribute('href') === `#${current}`) {
+                    link.classList.add('active');
+                }
+            });
+        });
+    </script>
+</body>
+</html>

@@ -2,8 +2,8 @@
 // CONFIGURATION - UPDATE THESE VALUES
 // ============================================
 const CONFIG = {
-    githubUsername: 'gopalakrishnachennu',  // Change this to your GitHub username
-    repoName: 'concepts',              // Change this to your repo name
+    githubUsername: 'Sarany1947',  // Change this to your GitHub username
+    repoName: 'getFitApp ',              // Change this to your repo name
     branch: 'main',                          // or 'master' depending on your default branch
     excludeFolders: ['assets', '.github', 'node_modules', '.git'], // Folders to ignore
     // excludeFiles: ['index.html', 'viewer.html', 'README.md', 'LICENSE']  // Files to ignore

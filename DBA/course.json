@@ -1,0 +1,39 @@
+{
+    "course": {
+        "title": "PostgreSQL DBA Mastery",
+        "description": "Comprehensive PostgreSQL Database Administration Course",
+        "version": "1.0.0"
+    },
+    "topics": [
+        {
+            "id": "os-tuning",
+            "title": "OS Tuning for PostgreSQL",
+            "icon": "⚙️",
+            "difficulty": "intermediate",
+            "duration": "2 hours",
+            "description": "Optimize operating system parameters for maximum database performance",
+            "enabled": true,
+            "contentFile": "os-tuning.json"
+        },
+        {
+            "id": "backup-recovery",
+            "title": "Backup & Recovery",
+            "icon": "💾",
+            "difficulty": "beginner",
+            "duration": "1.5 hours",
+            "description": "Master backup strategies, point-in-time recovery, and disaster recovery planning",
+            "enabled": true,
+            "contentFile": "backup-recovery.json"
+        },
+        {
+            "id": "performance-tuning",
+            "title": "Performance Tuning",
+            "icon": "🚀",
+            "difficulty": "advanced",
+            "duration": "3 hours",
+            "description": "Query optimization, index strategies, and performance analysis",
+            "enabled": true,
+            "contentFile": "performance-tuning.json"
+        }
+    ]
+}
