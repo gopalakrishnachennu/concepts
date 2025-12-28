@@ -7,7 +7,7 @@ const CONFIG = {
     branch: 'main',                          // or 'master' depending on your default branch
     excludeFolders: ['assets', '.github', 'node_modules', '.git'], // Folders to ignore
     // excludeFiles: ['index.html', 'viewer.html', 'README.md', 'LICENSE']  // Files to ignore
-    excludeFiles: ['index.html', 'viewer.html', 'README.md', 'LICENSE', '.DS_Store']
+    excludeFiles: ['viewer.html', 'README.md', 'LICENSE', '.DS_Store']
 };
 
 // ============================================
