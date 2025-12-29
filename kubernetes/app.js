@@ -777,161 +777,208 @@ spec:
 
         'controller-manager': `
             <div class="content-card">
-                <h2><span class="icon">⚙️</span> Controller Manager (kube-controller-manager)</h2>
-                <p>The Controller Manager is the <strong>"Brain"</strong> of Kubernetes. It's not just one thing—it's a single binary containing dozens of separate control loops that run forever.</p>
+                <h2><span class="icon">🧠</span> Controller Manager: The Micro-Level Mental Model</h2>
+                <p>The Controller Manager is a single binary running multiple "control loops". Below is the exact mental model that makes their behavior predictable.</p>
 
+                <h3>0. The Universal Pattern: Reconcile Loop</h3>
                 <div class="tech-explanation">
-                    <div class="tech-explanation-header">🎯 Micro-Level Explanation</div>
-                    <p>Every controller inside this manager follows the exactly same pattern. It compares the <strong>Desired State</strong> (what you asked for in YAML) with the <strong>Actual State</strong> (what is running right now).</p>
-                    <p>If they don't match, it fires a function to fix it. Let's look at the code logic for the most important ones.</p>
+                    <p><strong>Every</strong> controller follows this exact pattern. It is not a "do-once" script; it is a continuous loop ensuring <code>Actual State == Desired State</code>.</p>
                 </div>
 
-                <h3>1. Node Controller</h3>
-                <p>Watches the health of nodes. It's the reason pods get moved when a server dies.</p>
+                <div class="ascii-diagram">
+                    <div class="ascii-diagram-title">The Controller Skeleton</div>
+                    <div class="ascii-content">
+         (WATCH)                    (WORK)
++------------------+      events   +---------------------+
+|   API Server     | ------------> | Shared Informer     |
+| (etcd backing)   |               | (cache + handlers)  |
++------------------+               +----------+----------+
+                                             | enqueue key
+                                             v
+                                   +---------------------+
+                                   |   WorkQueue         |
+                                   +----------+----------+
+                                              | pop key
+                                              v
+                                   +---------------------+
+                                   | Reconcile(key)      |
+                                   | - read cache        |
+                                   | - compute diff      |
+                                   | - apply changes     |
+                                   +---------------------+</div>
+                </div>
+
                 <div class="code-block">
-                    <div class="code-header"><span class="code-lang">Micro-Logic (Pseudocode)</span></div>
+                    <div class="code-header"><span class="code-lang">Micro-Code Skeleton</span></div>
                     <pre>
-function monitorNodes() {
-    for (node in cluster.nodes) {
-        // Step 1: Check heartbeat
-        timeSinceHeartbeat = now() - node.lastHeartbeatTime
+workerLoop():
+  while true:
+    key = queue.get()
+    err = reconcile(key)
+    if err: queue.retry(key)
 
-        // Case A: Node is silent for 40 seconds
-        if (timeSinceHeartbeat > 40 * seconds) {
-            node.status.readiness = "Unknown"
-            updateAPIServer(node) // Turn node red in dashboard
-        }
+reconcile(key):
+  obj = cache.get(key)
+  desired = computeDesired(obj)
+  actual  = observeWorld(obj)
+  
+  diff = desired - actual
+  if diff:
+      applyChanges(diff) // CREATE, UPDATE, DELETE</pre>
+                </div>
 
-        // Case B: Node is silent for 5 minutes (Eviction)
-        if (timeSinceHeartbeat > 5 * minutes) {
-            // "The node is dead. Move the workloads!"
-            deleteAllPodsOnNode(node.id) 
-            // Result: ReplicaSet controller notices missing pods 
-            // and creates new ones on healthy nodes
-        }
-    }
-}</pre>
+                <hr style="border: 0; border-top: 1px solid var(--border-color); margin: 30px 0;">
+
+                <h3>1. Node Controller</h3>
+                <p><strong>Goal:</strong> Detect dead nodes and evict pods so they can be rescheduled.</p>
+                
+                <div class="code-block">
+                    <div class="code-header"><span class="code-lang">Micro-Level Logic</span></div>
+                    <pre>
+reconcileNode(nodeName):
+  node = getNode(nodeName)
+  
+  // Step 1: Check Heartbeat
+  lastHeartbeat = node.status.lastHeartbeatTime
+  if (now - lastHeartbeat > 40s):
+      node.condition = "Unknown"
+      addTaint(node, "NoSchedule") // Stop new pods
+      
+  // Step 2: Eviction Timeout (usually 5m)
+  if (now - lastHeartbeat > 5m):
+      // The node is truly dead.
+      // Delete pods from API so RS Controller recreates them elsewhere.
+      evictAllPodsOnNode(nodeName)</pre>
                 </div>
 
                 <h3>2. ReplicaSet Controller</h3>
-                <p>Accesses the API server to ensure the correct number of pods are running.</p>
+                <p><strong>Goal:</strong> Ensure <code>spec.replicas</code> matches the count of running pods with the correct label selector.</p>
+
                 <div class="code-block">
-                    <div class="code-header"><span class="code-lang">Micro-Logic (Pseudocode)</span></div>
+                    <div class="code-header"><span class="code-lang">Micro-Level Logic</span></div>
                     <pre>
-function reconcileReplicaSet(rs) {
-    // Step 1: Count current pods for this ReplicaSet
-    currentPods = getPods(labelSelector = rs.selector)
-    desiredCount = rs.spec.replicas
+reconcileReplicaSet(rs):
+  // 1. List all pods matching the selector
+  // 2. Filter for pods "owned" by this RS
+  pods = listPods(rs.selector)
+  currentCount = count(pods)
+  desiredCount = rs.spec.replicas
 
-    diff = currentPods.length - desiredCount
-
-    // Case A: Too few pods (e.g., one crashed or node died)
-    if (diff < 0) {
-        missingCount = abs(diff)
-        createPods(missingCount, rs.podTemplate)
-    }
-    
-    // Case B: Too many pods (e.g., you scaled down)
-    if (diff > 0) {
-        // Kill the youngest pods first
-        podsToKill = sortPodsByCreationTime(currentPods).take(diff)
-        deletePods(podsToKill)
-    }
-}</pre>
+  if (currentCount < desiredCount):
+      // Create missing pods
+      createPods(desiredCount - currentCount, rs.template)
+      
+  else if (currentCount > desiredCount):
+      // Delete extra pods (youngest first)
+      deletePods(currentCount - desiredCount)</pre>
                 </div>
 
                 <h3>3. Deployment Controller</h3>
-                <p><strong>Correction:</strong> Deployments technically manage ReplicaSets, NOT Pods directly! This enables Rolling Updates.</p>
+                <p><strong>Goal:</strong> Manage ReplicaSets to perform Rolling Updates. It does NOT manage pods directly.</p>
+
+                <div class="ascii-diagram">
+                    <div class="ascii-diagram-title">Rolling Update Flow</div>
+                    <div class="ascii-content">
+Deployment (v2)
+    |
+    v
+DeploymentController works with TWO ReplicaSets:
+    1. NewRS (v2) -> Scale UP
+    2. OldRS (v1) -> Scale DOWN
+    
+Loop continues until:
+    NewRS == 100%
+    OldRS == 0%</div>
+                </div>
+
                 <div class="code-block">
-                    <div class="code-header"><span class="code-lang">Micro-Logic (Pseudocode)</span></div>
+                    <div class="code-header"><span class="code-lang">Micro-Level Logic</span></div>
                     <pre>
-function reconcileDeployment(deploy) {
-    // When you update image from v1 to v2:
-    
-    // 1. Create a NEW ReplicaSet for v2
-    newRS = createReplicaSet(image="v2", replicas=0)
-    
-    // 2. Rolling Update Logic (one by one)
-    while (newRS.replicas < deploy.replicas) {
-        
-        // Scale UP new version
-        newRS.replicas += 1
-        
-        // Scale DOWN old version
-        oldRS.replicas -= 1
-        
-        // Wait for health check before continuing
-        waitForPodReady(newRS)
-    }
-}</pre>
+reconcileDeployment(deploy):
+  // Find or Create the "New" ReplicaSet for current template
+  newRS = ensureReplicaSet(deploy.spec.template)
+  oldRSs = listOldReplicaSets(deploy)
+
+  // Scale Up New / Scale Down Old
+  // (Respected maxSurge & maxUnavailable limits)
+  
+  while (newRS.replicas < deploy.replicas):
+      scaleUp(newRS)
+      scaleDown(oldRSs)</pre>
                 </div>
 
                 <h3>4. Endpoints Controller</h3>
-                <p>Connects Services to Pods. Without this, Services don't know which IP addresses to send traffic to.</p>
+                <p><strong>Goal:</strong> Populate the "address book" (Endpoints) for a Service by finding <strong>Ready</strong> pods.</p>
+
                 <div class="code-block">
-                    <div class="code-header"><span class="code-lang">Micro-Logic (Pseudocode)</span></div>
+                    <div class="code-header"><span class="code-lang">Micro-Level Logic</span></div>
                     <pre>
-function syncService(service) {
-    // 1. Find all pods matching the Service selector
-    pods = getPods(selector = service.selector)
-    
-    healthyIPs = []
-    
-    for (pod in pods) {
-        // Only add pods that are actually Running & Ready
-        if (pod.status.phase == "Running" && pod.readinessProbe == true) {
-            healthyIPs.add(pod.ipAddress)
-        }
-    }
-    
-    // 2. Update the Endpoints object (this updates kube-proxy rules)
-    updateEndpointObject(service.name, healthyIPs)
-}</pre>
+reconcileService(svc):
+  // 1. Find pods matching Service selector
+  pods = listPods(svc.selector)
+  
+  readyIPs = []
+  
+  for p in pods:
+      // STRICT RULES:
+      // - Must have IP
+      // - Must be Running
+      // - Readiness Probe must be Success
+      if (p.ip && p.status.phase=="Running" && p.ready):
+          readyIPs.add(p.ip)
+          
+  // 2. Update Endpoints Object
+  updateEndpoints(svc.name, readyIPs)</pre>
                 </div>
 
                 <h3>5. Job Controller</h3>
-                <p>Ensures a task runs to completion (like a database backup).</p>
+                <p><strong>Goal:</strong> Run pods to completion. Tracks explicitly how many succeeded/failed.</p>
                 <div class="code-block">
-                    <div class="code-header"><span class="code-lang">Micro-Logic (Pseudocode)</span></div>
+                    <div class="code-header"><span class="code-lang">Micro-Level Logic</span></div>
                     <pre>
-function monitorJob(job) {
-    // Checking completion variables
-    completedPods = countCompletedPods(job.selector)
-    
-    if (completedPods == job.spec.completions) {
-        job.status.active = 0
-        job.status.succeeded = 1
-        job.status.conditions.add("Complete")
-    } else if (activePods < job.spec.parallelism) {
-        // Start more pods if we haven't reached parallelism limit
-        createPod(job.template)
-    }
-}</pre>
+reconcileJob(job):
+  succeeded = count(pods.status == Succeeded)
+  failed    = count(pods.status == Failed)
+
+  if (failed > job.backoffLimit):
+      markJobFailed(job)
+      return
+
+  if (succeeded >= job.completions):
+      markJobComplete(job)
+      return
+
+  // Spawn more if needed (up to parallelism limit)
+  active = count(pods.status == Running)
+  if (active < job.parallelism):
+      createPod(job.template)</pre>
                 </div>
 
                 <h3>6. ServiceAccount Controller</h3>
-                <p>Simply ensures every namespace has a default identity.</p>
+                <p><strong>Goal:</strong> Ensure every Namespace executes with an identity.</p>
                 <div class="code-block">
-                    <div class="code-header"><span class="code-lang">Micro-Logic (Pseudocode)</span></div>
+                    <div class="code-header"><span class="code-lang">Micro-Level Logic</span></div>
                     <pre>
-function onNamespaceCreate(ns) {
-    // Whenever a new namespace is created...
-    if (!exists(ns, "default-token")) {
-        createServiceAccount(name="default", namespace=ns)
-        generateSecretToken(for="default")
-    }
-}</pre>
+reconcileNamespace(ns):
+  // Simple check on Namespace creation
+  if (getServiceAccount(ns, "default") == missing):
+      createServiceAccount(ns, "default")
+      // This effectively gives pods an identity 
+      // if they don't ask for one.</pre>
                 </div>
 
-                <div class="memory-box">
-                    <div class="memory-box-header">🧠 The "Control Loop" Summary</div>
-                    <p>It acts like a thermostat:</p>
-                    <ul>
-                        <li><strong>Thermostat (Controller):</strong> "I want room at 72°F (Desired)"</li>
-                        <li><strong>Sensor (Watch):</strong> "Room is 68°F (Actual)"</li>
-                        <li><strong>Action:</strong> Turn ON heater.</li>
-                    </ul>
-                    <p>All controllers above just do this simple check forever.</p>
+                <div class="real-world-box">
+                    <div class="real-world-header">⚡ The Chain Reaction: Node Failure</div>
+                    <p>See how they all link together when a node dies:</p>
+                    <ol>
+                        <li><strong>Node Controller:</strong> Check heartbeat > 5m loops. Evicts Pods.</li>
+                        <li><strong>API Server:</strong> Pods deleted.</li>
+                        <li><strong>ReplicaSet Controller:</strong> Sees <code>Current < Desired</code>. Creates replacements.</li>
+                        <li><strong>Scheduler:</strong> Assigns replacements to a healthy node.</li>
+                        <li><strong>Kubelet (on new node):</strong> Starts containers.</li>
+                        <li><strong>Endpoints Controller:</strong> Sees new Ready pods. Updates Service IP list.</li>
+                        <li><strong>Traffic:</strong> Flows to new location.</li>
+                    </ol>
                 </div>
             </div>
         `,
