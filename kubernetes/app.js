@@ -778,211 +778,160 @@ spec:
         'controller-manager': `
             <div class="content-card">
                 <h2><span class="icon">⚙️</span> Controller Manager (kube-controller-manager)</h2>
-                <p>The Controller Manager is the <strong>"state enforcer"</strong> of Kubernetes. It runs multiple control loops that continuously work to make the actual state match the desired state.</p>
+                <p>The Controller Manager is the <strong>"Brain"</strong> of Kubernetes. It's not just one thing—it's a single binary containing dozens of separate control loops that run forever.</p>
 
                 <div class="tech-explanation">
-                    <div class="tech-explanation-header">🎯 Technical Explanation</div>
-                    <p><strong>What is the Controller Manager?</strong> Think of it as the autopilot of Kubernetes. You declare "I want 3 replicas of my application" — the Controller Manager makes sure 3 replicas are always running, no matter what happens.</p>
-                    <p>It contains multiple controllers bundled together: ReplicaSet Controller, Deployment Controller, Node Controller, Job Controller, etc. Each one watches specific resources and takes action when the current state differs from the desired state.</p>
-                    <p><strong>Key insight:</strong> Controllers follow the "observe → compare → act" loop continuously. This is what gives Kubernetes its famous self-healing capability!</p>
+                    <div class="tech-explanation-header">🎯 Micro-Level Explanation</div>
+                    <p>Every controller inside this manager follows the exactly same pattern. It compares the <strong>Desired State</strong> (what you asked for in YAML) with the <strong>Actual State</strong> (what is running right now).</p>
+                    <p>If they don't match, it fires a function to fix it. Let's look at the code logic for the most important ones.</p>
                 </div>
 
-                <div class="use-case-grid">
-                    <div class="use-case-card">
-                        <div class="use-case-header">
-                            <span class="use-case-icon">🔄</span>
-                            <span class="use-case-title">Self-Healing</span>
-                        </div>
-                        <div class="use-case-desc">Pod crashed? ReplicaSet Controller creates a new one. Node died? Node Controller marks it NotReady and evicts pods.</div>
-                    </div>
-                    <div class="use-case-card">
-                        <div class="use-case-header">
-                            <span class="use-case-icon">📊</span>
-                            <span class="use-case-title">State Management</span>
-                        </div>
-                        <div class="use-case-desc">Deployment Controller manages ReplicaSets for rolling updates. Job Controller tracks batch job completion.</div>
-                    </div>
-                    <div class="use-case-card">
-                        <div class="use-case-header">
-                            <span class="use-case-icon">🔗</span>
-                            <span class="use-case-title">Resource Binding</span>
-                        </div>
-                        <div class="use-case-desc">Endpoints Controller populates Service endpoints. ServiceAccount Controller creates default accounts.</div>
-                    </div>
+                <h3>1. Node Controller</h3>
+                <p>Watches the health of nodes. It's the reason pods get moved when a server dies.</p>
+                <div class="code-block">
+                    <div class="code-header"><span class="code-lang">Micro-Logic (Pseudocode)</span></div>
+                    <pre>
+function monitorNodes() {
+    for (node in cluster.nodes) {
+        // Step 1: Check heartbeat
+        timeSinceHeartbeat = now() - node.lastHeartbeatTime
+
+        // Case A: Node is silent for 40 seconds
+        if (timeSinceHeartbeat > 40 * seconds) {
+            node.status.readiness = "Unknown"
+            updateAPIServer(node) // Turn node red in dashboard
+        }
+
+        // Case B: Node is silent for 5 minutes (Eviction)
+        if (timeSinceHeartbeat > 5 * minutes) {
+            // "The node is dead. Move the workloads!"
+            deleteAllPodsOnNode(node.id) 
+            // Result: ReplicaSet controller notices missing pods 
+            // and creates new ones on healthy nodes
+        }
+    }
+}</pre>
                 </div>
 
-                <div class="real-world-box">
-                    <div class="real-world-header">🌍 Real-World Scenario: E-commerce During Sale</div>
-                    <p>Imagine running an e-commerce platform during a big sale:</p>
-                    <ul>
-                        <li><strong>Some pods crash</strong> due to memory pressure → ReplicaSet Controller immediately spins up replacement pods</li>
-                        <li><strong>A node becomes unresponsive</strong> → Node Controller marks it NotReady after 40s, evicts pods after 5 minutes</li>
-                        <li><strong>You deploy a hotfix</strong> → Deployment Controller creates new ReplicaSet, gradually shifts traffic</li>
-                        <li><strong>Background jobs complete</strong> → Job Controller marks them as Completed, cleans up after TTL</li>
-                    </ul>
+                <h3>2. ReplicaSet Controller</h3>
+                <p>Accesses the API server to ensure the correct number of pods are running.</p>
+                <div class="code-block">
+                    <div class="code-header"><span class="code-lang">Micro-Logic (Pseudocode)</span></div>
+                    <pre>
+function reconcileReplicaSet(rs) {
+    // Step 1: Count current pods for this ReplicaSet
+    currentPods = getPods(labelSelector = rs.selector)
+    desiredCount = rs.spec.replicas
+
+    diff = currentPods.length - desiredCount
+
+    // Case A: Too few pods (e.g., one crashed or node died)
+    if (diff < 0) {
+        missingCount = abs(diff)
+        createPods(missingCount, rs.podTemplate)
+    }
+    
+    // Case B: Too many pods (e.g., you scaled down)
+    if (diff > 0) {
+        // Kill the youngest pods first
+        podsToKill = sortPodsByCreationTime(currentPods).take(diff)
+        deletePods(podsToKill)
+    }
+}</pre>
                 </div>
 
-                <h3>ASCII Architecture Diagram</h3>
-                <div class="ascii-diagram">
-                    <div class="ascii-diagram-title">📊 Controller Manager Internal Structure</div>
-                    <div class="ascii-content">
-┌──────────────────────────────────────────────────────────────────────────┐
-│                     <span class="highlight">KUBE-CONTROLLER-MANAGER</span>                            │
-└──────────────────────────────────────────────────────────────────────────┘
-                                    │
-     ┌──────────────────────────────┼──────────────────────────────┐
-     │                              │                              │
-     ▼                              ▼                              ▼
-┌─────────────┐            ┌─────────────┐            ┌─────────────┐
-│  <span class="success">ReplicaSet</span>  │            │ <span class="success">Deployment</span>  │            │    <span class="success">Node</span>     │
-│  Controller │            │  Controller │            │  Controller │
-└──────┬──────┘            └──────┬──────┘            └──────┬──────┘
-       │                          │                          │
-       ▼                          ▼                          ▼
-  ┌─────────┐              ┌─────────┐              ┌─────────┐
-  │Watch:   │              │Watch:   │              │Watch:   │
-  │Pods     │              │Deploys  │              │Nodes    │
-  │RS       │              │RS       │              │         │
-  └─────────┘              └─────────┘              └─────────┘
-
-┌─────────────┐            ┌─────────────┐            ┌─────────────┐
-│  <span class="warning">Endpoints</span>  │            │    <span class="warning">Job</span>      │            │  <span class="warning">Service</span>   │
-│  Controller │            │  Controller │            │  Account    │
-└─────────────┘            └─────────────┘            └─────────────┘
-                    </div>
+                <h3>3. Deployment Controller</h3>
+                <p><strong>Correction:</strong> Deployments technically manage ReplicaSets, NOT Pods directly! This enables Rolling Updates.</p>
+                <div class="code-block">
+                    <div class="code-header"><span class="code-lang">Micro-Logic (Pseudocode)</span></div>
+                    <pre>
+function reconcileDeployment(deploy) {
+    // When you update image from v1 to v2:
+    
+    // 1. Create a NEW ReplicaSet for v2
+    newRS = createReplicaSet(image="v2", replicas=0)
+    
+    // 2. Rolling Update Logic (one by one)
+    while (newRS.replicas < deploy.replicas) {
+        
+        // Scale UP new version
+        newRS.replicas += 1
+        
+        // Scale DOWN old version
+        oldRS.replicas -= 1
+        
+        // Wait for health check before continuing
+        waitForPodReady(newRS)
+    }
+}</pre>
                 </div>
 
-                <div class="interview-tip">
-                    <div class="interview-tip-header">💡 Interview Tip</div>
-                    <p><strong>Common question:</strong> "What happens when a pod crashes?" — The ReplicaSet Controller watches pods via API Server. When pod count drops below desired replicas, it creates new pods to match the desired state. This is the reconciliation loop in action!</p>
+                <h3>4. Endpoints Controller</h3>
+                <p>Connects Services to Pods. Without this, Services don't know which IP addresses to send traffic to.</p>
+                <div class="code-block">
+                    <div class="code-header"><span class="code-lang">Micro-Logic (Pseudocode)</span></div>
+                    <pre>
+function syncService(service) {
+    // 1. Find all pods matching the Service selector
+    pods = getPods(selector = service.selector)
+    
+    healthyIPs = []
+    
+    for (pod in pods) {
+        // Only add pods that are actually Running & Ready
+        if (pod.status.phase == "Running" && pod.readinessProbe == true) {
+            healthyIPs.add(pod.ipAddress)
+        }
+    }
+    
+    // 2. Update the Endpoints object (this updates kube-proxy rules)
+    updateEndpointObject(service.name, healthyIPs)
+}</pre>
+                </div>
+
+                <h3>5. Job Controller</h3>
+                <p>Ensures a task runs to completion (like a database backup).</p>
+                <div class="code-block">
+                    <div class="code-header"><span class="code-lang">Micro-Logic (Pseudocode)</span></div>
+                    <pre>
+function monitorJob(job) {
+    // Checking completion variables
+    completedPods = countCompletedPods(job.selector)
+    
+    if (completedPods == job.spec.completions) {
+        job.status.active = 0
+        job.status.succeeded = 1
+        job.status.conditions.add("Complete")
+    } else if (activePods < job.spec.parallelism) {
+        // Start more pods if we haven't reached parallelism limit
+        createPod(job.template)
+    }
+}</pre>
+                </div>
+
+                <h3>6. ServiceAccount Controller</h3>
+                <p>Simply ensures every namespace has a default identity.</p>
+                <div class="code-block">
+                    <div class="code-header"><span class="code-lang">Micro-Logic (Pseudocode)</span></div>
+                    <pre>
+function onNamespaceCreate(ns) {
+    // Whenever a new namespace is created...
+    if (!exists(ns, "default-token")) {
+        createServiceAccount(name="default", namespace=ns)
+        generateSecretToken(for="default")
+    }
+}</pre>
                 </div>
 
                 <div class="memory-box">
-                    <div class="memory-box-header">🧠 Quick Memory Trick</div>
-                    <p>Remember Controller Manager as <strong>"OCA Loop"</strong> — Observe → Compare → Act. Each controller continuously observes resources, compares actual vs desired state, and acts to reconcile differences!</p>
-                </div>
-
-                <div class="deep-dive">
-                    <div class="deep-dive-header">🔬 Deep Dive: The Control Loop Pattern</div>
-                    <p>Each controller follows the same pattern: observe the current state, compare to desired state, and take action to reconcile differences. This is the heart of Kubernetes' self-healing capability.</p>
-                </div>
-
-                <h3>The Reconciliation Loop</h3>
-                <div class="animation-container">
-                    <div class="animation-title">▶ Control Loop Animation</div>
-                    <div class="flow-container">
-                        <div class="flow-step"><span>👁️</span> Observe: Watch API Server for changes</div>
-                        <div class="flow-arrow">↓</div>
-                        <div class="flow-step"><span>📊</span> Analyze: Compare actual vs desired state</div>
-                        <div class="flow-arrow">↓</div>
-                        <div class="flow-step"><span>🔧</span> Act: Make changes to reconcile</div>
-                        <div class="flow-arrow">↓</div>
-                        <div class="flow-step"><span>🔄</span> Repeat: Continuous loop</div>
-                    </div>
-                </div>
-
-                <div class="code-block">
-                    <div class="code-header">
-                        <span class="code-lang">pseudocode</span>
-                    </div>
-                    <pre>// The Control Loop Pattern
-while (true) {
-    desiredState = apiServer.get("/desired")
-    actualState = cluster.observe()
-    
-    if (actualState != desiredState) {
-        diff = calculateDiff(desired, actual)
-        actions = planActions(diff)
-        execute(actions)
-    }
-    
-    wait(reconciliationPeriod)
-}</pre>
-                </div>
-
-                <h3>Built-in Controllers</h3>
-                <div class="table-container">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Controller</th>
-                                <th>Watches</th>
-                                <th>Action</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td><span class="badge badge-blue">Node Controller</span></td>
-                                <td>Node heartbeats</td>
-                                <td>Marks nodes NotReady, evicts pods</td>
-                            </tr>
-                            <tr>
-                                <td><span class="badge badge-green">ReplicaSet Controller</span></td>
-                                <td>ReplicaSets, Pods</td>
-                                <td>Creates/deletes pods to match replica count</td>
-                            </tr>
-                            <tr>
-                                <td><span class="badge badge-orange">Deployment Controller</span></td>
-                                <td>Deployments</td>
-                                <td>Manages ReplicaSets for rolling updates</td>
-                            </tr>
-                            <tr>
-                                <td><span class="badge badge-purple">Endpoints Controller</span></td>
-                                <td>Services, Pods</td>
-                                <td>Populates Endpoints with ready Pod IPs</td>
-                            </tr>
-                            <tr>
-                                <td><span class="badge badge-blue">ServiceAccount Controller</span></td>
-                                <td>Namespaces</td>
-                                <td>Creates default ServiceAccount</td>
-                            </tr>
-                            <tr>
-                                <td><span class="badge badge-green">Job Controller</span></td>
-                                <td>Jobs</td>
-                                <td>Creates pods, tracks completion</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-
-                <h3>Example: ReplicaSet Controller</h3>
-                <div class="micro-detail">
-                    <div class="micro-detail-title">⚡ Scenario: Pod Crashes</div>
-                    <p><strong>Desired:</strong> 3 replicas of nginx<br>
-                    <strong>Actual:</strong> 2 pods running (one crashed)<br>
-                    <strong>Action:</strong> ReplicaSet Controller creates 1 new Pod</p>
-                </div>
-
-                <div class="code-block">
-                    <div class="code-header">
-                        <span class="code-lang">ReplicaSet Controller Logic</span>
-                    </div>
-                    <pre>// ReplicaSet Controller pseudo-code
-function reconcile(replicaset) {
-    currentPods = listPods(matchLabels: replicaset.selector)
-    desired = replicaset.spec.replicas
-    current = len(currentPods)
-    
-    if (current < desired) {
-        // Need more pods
-        for i in range(desired - current) {
-            createPod(replicaset.spec.template)
-        }
-    } else if (current > desired) {
-        // Too many pods
-        toDelete = selectPodsToDelete(currentPods, current - desired)
-        for pod in toDelete {
-            deletePod(pod)
-        }
-    }
-}</pre>
-                </div>
-
-                <h3>Leader Election</h3>
-                <p>In HA setups, only one Controller Manager is active. Others are standby:</p>
-                <div class="deep-dive">
-                    <div class="deep-dive-header">🔐 How Leader Election Works</div>
-                    <p>Controller Manager instances compete for a "lease" object in etcd. The winner becomes the leader and runs the controllers. Others watch and take over if the lease expires.</p>
+                    <div class="memory-box-header">🧠 The "Control Loop" Summary</div>
+                    <p>It acts like a thermostat:</p>
+                    <ul>
+                        <li><strong>Thermostat (Controller):</strong> "I want room at 72°F (Desired)"</li>
+                        <li><strong>Sensor (Watch):</strong> "Room is 68°F (Actual)"</li>
+                        <li><strong>Action:</strong> Turn ON heater.</li>
+                    </ul>
+                    <p>All controllers above just do this simple check forever.</p>
                 </div>
             </div>
         `,
