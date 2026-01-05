@@ -1088,7 +1088,7 @@ async function initFileViewer() {
     
     // Update UI with folder name
     document.getElementById('currentFolder').textContent = folderName;
-    document.getElementById('folderTitle').textContent = `${getFolderEmoji(folderName)} ${folderName}`;
+    document.getElementById('folderTitle').innerHTML = `${getFolderEmoji(folderName)} ${folderName}`;
     document.getElementById('folderPath').textContent = `📂 /${folderName}`;
     
     // Load analytics
