@@ -100,6 +100,8 @@ function getFolderEmoji(folderName) {
         'docs': 'https://img.icons8.com/color/96/book.png',
         'api': 'https://img.icons8.com/color/96/api.png',
         'database': 'https://img.icons8.com/color/96/database.png',
+        'dba': 'https://img.icons8.com/color/96/database.png',
+        'git-ci': 'https://img.icons8.com/color/96/git.png',
         'mobile': 'https://img.icons8.com/color/96/smartphone.png',
         'devops': 'https://img.icons8.com/color/96/infinity.png'
     };
