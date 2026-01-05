@@ -79,26 +79,44 @@ function getFileIcon(filename) {
     return iconMap[ext] || '📄';
 }
 
-// Get folder emoji (can be customized)
+// Get folder emoji (can be customized with Icons8)
 function getFolderEmoji(folderName) {
-    const emojiMap = {
-        'ansible': '🔧',
-        'docker': '🐳',
-        'git-ci': '🔄',
-        'kubernetes': '☸️',
-        'postgres': '🐘',
-        'design': '🎨',
-        'projects': '💻',
-        'blog': '📝',
-        'docs': '📚',
-        'api': '🔌',
-        'database': '💾',
-        'frontend': '🎭',
-        'backend': '⚙️',
-        'mobile': '📱',
-        'devops': '🚀'
+    const iconMap = {
+        'terraform': 'https://img.icons8.com/color/96/terraform.png',
+        'ansible': 'https://img.icons8.com/color/96/ansible.png',
+        'docker': 'https://img.icons8.com/color/96/docker.png',
+        'kubernetes': 'https://img.icons8.com/color/96/kubernetes.png',
+        'github': 'https://img.icons8.com/color/96/github--v1.png',
+        'git': 'https://img.icons8.com/color/96/git.png',
+        'aws': 'https://img.icons8.com/color/96/amazon-web-services.png',
+        'jenkins': 'https://img.icons8.com/color/96/jenkins.png',
+        'python': 'https://img.icons8.com/color/96/python--v1.png',
+        'prometheus': 'https://img.icons8.com/color/96/prometheus.png',
+        'grafana': 'https://img.icons8.com/color/96/grafana.png',
+        'postgres': 'https://img.icons8.com/color/96/postgreesql.png',
+        'design': 'https://img.icons8.com/color/96/design.png',
+        'projects': 'https://img.icons8.com/color/96/code.png',
+        'blog': 'https://img.icons8.com/color/96/edit-property.png',
+        'docs': 'https://img.icons8.com/color/96/book.png',
+        'api': 'https://img.icons8.com/color/96/api.png',
+        'database': 'https://img.icons8.com/color/96/database.png',
+        'mobile': 'https://img.icons8.com/color/96/smartphone.png',
+        'devops': 'https://img.icons8.com/color/96/infinity.png'
     };
+    
     const lowerName = folderName.toLowerCase();
+    const iconUrl = iconMap[lowerName];
+    
+    if (iconUrl) {
+        return `<img src="${iconUrl}" class="tool-icon" alt="${folderName}">`;
+    }
+
+    // Fallback Emojis
+    const emojiMap = {
+        'git-ci': '🔄',
+        'frontend': '🎭',
+        'backend': '⚙️'
+    };
     return emojiMap[lowerName] || '📁';
 }
 
@@ -302,11 +320,19 @@ async function getFilesInFolder(folderName) {
 // Get category from folder name
 function getCategoryFromName(name) {
     const lowerName = name.toLowerCase();
-    if (lowerName.includes('design') || lowerName.includes('ui') || lowerName.includes('ux')) return 'design';
-    if (lowerName.includes('code') || lowerName.includes('project') || lowerName.includes('app')) return 'code';
-    if (lowerName.includes('blog') || lowerName.includes('article') || lowerName.includes('content')) return 'content';
-    if (lowerName.includes('ansible') || lowerName.includes('docker') || lowerName.includes('kubernetes')) return 'devops';
-    if (lowerName.includes('postgres') || lowerName.includes('database') || lowerName.includes('sql')) return 'database';
+    const categories = {
+        design: ['design', 'ui', 'ux', 'figma', 'sketch'],
+        code: ['code', 'project', 'app', 'script', 'python', 'javascript', 'js', 'go', 'rust'],
+        content: ['blog', 'article', 'content', 'writing', 'docs', 'readme'],
+        devops: ['ansible', 'docker', 'kubernetes', 'terraform', 'jenkins', 'devops', 'ci', 'cd', 'aws', 'cloud', 'git'],
+        database: ['postgres', 'database', 'sql', 'nosql', 'mongo', 'redis', 'db']
+    };
+
+    for (const [cat, keywords] of Object.entries(categories)) {
+        if (keywords.some(keyword => lowerName.includes(keyword))) {
+            return cat;
+        }
+    }
     return 'other';
 }
 

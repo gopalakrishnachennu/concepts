@@ -279,6 +279,349 @@ Library updated (Apr 1)
                     <p><strong>Without IaC:</strong> You wake up, log into AWS console, try to remember instance size, security groups, and user data. You miss one detail. The app stays down.</p>
                     <p><strong>With Terraform:</strong> You run \`terraform apply\`. The exact same server (same IP, same config, same storage) is spun up in 2 minutes. You go back to sleep.</p>
                 </div>
+
+                <div class="deep-dive">
+                    <div class="deep-dive-header">🧭 IaC Maturity Levels</div>
+                    <div class="ascii-diagram">
+                        <div class="ascii-diagram-title">From Manual to Automated</div>
+                        <div class="ascii-content">
+Level 0: ClickOps (console only)
+Level 1: Scripts (bash/cli automation)
+Level 2: IaC (Terraform state + plan)
+Level 3: IaC + Tests (policy + validation)
+Level 4: GitOps (PRs, approvals, drift monitoring)
+                        </div>
+                    </div>
+                </div>
+
+                <div class="deep-dive">
+                    <div class="deep-dive-header">🔁 The Core Terraform Phases</div>
+                    <div class="ascii-diagram">
+                        <div class="ascii-content">
+init  -> download providers, set backend
+plan  -> show changes (diff: desired vs known vs actual)
+apply -> execute changes in safe order
+destroy -> teardown infrastructure
+                        </div>
+                    </div>
+                </div>
+
+                <div class="tech-explanation">
+                    <div class="tech-explanation-header">✅ Pro Tips</div>
+                    <ul>
+                        <li><strong>Always plan first:</strong> Treat plan like a deployment diff review.</li>
+                        <li><strong>Commit lock files:</strong> <code>.terraform.lock.hcl</code> makes provider versions reproducible.</li>
+                        <li><strong>Automate drift checks:</strong> Scheduled <code>plan -refresh-only</code> catches manual changes.</li>
+                    </ul>
+                </div>
+
+                <div class="deep-dive">
+                    <div class="deep-dive-header">🧩 IaC Practices That Scale</div>
+                    <div class="component-grid">
+                        <div class="component-box">
+                            <span class="icon">🧪</span>
+                            <div class="name">Pre-merge checks</div>
+                            <div class="desc">Automated format, validate, lint, and security scans on every PR.</div>
+                        </div>
+                        <div class="component-box">
+                            <span class="icon">🧾</span>
+                            <div class="name">Change review</div>
+                            <div class="desc">Plan output is treated like a code diff and requires human approval.</div>
+                        </div>
+                        <div class="component-box">
+                            <span class="icon">🔐</span>
+                            <div class="name">Secrets policy</div>
+                            <div class="desc">Secrets stay in vaults, never in code or tfvars in Git.</div>
+                        </div>
+                        <div class="component-box">
+                            <span class="icon">🧯</span>
+                            <div class="name">Rollbacks</div>
+                            <div class="desc">State versioning and release tags make rollbacks practical.</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="deep-dive">
+                    <div class="deep-dive-header">📊 Infrastructure Drift Workflow</div>
+                    <div class="ascii-diagram">
+                        <div class="ascii-content">
+1) Scheduled plan -refresh-only
+2) Drift detected -> open ticket
+3) Decide: fix in code or accept real-world change
+4) Apply from code to reconcile
+                        </div>
+                    </div>
+                </div>
+
+                <div class="deep-dive">
+                    <div class="deep-dive-header">🧰 Terraform CLI Cheat Sheet</div>
+                    <div class="comparison-table">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Command</th>
+                                    <th>Purpose</th>
+                                    <th>Notes</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><code>terraform init</code></td>
+                                    <td>Initialize backend + providers</td>
+                                    <td>Run after adding providers/modules</td>
+                                </tr>
+                                <tr>
+                                    <td><code>terraform fmt</code></td>
+                                    <td>Format HCL</td>
+                                    <td>Standardizes style, avoid noisy diffs</td>
+                                </tr>
+                                <tr>
+                                    <td><code>terraform validate</code></td>
+                                    <td>Schema + syntax checks</td>
+                                    <td>No API calls made</td>
+                                </tr>
+                                <tr>
+                                    <td><code>terraform plan</code></td>
+                                    <td>Show changes</td>
+                                    <td>Use <code>-out</code> to save plan</td>
+                                </tr>
+                                <tr>
+                                    <td><code>terraform apply</code></td>
+                                    <td>Apply changes</td>
+                                    <td>Prefer <code>apply tfplan</code></td>
+                                </tr>
+                                <tr>
+                                    <td><code>terraform destroy</code></td>
+                                    <td>Delete resources</td>
+                                    <td>Use with caution</td>
+                                </tr>
+                                <tr>
+                                    <td><code>terraform plan -refresh-only</code></td>
+                                    <td>Detect drift</td>
+                                    <td>Safe: no changes proposed</td>
+                                </tr>
+                                <tr>
+                                    <td><code>terraform graph</code></td>
+                                    <td>Dependency graph</td>
+                                    <td>Pipe to <code>dot</code></td>
+                                </tr>
+                                <tr>
+                                    <td><code>terraform console</code></td>
+                                    <td>Evaluate expressions</td>
+                                    <td>Great for debugging locals</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="deep-dive">
+                    <div class="deep-dive-header">🗂️ Recommended Project Layout</div>
+                    <div class="ascii-diagram">
+                        <div class="ascii-content">
+terraform/
+├── versions.tf
+├── backend.tf
+├── variables.tf
+├── main.tf
+├── outputs.tf
+└── modules/
+    ├── network/
+    ├── compute/
+    └── database/
+                        </div>
+                    </div>
+                </div>
+
+                <div class="deep-dive">
+                    <div class="deep-dive-header">✅ Preflight Checklist</div>
+                    <ul>
+                        <li><strong>Format:</strong> <code>terraform fmt -recursive</code></li>
+                        <li><strong>Validate:</strong> <code>terraform validate</code></li>
+                        <li><strong>Policy:</strong> OPA/Sentinel checks pass</li>
+                        <li><strong>Plan:</strong> Reviewed by a human</li>
+                        <li><strong>State:</strong> Locked and versioned</li>
+                    </ul>
+                </div>
+
+                <div class="deep-dive">
+                    <div class="deep-dive-header">📘 CLI Reference (Core)</div>
+                    <div class="code-block">
+                        <pre># Initialization
+terraform init
+terraform init -upgrade
+terraform init -reconfigure
+
+# Formatting and validation
+terraform fmt
+terraform fmt -recursive
+terraform validate
+
+# Planning
+terraform plan
+terraform plan -out=tfplan
+terraform plan -refresh-only
+terraform plan -var="env=prod"
+terraform plan -var-file="prod.tfvars"
+
+# Apply
+terraform apply
+terraform apply tfplan
+terraform apply -auto-approve
+
+# Destroy
+terraform destroy
+terraform destroy -target=aws_instance.web
+
+# State commands
+terraform state list
+terraform state show aws_instance.web
+terraform state mv aws_instance.old aws_instance.new
+terraform state rm aws_security_group.web
+terraform state pull
+terraform state push
+
+# Import
+terraform import aws_s3_bucket.data my-bucket
+
+# Workspaces
+terraform workspace list
+terraform workspace new dev
+terraform workspace select prod
+terraform workspace delete dev
+
+# Graph
+terraform graph | dot -Tsvg > graph.svg
+
+# Console
+terraform console
+
+# Providers
+terraform providers
+terraform providers schema -json
+
+# Output
+terraform output
+terraform output -json
+terraform output -raw vpc_id
+
+# Tests
+terraform test
+
+# Debugging
+export TF_LOG=DEBUG
+export TF_LOG_PATH=./terraform.log
+export TF_LOG_CORE=INFO
+export TF_LOG_PROVIDER=DEBUG</pre>
+                    </div>
+                </div>
+
+                <div class="interview-tip">
+                    <div class="interview-tip-header">💡 Core Interview Pack</div>
+                    <p><strong>Q:</strong> "What is Terraform's primary job?"<br>
+                    <strong>A:</strong> Reconcile real infrastructure to match desired configuration.</p>
+                    <p><strong>Q:</strong> "Why use IaC instead of console?"<br>
+                    <strong>A:</strong> Repeatability, reviewability, and automation.</p>
+                    <p><strong>Q:</strong> "What is idempotency?"<br>
+                    <strong>A:</strong> Same input yields same final state.</p>
+                    <p><strong>Q:</strong> "What is drift?"<br>
+                    <strong>A:</strong> Real infrastructure differs from code/state.</p>
+                    <p><strong>Q:</strong> "Why use plan files?"<br>
+                    <strong>A:</strong> Ensure apply uses reviewed changes.</p>
+                    <p><strong>Q:</strong> "What does init do?"<br>
+                    <strong>A:</strong> Sets up backend, downloads providers/modules.</p>
+                    <p><strong>Q:</strong> "Can you use variables in backend?"<br>
+                    <strong>A:</strong> No, backend config is static.</p>
+                    <p><strong>Q:</strong> "Where do providers live?"<br>
+                    <strong>A:</strong> <code>.terraform/providers</code> cache.</p>
+                    <p><strong>Q:</strong> "What is the graph?"<br>
+                    <strong>A:</strong> Dependency DAG for resource ordering.</p>
+                    <p><strong>Q:</strong> "What is state?"<br>
+                    <strong>A:</strong> Terraform's memory of managed resources.</p>
+                    <p><strong>Q:</strong> "Why not commit state?"<br>
+                    <strong>A:</strong> Secrets and conflicts.</p>
+                    <p><strong>Q:</strong> "How to detect drift safely?"<br>
+                    <strong>A:</strong> <code>terraform plan -refresh-only</code>.</p>
+                </div>
+
+                <div class="deep-dive">
+                    <div class="deep-dive-header">📌 Best Practices Catalog</div>
+                    <ul>
+                        <li><strong>Pin versions:</strong> Terraform core and providers.</li>
+                        <li><strong>Use remote state:</strong> With locking and versioning.</li>
+                        <li><strong>Prefer for_each:</strong> For identity-based resources.</li>
+                        <li><strong>Review plans:</strong> Treat as code changes.</li>
+                        <li><strong>Keep modules small:</strong> Composable over monolithic.</li>
+                        <li><strong>Use consistent tagging:</strong> default_tags or locals.</li>
+                        <li><strong>Separate environments:</strong> Distinct state and accounts.</li>
+                        <li><strong>Automate drift checks:</strong> Scheduled refresh-only plans.</li>
+                        <li><strong>Limit -target:</strong> Emergency use only.</li>
+                        <li><strong>Document modules:</strong> Inputs/outputs and examples.</li>
+                        <li><strong>Enable encryption:</strong> State and storage.</li>
+                        <li><strong>Use least privilege:</strong> IAM roles for Terraform.</li>
+                        <li><strong>Store secrets safely:</strong> Vault or secret manager.</li>
+                        <li><strong>Plan in CI:</strong> Apply on merge only.</li>
+                        <li><strong>Use policy checks:</strong> OPA/Sentinel gates.</li>
+                        <li><strong>Reduce blast radius:</strong> Split state by domain.</li>
+                        <li><strong>Monitor logs:</strong> Keep plan/apply logs.</li>
+                        <li><strong>Back up state:</strong> Versioning and snapshots.</li>
+                        <li><strong>Use templatefile:</strong> For user_data templating.</li>
+                        <li><strong>Keep tfvars out of Git:</strong> Use env vars or secret store.</li>
+                    </ul>
+                </div>
+
+                <div class="deep-dive">
+                    <div class="deep-dive-header">🧾 Minimal Stack Example</div>
+                    <div class="code-block">
+                        <pre>terraform {
+  required_version = ">= 1.5.0"
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 5.0"
+    }
+  }
+}
+
+provider "aws" {
+  region = "us-east-1"
+}
+
+resource "aws_vpc" "main" {
+  cidr_block = "10.0.0.0/16"
+  tags = { Name = "main" }
+}
+
+resource "aws_subnet" "public" {
+  vpc_id                  = aws_vpc.main.id
+  cidr_block              = "10.0.1.0/24"
+  map_public_ip_on_launch = true
+}
+
+resource "aws_security_group" "web" {
+  name   = "web-sg"
+  vpc_id = aws_vpc.main.id
+
+  ingress {
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+}
+
+resource "aws_instance" "web" {
+  ami           = "ami-123456"
+  instance_type = "t3.micro"
+  subnet_id     = aws_subnet.public.id
+  vpc_security_group_ids = [aws_security_group.web.id]
+}
+
+output "web_ip" {
+  value = aws_instance.web.public_ip
+}</pre>
+                    </div>
+                </div>
             </div>
         `,
 
@@ -357,6 +700,94 @@ Library updated (Apr 1)
                     <div class="interview-tip-header">💡 Interview Tip</div>
                     <p><strong>Question:</strong> "Where does Terraform installed plugins live?"<br>
                     <strong>Answer:</strong> In the \`.terraform/providers\` directory within your project (initialized during \`terraform init\`). They are separate binaries that Terraform Core starts via RPC.</p>
+                </div>
+
+                <div class="deep-dive">
+                    <div class="deep-dive-header">🔬 Plugin RPC Boundary</div>
+                    <p>Terraform Core communicates with providers via a plugin protocol over RPC. This clean boundary is why providers can be updated independently.</p>
+                    <div class="ascii-diagram">
+                        <div class="ascii-diagram-title">Core ↔ Provider Communication</div>
+                        <div class="ascii-content">
+Terraform Core
+   |
+   |  RPC (plugin protocol)
+   v
+Provider Binary (aws, azurerm, gcp)
+   |
+   v
+Cloud API (AWS/Azure/GCP)
+                        </div>
+                    </div>
+                </div>
+
+                <div class="tech-explanation">
+                    <div class="tech-explanation-header">✅ Pro Tips</div>
+                    <ul>
+                        <li><strong>Check provider schemas:</strong> Use <code>terraform providers schema -json</code> for debugging.</li>
+                        <li><strong>Use <code>TF_CLI_CONFIG_FILE</code>:</strong> Centralize provider cache settings.</li>
+                        <li><strong>Pin Terraform Core:</strong> Production pipelines should lock the CLI version.</li>
+                    </ul>
+                </div>
+
+                <div class="deep-dive">
+                    <div class="deep-dive-header">🧠 Internal Files Terraform Uses</div>
+                    <div class="ascii-diagram">
+                        <div class="ascii-content">
+.terraform/                -> provider plugins, module cache
+terraform.tfstate          -> current state (local backend)
+.terraform.lock.hcl        -> provider version locks
+                        </div>
+                    </div>
+                </div>
+
+                <div class="deep-dive">
+                    <div class="deep-dive-header">🧮 Plan File Anatomy (Conceptual)</div>
+                    <div class="ascii-diagram">
+                        <div class="ascii-content">
+plan:
+  add:     resources to create
+  change:  in-place updates
+  delete:  resources to destroy
+                        </div>
+                    </div>
+                </div>
+
+                <div class="deep-dive">
+                    <div class="deep-dive-header">🧠 Init / Plan / Apply Internals</div>
+                    <div class="ascii-diagram">
+                        <div class="ascii-content">
+INIT:
+  1) Read backend config
+  2) Download providers
+  3) Load module sources
+
+PLAN:
+  1) Load config
+  2) Read state
+  3) Refresh real-world (if enabled)
+  4) Build diff
+  5) Show proposed actions
+
+APPLY:
+  1) Acquire lock
+  2) Execute graph in order
+  3) Persist new state
+  4) Release lock
+                        </div>
+                    </div>
+                </div>
+
+                <div class="deep-dive">
+                    <div class="deep-dive-header">🔍 Graph Walk Strategy</div>
+                    <p>Terraform walks the DAG in parallel where possible, but never violates dependencies.</p>
+                    <div class="ascii-diagram">
+                        <div class="ascii-content">
+vpc
+├── subnet_a ──┐
+├── subnet_b ──┼──> instances (parallel)
+└── subnet_c ──┘
+                        </div>
+                    </div>
                 </div>
             </div>
         `,
@@ -616,6 +1047,73 @@ resource "aws_s3_bucket" "eu_data" {
                         <li><strong>Lock file matters</strong> - Commit <code>.terraform.lock.hcl</code> to Git</li>
                     </ul>
                 </div>
+
+                <div class="deep-dive">
+                    <div class="deep-dive-header">🧱 Provider CRUD Lifecycle</div>
+                    <div class="ascii-diagram">
+                        <div class="ascii-content">
+Create -> Read -> Update -> Delete
+  ^                     |
+  |---------------------|
+Terraform re-reads after change to confirm state
+                        </div>
+                    </div>
+                    <p>Providers implement CRUD. If the <strong>Read</strong> step fails, Terraform may think the resource is gone and try to recreate it.</p>
+                </div>
+
+                <div class="tech-explanation">
+                    <div class="tech-explanation-header">✅ Pro Tips</div>
+                    <ul>
+                        <li><strong>Use timeouts:</strong> Many resources support <code>timeouts</code> blocks for slow APIs.</li>
+                        <li><strong>Enable retries:</strong> Providers retry transient errors automatically.</li>
+                        <li><strong>Upgrade carefully:</strong> Always run a plan after bumping provider versions.</li>
+                    </ul>
+                </div>
+
+                <div class="deep-dive">
+                    <div class="deep-dive-header">🧰 Provider Lock File</div>
+                    <p>The lock file records the exact provider versions used in your environment so CI and teammates get the same binaries.</p>
+                    <div class="code-block">
+                        <pre># Update provider selections
+terraform init -upgrade</pre>
+                    </div>
+                </div>
+
+                <div class="deep-dive">
+                    <div class="deep-dive-header">📦 Provider Cache Strategy</div>
+                    <p>Use a plugin cache to avoid repeated downloads in CI.</p>
+                    <div class="code-block">
+                        <pre># ~/.terraformrc
+plugin_cache_dir = "$HOME/.terraform.d/plugin-cache"</pre>
+                    </div>
+                </div>
+
+                <div class="deep-dive">
+                    <div class="deep-dive-header">🧭 Provider Upgrade Checklist</div>
+                    <ul>
+                        <li><strong>Read changelog:</strong> Breaking changes are common across major versions.</li>
+                        <li><strong>Update constraints:</strong> Bump version in <code>required_providers</code>.</li>
+                        <li><strong>Re-init:</strong> Run <code>terraform init -upgrade</code>.</li>
+                        <li><strong>Plan:</strong> Review for drift or replacement actions.</li>
+                        <li><strong>Apply in lower env:</strong> Validate before production.</li>
+                    </ul>
+                </div>
+
+                <div class="deep-dive">
+                    <div class="deep-dive-header">🧩 Provider Mirrors (Enterprise)</div>
+                    <p>Use a provider mirror to control binaries and avoid external downloads.</p>
+                    <div class="code-block">
+                        <pre>provider_installation {
+  filesystem_mirror {
+    path    = "/opt/terraform/providers"
+    include = ["hashicorp/*"]
+  }
+  direct {
+    exclude = ["hashicorp/*"]
+  }
+}</pre>
+                    </div>
+                </div>
             </div>
         `,
 
@@ -836,6 +1334,239 @@ In terraform plan output:
                         <li><strong>lifecycle blocks</strong> control unexpected destroys</li>
                     </ul>
                 </div>
+
+                <div class="deep-dive">
+                    <div class="deep-dive-header">🧭 Resource Addressing</div>
+                    <div class="code-block">
+                        <pre># Simple resource
+aws_instance.web
+
+# Count-based resource
+aws_instance.web[0]
+
+# for_each resource
+aws_instance.web["prod"]
+
+# Module resource
+module.vpc.aws_subnet.public[0]</pre>
+                    </div>
+                </div>
+
+                <div class="tech-explanation">
+                    <div class="tech-explanation-header">✅ Pro Tips</div>
+                    <ul>
+                        <li><strong>Use <code>terraform import</code>:</strong> Bring existing resources under Terraform control.</li>
+                        <li><strong>Replace safely:</strong> Use <code>terraform apply -replace</code> when needed.</li>
+                        <li><strong>Avoid <code>taint</code> overuse:</strong> Prefer <code>-replace</code> for clarity.</li>
+                    </ul>
+                </div>
+
+                <div class="deep-dive">
+                    <div class="deep-dive-header">🧾 Resource Lifecycle Events</div>
+                    <div class="ascii-diagram">
+                        <div class="ascii-content">
+CREATE:
+  read state -> diff -> api create -> read back -> state update
+
+UPDATE:
+  diff -> api update -> read back -> state update
+
+DELETE:
+  api delete -> remove from state
+                        </div>
+                    </div>
+                </div>
+
+                <div class="deep-dive">
+                    <div class="deep-dive-header">🧱 Import Strategy</div>
+                    <p>Import is a two-step process: write the resource code, then import the real ID into state.</p>
+                    <div class="code-block">
+                        <pre># 1) Write the resource block
+# 2) Import
+terraform import aws_security_group.web sg-0abc123</pre>
+                    </div>
+                </div>
+
+                <div class="deep-dive">
+                    <div class="deep-dive-header">⚙️ Meta-Argument Patterns</div>
+                    <div class="code-block">
+                        <pre>resource "aws_instance" "web" {
+  count = var.enable_web ? 1 : 0
+  depends_on = [aws_security_group.web]
+  provider   = aws.west
+
+  lifecycle {
+    prevent_destroy = true
+    create_before_destroy = true
+  }
+}</pre>
+                    </div>
+                </div>
+
+                <div class="deep-dive">
+                    <div class="deep-dive-header">🧯 Targeted Apply Caution</div>
+                    <p><code>-target</code> is useful for emergency recovery, but can create inconsistent state. Use sparingly and follow with a full plan.</p>
+                </div>
+
+                <div class="deep-dive">
+                    <div class="deep-dive-header">🧩 Resource Patterns Library</div>
+                    <div class="code-block">
+                        <pre># Conditional resource
+resource "aws_s3_bucket" "logs" {
+  count  = var.enable_logs ? 1 : 0
+  bucket = "my-logs-bucket"
+}
+
+# for_each map
+resource "aws_iam_user" "team" {
+  for_each = {
+    alice = "Developer"
+    bob   = "Ops"
+  }
+  name = each.key
+}
+
+# Dynamic block
+resource "aws_security_group" "app" {
+  name = "app-sg"
+  dynamic "ingress" {
+    for_each = var.ingress_ports
+    content {
+      from_port   = ingress.value
+      to_port     = ingress.value
+      protocol    = "tcp"
+      cidr_blocks = ["0.0.0.0/0"]
+    }
+  }
+}
+
+# Timeouts
+resource "aws_db_instance" "db" {
+  # ...
+  timeouts {
+    create = "60m"
+    delete = "60m"
+  }
+}
+
+# Provider alias selection
+resource "aws_s3_bucket" "backup" {
+  provider = aws.west
+  bucket   = "backup-bucket"
+}</pre>
+                    </div>
+                </div>
+
+                <div class="deep-dive">
+                    <div class="deep-dive-header">🔍 Plan Change Types</div>
+                    <div class="comparison-table">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Symbol</th>
+                                    <th>Meaning</th>
+                                    <th>Typical Cause</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><code>+</code></td>
+                                    <td>Create</td>
+                                    <td>New resource in config</td>
+                                </tr>
+                                <tr>
+                                    <td><code>~</code></td>
+                                    <td>Update in-place</td>
+                                    <td>Argument changed (mutable)</td>
+                                </tr>
+                                <tr>
+                                    <td><code>-</code></td>
+                                    <td>Destroy</td>
+                                    <td>Resource removed from config</td>
+                                </tr>
+                                <tr>
+                                    <td><code>-/+</code></td>
+                                    <td>Replace</td>
+                                    <td>ForceNew argument changed</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="deep-dive">
+                    <div class="deep-dive-header">📘 Resource Cookbook</div>
+                    <div class="code-block">
+                        <pre># Common tags pattern
+locals {
+  tags = {
+    Project = var.project
+    Env     = var.env
+  }
+}
+
+resource "aws_s3_bucket" "data" {
+  bucket = "\${var.project}-\${var.env}-data"
+  tags   = local.tags
+}
+
+# Conditional enable/disable
+resource "aws_cloudwatch_log_group" "app" {
+  count = var.enable_logs ? 1 : 0
+  name  = "/app/\${var.env}"
+}
+
+# for_each with map
+resource "aws_iam_user" "users" {
+  for_each = var.user_map
+  name     = each.key
+  tags     = { Role = each.value }
+}
+
+# Optional value using try()
+resource "aws_db_instance" "db" {
+  # ...
+  port = try(var.db_port, 5432)
+}
+
+# Merge tags
+resource "aws_instance" "web" {
+  # ...
+  tags = merge(local.tags, { Name = "web" })
+}
+
+# Depends on hidden resource
+resource "null_resource" "wait" {
+  depends_on = [aws_lb.main]
+}
+
+# Use data source for AMI
+data "aws_ami" "latest" {
+  most_recent = true
+  owners      = ["amazon"]
+  filter {
+    name   = "name"
+    values = ["amzn2-ami-hvm-*-x86_64-gp2"]
+  }
+}
+
+resource "aws_instance" "app" {
+  ami           = data.aws_ami.latest.id
+  instance_type = var.instance_type
+}</pre>
+                    </div>
+                </div>
+
+                <div class="deep-dive">
+                    <div class="deep-dive-header">✅ Resource Checklist</div>
+                    <ul>
+                        <li>Names are unique and stable.</li>
+                        <li>Tags include ownership.</li>
+                        <li>ForceNew changes reviewed.</li>
+                        <li>Dependencies are explicit when needed.</li>
+                        <li>Lifecycle rules documented.</li>
+                    </ul>
+                </div>
             </div>
         `,
 
@@ -1004,6 +1735,158 @@ RESULT:  Terraform shows you exactly what will change before it happens!
                     
                     <p><strong>Q3:</strong> "What's the 'serial' number in state?"<br>
                     <strong>A:</strong> A monotonically increasing number that increments on every state change. Used for conflict detection.</p>
+                </div>
+
+                <div class="deep-dive">
+                    <div class="deep-dive-header">🔒 State Locking</div>
+                    <p>Remote backends lock state to prevent concurrent writes. Example: S3 backend uses DynamoDB for locking.</p>
+                    <div class="ascii-diagram">
+                        <div class="ascii-content">
+terraform apply
+   |
+   | acquire lock (DynamoDB)
+   v
+update state (S3)
+   |
+   | release lock
+   v
+done
+                        </div>
+                    </div>
+                </div>
+
+                <div class="tech-explanation">
+                    <div class="tech-explanation-header">✅ Pro Tips</div>
+                    <ul>
+                        <li><strong>Enable versioning:</strong> Always keep rollback history for state.</li>
+                        <li><strong>Encrypt state:</strong> Use KMS for S3 backends.</li>
+                        <li><strong>Never edit state manually:</strong> Use <code>terraform state</code> commands.</li>
+                    </ul>
+                </div>
+
+                <div class="deep-dive">
+                    <div class="deep-dive-header">📦 State Movement</div>
+                    <p>Moving resources in code should be reflected in state to prevent destroy/create.</p>
+                    <div class="code-block">
+                        <pre>terraform state mv aws_instance.web module.app.aws_instance.web</pre>
+                    </div>
+                </div>
+
+                <div class="deep-dive">
+                    <div class="deep-dive-header">🧯 State Backup Strategy</div>
+                    <div class="ascii-diagram">
+                        <div class="ascii-content">
+S3 versioning ON
++ daily backups (optional)
++ restrict write access
+                        </div>
+                    </div>
+                </div>
+
+                <div class="deep-dive">
+                    <div class="deep-dive-header">🧰 State Command Reference</div>
+                    <div class="comparison-table">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Command</th>
+                                    <th>Use</th>
+                                    <th>Risk</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><code>terraform state list</code></td>
+                                    <td>Inventory resources in state</td>
+                                    <td>Low</td>
+                                </tr>
+                                <tr>
+                                    <td><code>terraform state show</code></td>
+                                    <td>Inspect one resource</td>
+                                    <td>Low</td>
+                                </tr>
+                                <tr>
+                                    <td><code>terraform state mv</code></td>
+                                    <td>Move/rename resources</td>
+                                    <td>Medium</td>
+                                </tr>
+                                <tr>
+                                    <td><code>terraform state rm</code></td>
+                                    <td>Remove resource from state</td>
+                                    <td>High</td>
+                                </tr>
+                                <tr>
+                                    <td><code>terraform import</code></td>
+                                    <td>Bring existing infra under state</td>
+                                    <td>Medium</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="deep-dive">
+                    <div class="deep-dive-header">🧯 Common State Incidents</div>
+                    <ul>
+                        <li><strong>Stale lock:</strong> Apply crashed; use <code>force-unlock</code> after verification.</li>
+                        <li><strong>Corrupt state:</strong> Restore from S3 versioning.</li>
+                        <li><strong>Manual deletion:</strong> Import or recreate resources.</li>
+                    </ul>
+                </div>
+
+                <div class="deep-dive">
+                    <div class="deep-dive-header">❓ State FAQ</div>
+                    <p><strong>Q:</strong> "Can I store state in Git?"<br>
+                    <strong>A:</strong> No. State contains secrets and will drift if multiple people edit it.</p>
+                    <p><strong>Q:</strong> "What if state is lost?"<br>
+                    <strong>A:</strong> Restore from versioning or re-import resources.</p>
+                    <p><strong>Q:</strong> "Is state encrypted?"<br>
+                    <strong>A:</strong> Only if the backend supports encryption (S3/KMS).</p>
+                    <p><strong>Q:</strong> "Why is my plan slow?"<br>
+                    <strong>A:</strong> Large state or excessive refresh calls.</p>
+                    <p><strong>Q:</strong> "Can I edit state by hand?"<br>
+                    <strong>A:</strong> Avoid it. Use <code>terraform state</code> commands.</p>
+                </div>
+
+                <div class="deep-dive">
+                    <div class="deep-dive-header">🚩 State Red Flags</div>
+                    <ul>
+                        <li><strong>Huge diffs:</strong> Plan shows mass replacements unexpectedly.</li>
+                        <li><strong>Unknown attributes:</strong> Providers returning empty/unknown values.</li>
+                        <li><strong>Frequent lock conflicts:</strong> Too many concurrent applies.</li>
+                    </ul>
+                </div>
+
+                <div class="deep-dive">
+                    <div class="deep-dive-header">🧾 State Operations Cookbook</div>
+                    <div class="code-block">
+                        <pre># Rename a resource in state
+terraform state mv aws_instance.web aws_instance.app
+
+# Move resource into a module
+terraform state mv aws_instance.web module.app.aws_instance.web
+
+# Remove from state but keep real resource
+terraform state rm aws_s3_bucket.logs
+
+# Import existing resource
+terraform import aws_vpc.main vpc-123456
+
+# List state resources
+terraform state list | sort
+
+# Inspect one resource
+terraform state show aws_db_instance.main</pre>
+                    </div>
+                </div>
+
+                <div class="deep-dive">
+                    <div class="deep-dive-header">✅ State Guardrails</div>
+                    <ul>
+                        <li>Locking enabled for all applies.</li>
+                        <li>Versioning enabled on remote state.</li>
+                        <li>State access restricted to CI roles.</li>
+                    </ul>
                 </div>
             </div>
         `,
@@ -1206,6 +2089,109 @@ resource "aws_instance" "app" {
                     <p><strong>Q3:</strong> "Can backend config use variables?"<br>
                     <strong>A:</strong> NO. Backend blocks don't support interpolation. Use <code>-backend-config</code> CLI flags or partial configurations.</p>
                 </div>
+
+                <div class="deep-dive">
+                    <div class="deep-dive-header">🧰 Minimal S3 Backend</div>
+                    <div class="code-block">
+                        <pre>terraform {
+  backend "s3" {
+    bucket         = "tf-state-prod"
+    key            = "prod/network/terraform.tfstate"
+    region         = "us-east-1"
+    dynamodb_table = "tf-locks"
+    encrypt        = true
+  }
+}</pre>
+                    </div>
+                </div>
+
+                <div class="tech-explanation">
+                    <div class="tech-explanation-header">✅ Pro Tips</div>
+                    <ul>
+                        <li><strong>Separate state per layer:</strong> Network, app, and DB should be isolated.</li>
+                        <li><strong>Use <code>terraform_remote_state</code> cautiously:</strong> Prefer module outputs when possible.</li>
+                        <li><strong>Lock table is mandatory:</strong> Without it, concurrent applies corrupt state.</li>
+                    </ul>
+                </div>
+
+                <div class="deep-dive">
+                    <div class="deep-dive-header">🧭 Remote State Patterns</div>
+                    <ul>
+                        <li><strong>Foundations:</strong> VPC, IAM, shared networking.</li>
+                        <li><strong>Platforms:</strong> Kubernetes, shared services, logging.</li>
+                        <li><strong>Apps:</strong> Each application owns its own state.</li>
+                    </ul>
+                </div>
+
+                <div class="deep-dive">
+                    <div class="deep-dive-header">🧪 Remote State Guardrails</div>
+                    <div class="ascii-diagram">
+                        <div class="ascii-content">
+Locking enabled
+Versioning enabled
+Access restricted to CI role
+                        </div>
+                    </div>
+                </div>
+
+                <div class="deep-dive">
+                    <div class="deep-dive-header">🧾 Backend Comparison</div>
+                    <div class="comparison-table">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Backend</th>
+                                    <th>Locking</th>
+                                    <th>Best For</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>S3 + DynamoDB</td>
+                                    <td>Yes</td>
+                                    <td>Most AWS teams</td>
+                                </tr>
+                                <tr>
+                                    <td>Terraform Cloud</td>
+                                    <td>Yes</td>
+                                    <td>Managed workflows + policy</td>
+                                </tr>
+                                <tr>
+                                    <td>Consul</td>
+                                    <td>Yes</td>
+                                    <td>Self-hosted, multi-cloud</td>
+                                </tr>
+                                <tr>
+                                    <td>Local</td>
+                                    <td>No</td>
+                                    <td>Learning only</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="deep-dive">
+                    <div class="deep-dive-header">🧩 Key Naming Strategy</div>
+                    <div class="ascii-diagram">
+                        <div class="ascii-content">
+prod/network/terraform.tfstate
+prod/app/terraform.tfstate
+prod/db/terraform.tfstate
+                        </div>
+                    </div>
+                </div>
+
+                <div class="deep-dive">
+                    <div class="deep-dive-header">✅ Remote State Checklist</div>
+                    <ul>
+                        <li><strong>Locking:</strong> Enabled (DynamoDB, TFC, Consul).</li>
+                        <li><strong>Versioning:</strong> Enabled for rollback.</li>
+                        <li><strong>Encryption:</strong> KMS or backend encryption.</li>
+                        <li><strong>Access control:</strong> CI role only.</li>
+                        <li><strong>Backups:</strong> Periodic snapshots.</li>
+                    </ul>
+                </div>
             </div>
         `,
 
@@ -1406,6 +2392,120 @@ variable "vpc_config" {
                     <p><strong>Q3:</strong> "Why use type = any is bad practice?"<br>
                     <strong>A:</strong> It defeats type safety. Errors appear at runtime instead of plan time. Always be explicit!</p>
                 </div>
+
+                <div class="deep-dive">
+                    <div class="deep-dive-header">🧪 Validation Patterns</div>
+                    <div class="code-block">
+                        <pre>variable "cidr_block" {
+  type = string
+  validation {
+    condition     = can(cidrnetmask(var.cidr_block))
+    error_message = "Must be a valid CIDR block."
+  }
+}
+
+variable "env" {
+  type = string
+  validation {
+    condition     = contains(["dev", "stage", "prod"], var.env)
+    error_message = "env must be dev, stage, or prod."
+  }
+}</pre>
+                    </div>
+                </div>
+
+                <div class="tech-explanation">
+                    <div class="tech-explanation-header">✅ Pro Tips</div>
+                    <ul>
+                        <li><strong>Document variables:</strong> Always set <code>description</code> and <code>type</code>.</li>
+                        <li><strong>Use locals for derived values:</strong> Keep variables as inputs only.</li>
+                        <li><strong>Prefer objects:</strong> Group related values to reduce long variable lists.</li>
+                    </ul>
+                </div>
+
+                <div class="deep-dive">
+                    <div class="deep-dive-header">🧠 Variable Files</div>
+                    <div class="ascii-diagram">
+                        <div class="ascii-content">
+terraform.tfvars        -> auto-loaded
+dev.tfvars              -> loaded with -var-file
+prod.auto.tfvars        -> auto-loaded
+                        </div>
+                    </div>
+                </div>
+
+                <div class="deep-dive">
+                    <div class="deep-dive-header">🧰 Environment Variables</div>
+                    <div class="code-block">
+                        <pre>export TF_VAR_region="us-east-1"
+export TF_VAR_env="prod"</pre>
+                    </div>
+                </div>
+
+                <div class="deep-dive">
+                    <div class="deep-dive-header">🧾 Example tfvars</div>
+                    <div class="code-block">
+                        <pre># prod.tfvars
+region      = "us-east-1"
+environment = "prod"
+instance_type = "t3.medium"
+
+tags = {
+  Owner = "platform-team"
+  CostCenter = "1234"
+}</pre>
+                    </div>
+                </div>
+
+                <div class="deep-dive">
+                    <div class="deep-dive-header">🧩 Complex Variable Schema</div>
+                    <div class="code-block">
+                        <pre>variable "app" {
+  type = object({
+    name = string
+    env  = string
+    scaling = object({
+      min = number
+      max = number
+    })
+    networking = object({
+      vpc_id     = string
+      subnet_ids = list(string)
+    })
+  })
+}
+
+variable "app" {
+  validation {
+    condition     = var.app.scaling.min <= var.app.scaling.max
+    error_message = "min must be <= max"
+  }
+}</pre>
+                    </div>
+                </div>
+
+                <div class="deep-dive">
+                    <div class="deep-dive-header">❓ Variables FAQ</div>
+                    <p><strong>Q:</strong> "How do I make a variable optional?"<br>
+                    <strong>A:</strong> Provide a <code>default</code> value.</p>
+                    <p><strong>Q:</strong> "How do I prevent nulls?"<br>
+                    <strong>A:</strong> Set <code>nullable = false</code>.</p>
+                    <p><strong>Q:</strong> "Can I validate formats?"<br>
+                    <strong>A:</strong> Use <code>validation</code> with regex or functions.</p>
+                    <p><strong>Q:</strong> "Where to store tfvars?"<br>
+                    <strong>A:</strong> Keep secrets out of Git; load via CI or env vars.</p>
+                    <p><strong>Q:</strong> "When to use object types?"<br>
+                    <strong>A:</strong> Group related settings and reduce variable sprawl.</p>
+                </div>
+
+                <div class="deep-dive">
+                    <div class="deep-dive-header">✅ Variables Checklist</div>
+                    <ul>
+                        <li>Every variable has description and type.</li>
+                        <li>Sensitive values are marked.</li>
+                        <li>Validation rules enforce constraints.</li>
+                    </ul>
+                </div>
             </div>
         `,
 
@@ -1487,6 +2587,101 @@ output "alb_dns" = <unknown>   output "alb_dns" = "my-alb-123.us-east-1.elb.amaz
                         <li><strong>Use <code>-raw</code>:</strong> <code>terraform output -raw vpc_id</code> prints a clean string (no quotes).</li>
                         <li><strong>Hide secrets:</strong> Always mark sensitive outputs with <code>sensitive = true</code>.</li>
                         <li><strong>Explicit dependency:</strong> You can use <code>depends_on</code> inside an output if you need a strict apply order.</li>
+                    </ul>
+                </div>
+
+                <div class="deep-dive">
+                    <div class="deep-dive-header">🧩 Output Use Cases</div>
+                    <ul>
+                        <li><strong>Chaining modules:</strong> Pass VPC IDs, subnet IDs, or ARNs to other stacks.</li>
+                        <li><strong>Automation:</strong> Export DNS names or IPs for scripts and smoke tests.</li>
+                        <li><strong>Observability:</strong> Publish URLs and IDs into runbooks or dashboards.</li>
+                    </ul>
+                </div>
+
+                <div class="ascii-diagram">
+                    <div class="ascii-diagram-title">Sensitive Output Visibility</div>
+                    <div class="ascii-content">
+output "db_password" {
+  value     = aws_db_instance.main.password
+  sensitive = true
+}
+
+CLI: terraform output
+=> db_password = (sensitive)
+                    </div>
+                </div>
+
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-lang">Complex Outputs</span>
+                    </div>
+                    <pre>output "subnet_ids" {
+  description = "All private subnet IDs"
+  value       = aws_subnet.private[*].id
+}
+
+output "service_map" {
+  value = {
+    api = aws_lb.api.dns_name
+    web = aws_lb.web.dns_name
+  }
+}</pre>
+                </div>
+
+                <div class="deep-dive">
+                    <div class="deep-dive-header">🧭 Output Stability</div>
+                    <p>Outputs should be stable contracts. Changing output names or structure can break downstream modules.</p>
+                </div>
+
+                <div class="deep-dive">
+                    <div class="deep-dive-header">🧰 Output Consumption Patterns</div>
+                    <div class="code-block">
+                        <pre># In a parent module
+module "network" {
+  source = "./modules/network"
+}
+
+module "app" {
+  source    = "./modules/app"
+  subnet_id = module.network.private_subnet_ids[0]
+}
+
+# In scripts
+terraform output -json | jq -r .alb_dns.value</pre>
+                    </div>
+                </div>
+
+                <div class="deep-dive">
+                    <div class="deep-dive-header">🧪 Output Parsing Examples</div>
+                    <div class="code-block">
+                        <pre># Get a single value
+terraform output -raw web_url
+
+# Parse JSON
+terraform output -json | jq -r '.subnet_ids.value[]'
+
+# Use in shell variable
+WEB_URL=$(terraform output -raw web_url)</pre>
+                    </div>
+                </div>
+
+                <div class="deep-dive">
+                    <div class="deep-dive-header">❓ Outputs FAQ</div>
+                    <p><strong>Q:</strong> "Do outputs trigger dependencies?"<br>
+                    <strong>A:</strong> Outputs can depend on resources but do not create resources.</p>
+                    <p><strong>Q:</strong> "Can outputs be sensitive?"<br>
+                    <strong>A:</strong> Yes, use <code>sensitive = true</code>.</p>
+                    <p><strong>Q:</strong> "How are outputs used across stacks?"<br>
+                    <strong>A:</strong> Via module outputs or <code>terraform_remote_state</code>.</p>
+                </div>
+
+                <div class="deep-dive">
+                    <div class="deep-dive-header">✅ Outputs Checklist</div>
+                    <ul>
+                        <li>Names are stable and documented.</li>
+                        <li>Sensitive values are hidden.</li>
+                        <li>Only expose what consumers need.</li>
                     </ul>
                 </div>
             </div>
@@ -1571,6 +2766,120 @@ resource "aws_instance" "web" {
                         <li><strong>Fail fast:</strong> If a data source lookup fails, the plan fails early (good for safety).</li>
                     </ul>
                 </div>
+
+                <div class="deep-dive">
+                    <div class="deep-dive-header">🧭 Data Source Gotchas</div>
+                    <ul>
+                        <li><strong>Eventually consistent APIs:</strong> Newly created resources may not appear immediately.</li>
+                        <li><strong>Multiple matches:</strong> Overly broad filters can return the wrong resource.</li>
+                        <li><strong>Region mismatch:</strong> Data sources use the provider region.</li>
+                    </ul>
+                </div>
+
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-lang">Lookup by Tag</span>
+                    </div>
+                    <pre>data "aws_vpc" "selected" {
+  filter {
+    name   = "tag:Environment"
+    values = ["prod"]
+  }
+}
+
+data "aws_subnets" "private" {
+  filter {
+    name   = "vpc-id"
+    values = [data.aws_vpc.selected.id]
+  }
+  filter {
+    name   = "tag:Tier"
+    values = ["private"]
+  }
+}</pre>
+                </div>
+
+                <div class="deep-dive">
+                    <div class="deep-dive-header">🧠 Data Source Caching</div>
+                    <p>Terraform does not cache data sources across runs. Each plan re-reads from the provider.</p>
+                </div>
+
+                <div class="deep-dive">
+                    <div class="deep-dive-header">🧰 Data Source Patterns</div>
+                    <div class="code-block">
+                        <pre># Lookup latest AMI per region
+data "aws_ami" "latest" {
+  most_recent = true
+  owners      = ["amazon"]
+  filter {
+    name   = "name"
+    values = ["amzn2-ami-hvm-*-x86_64-gp2"]
+  }
+}
+
+# Read existing VPC by ID
+data "aws_vpc" "existing" {
+  id = var.vpc_id
+}</pre>
+                    </div>
+                </div>
+
+                <div class="deep-dive">
+                    <div class="deep-dive-header">🧾 Advanced Data Lookups</div>
+                    <div class="code-block">
+                        <pre># Current account and region
+data "aws_caller_identity" "current" {}
+data "aws_region" "current" {}
+
+# VPC by tag
+data "aws_vpc" "main" {
+  filter {
+    name   = "tag:Name"
+    values = ["main"]
+  }
+}
+
+# Subnets by tag and VPC
+data "aws_subnets" "private" {
+  filter {
+    name   = "vpc-id"
+    values = [data.aws_vpc.main.id]
+  }
+  filter {
+    name   = "tag:Tier"
+    values = ["private"]
+  }
+}
+
+# Security group by name
+data "aws_security_group" "app" {
+  filter {
+    name   = "group-name"
+    values = ["app-sg"]
+  }
+  vpc_id = data.aws_vpc.main.id
+}
+
+# Use in resources
+resource "aws_instance" "app" {
+  ami           = data.aws_ami.latest.id
+  instance_type = var.instance_type
+  subnet_id     = data.aws_subnets.private.ids[0]
+  vpc_security_group_ids = [data.aws_security_group.app.id]
+}</pre>
+                    </div>
+                </div>
+
+                <div class="deep-dive">
+                    <div class="deep-dive-header">✅ Data Source Checklist</div>
+                    <ul>
+                        <li>Filters are specific and stable.</li>
+                        <li>Region matches expected resources.</li>
+                        <li>Lookups fail fast when missing.</li>
+                        <li>Results are consumed explicitly.</li>
+                        <li>Minimize unnecessary API calls.</li>
+                    </ul>
+                </div>
             </div>
         `,
 
@@ -1644,6 +2953,296 @@ resource "aws_security_group" "web" {
 
 # Transform List to Map
 {for s in var.list : s => upper(s)}</pre>
+                    </div>
+                </div>
+
+                <div class="deep-dive">
+                    <div class="deep-dive-header">⚖️ Conditionals & Safe Lookups</div>
+                    <div class="code-block">
+                        <pre># Conditional expression
+var.environment == "prod" ? 3 : 1
+
+# Safe lookup with default
+lookup(var.tags, "Owner", "unknown")
+
+# Try first non-error value
+try(var.optional_setting, "fallback")</pre>
+                    </div>
+                </div>
+
+                <div class="ascii-diagram">
+                    <div class="ascii-diagram-title">Map Comprehension</div>
+                    <div class="ascii-content">
+Input:
+var.ports = [80, 443, 8080]
+
+Expression:
+{ for p in var.ports : "port_\${p}" => p }
+
+Result:
+{
+  "port_80"   = 80
+  "port_443"  = 443
+  "port_8080" = 8080
+}
+                    </div>
+                </div>
+
+                <div class="interview-tip">
+                    <div class="interview-tip-header">💡 Interview Tip</div>
+                    <p><strong>Question:</strong> "How do you handle optional arguments in Terraform?"<br>
+                    <strong>Answer:</strong> Use <code>try()</code>, <code>lookup()</code>, or conditional expressions to fall back when attributes are null or missing.</p>
+                </div>
+
+                <div class="deep-dive">
+                    <div class="deep-dive-header">🧰 Common Functions</div>
+                    <div class="code-block">
+                        <pre># Merging maps
+merge({a = 1}, {b = 2})
+
+# Zipping into a map
+zipmap(["a","b"], [1,2])
+
+# Coalesce first non-null
+coalesce(var.primary, var.fallback)</pre>
+                    </div>
+                </div>
+
+                <div class="deep-dive">
+                    <div class="deep-dive-header">🧪 Flatten & Distinct</div>
+                    <div class="code-block">
+                        <pre># Flatten a list of lists
+flatten([["a","b"], ["c"]])  # => ["a","b","c"]
+
+# Remove duplicates
+distinct(["a","a","b"])      # => ["a","b"]</pre>
+                    </div>
+                </div>
+
+                <div class="deep-dive">
+                    <div class="deep-dive-header">🔁 Dynamic Blocks: Pattern</div>
+                    <div class="code-block">
+                        <pre>dynamic "ingress" {
+  for_each = var.ports
+  content {
+    from_port = ingress.value
+    to_port   = ingress.value
+    protocol  = "tcp"
+  }
+}</pre>
+                    </div>
+                </div>
+
+                <div class="deep-dive">
+                    <div class="deep-dive-header">📚 Expression Cookbook</div>
+                    <div class="code-block">
+                        <pre># Build a map of AZ -> subnet
+zipmap(var.azs, aws_subnet.private[*].id)
+
+# Filter only prod resources
+{ for k, v in var.tags : k => v if k != "Environment" || v == "prod" }
+
+# Conditional list
+var.enable_logs ? ["logs"] : []
+
+# Build names with format
+format("%s-%s-%s", var.app, var.env, var.region)
+
+# Safe access nested object
+try(var.config.db.port, 5432)
+
+# Default to empty list
+coalesce(var.allowed_cidrs, [])
+
+# Convert list to set for for_each
+toset(var.subnet_ids)
+
+# Slice first two subnets
+slice(var.subnet_ids, 0, 2)
+
+# Merge multiple tag maps
+merge(local.base_tags, var.extra_tags)
+
+# Flatten a nested list
+flatten([var.public_subnets, var.private_subnets])</pre>
+                    </div>
+                </div>
+
+                <div class="deep-dive">
+                    <div class="deep-dive-header">🧾 Function Groups</div>
+                    <div class="comparison-table">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Group</th>
+                                    <th>Examples</th>
+                                    <th>Use Case</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>String</td>
+                                    <td><code>format</code>, <code>upper</code>, <code>replace</code></td>
+                                    <td>Normalize names</td>
+                                </tr>
+                                <tr>
+                                    <td>Collection</td>
+                                    <td><code>merge</code>, <code>zipmap</code>, <code>flatten</code></td>
+                                    <td>Transform lists/maps</td>
+                                </tr>
+                                <tr>
+                                    <td>Numeric</td>
+                                    <td><code>min</code>, <code>max</code>, <code>ceil</code></td>
+                                    <td>Capacity math</td>
+                                </tr>
+                                <tr>
+                                    <td>Type/Check</td>
+                                    <td><code>can</code>, <code>try</code></td>
+                                    <td>Safe evaluations</td>
+                                </tr>
+                                <tr>
+                                    <td>Path/File</td>
+                                    <td><code>file</code>, <code>templatefile</code></td>
+                                    <td>Read configs</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="deep-dive">
+                    <div class="deep-dive-header">📦 HCL Pattern Library</div>
+                    <div class="code-block">
+                        <pre># Conditional object
+locals {
+  db = var.enable_db ? {
+    engine = "postgres"
+    size   = "db.t3.micro"
+  } : null
+}
+
+# Map of environment to CIDR
+locals {
+  env_cidr = {
+    dev  = "10.0.0.0/16"
+    prod = "10.1.0.0/16"
+  }
+}
+
+# Build tags once
+locals {
+  common_tags = {
+    Project = var.project
+    Env     = var.env
+  }
+}
+
+# Merge tags
+locals {
+  tags = merge(local.common_tags, var.extra_tags)
+}
+
+# Conditional resource count
+resource "aws_instance" "debug" {
+  count = var.enable_debug ? 1 : 0
+  ami   = var.ami_id
+}
+
+# for_each from map
+resource "aws_s3_bucket" "env" {
+  for_each = {
+    dev  = "app-dev-bucket"
+    prod = "app-prod-bucket"
+  }
+  bucket = each.value
+}
+
+# for_each from list (converted to set)
+resource "aws_security_group" "tier" {
+  for_each = toset(["web", "app", "db"])
+  name     = "sg-\${each.key}"
+}
+
+# Filter a map
+locals {
+  prod_only = { for k, v in var.env_cidr : k => v if k == "prod" }
+}
+
+# Build a list of IDs
+locals {
+  subnet_ids = [for s in aws_subnet.private : s.id]
+}
+
+# Conditional list entries
+locals {
+  cidrs = compact([
+    var.include_office ? var.office_cidr : null,
+    var.include_vpn ? var.vpn_cidr : null
+  ])
+}
+
+# Templatefile with vars
+locals {
+  user_data = templatefile("\${path.module}/user_data.tftpl", {
+    env = var.env
+  })
+}
+
+# Fileset usage
+locals {
+  policy_files = fileset("\${path.module}/policies", "*.json")
+}
+
+# Read file contents
+locals {
+  policy_json = file("\${path.module}/policies/s3.json")
+}
+
+# Join and split
+locals {
+  name = join("-", [var.project, var.env])
+  parts = split("-", local.name)
+}
+
+# Numeric math
+locals {
+  asg_desired = max(2, var.instance_count)
+}
+
+# Boolean logic
+locals {
+  enable_https = var.env == "prod" && var.enable_tls
+}
+
+# Safe access to nested objects
+locals {
+  db_port = try(var.config.db.port, 5432)
+}
+
+# Convert list to map with index
+locals {
+  indexed = { for idx, v in var.azs : idx => v }
+}
+
+# Sort for stable ordering
+locals {
+  sorted_azs = sort(var.azs)
+}
+
+# Distinct values
+locals {
+  unique_tags = distinct(var.tags)
+}
+
+# Set operations
+locals {
+  common = setintersection(var.set_a, var.set_b)
+}
+
+# String replace
+locals {
+  safe_name = replace(var.name, "_", "-")
+}</pre>
                     </div>
                 </div>
             </div>
@@ -1725,6 +3324,63 @@ resource "aws_security_group" "web" {
 Use <code>aws_security_group_rule</code> resources outside the SG blocks.
                     </div>
                 </div>
+
+                <div class="deep-dive">
+                    <div class="deep-dive-header">🔍 Visualize the Graph</div>
+                    <p>Terraform can render the dependency graph. This is huge for debugging large modules.</p>
+                    <div class="code-block">
+                        <pre>terraform graph | dot -Tsvg > graph.svg</pre>
+                    </div>
+                </div>
+
+                <div class="tech-explanation">
+                    <div class="tech-explanation-header">✅ Pro Tips</div>
+                    <ul>
+                        <li><strong>Use implicit deps first:</strong> References create dependencies automatically.</li>
+                        <li><strong>Explicit deps for hidden relationships:</strong> Provisioners, local files, or external tools.</li>
+                        <li><strong>Module dependency:</strong> <code>module.app</code> can depend on <code>module.network</code> via outputs or <code>depends_on</code>.</li>
+                    </ul>
+                </div>
+
+                <div class="deep-dive">
+                    <div class="deep-dive-header">⚙️ Parallelism Control</div>
+                    <p>Terraform can execute independent graph nodes in parallel. Limit parallelism to avoid API throttling.</p>
+                    <div class="code-block">
+                        <pre>terraform apply -parallelism=5</pre>
+                    </div>
+                </div>
+
+                <div class="ascii-diagram">
+                    <div class="ascii-diagram-title">Implicit Module Dependency</div>
+                    <div class="ascii-content">
+module "network" -> outputs subnet_ids
+module "app"     -> uses module.network.subnet_ids
+=> app depends on network (implicit)
+                    </div>
+                </div>
+
+                <div class="deep-dive">
+                    <div class="deep-dive-header">🧯 Breaking Cycles</div>
+                    <p>Split dependencies into separate resources (e.g., security group + rules) to avoid cycles.</p>
+                </div>
+
+                <div class="deep-dive">
+                    <div class="deep-dive-header">🧩 Explicit Depends On Use Cases</div>
+                    <ul>
+                        <li><strong>Provisioners:</strong> Ensure data is ready before script runs.</li>
+                        <li><strong>External systems:</strong> Local files or null resources controlling order.</li>
+                        <li><strong>Hidden dependencies:</strong> When values are not directly referenced.</li>
+                    </ul>
+                </div>
+
+                <div class="deep-dive">
+                    <div class="deep-dive-header">⚠️ Dependency Pitfalls</div>
+                    <ul>
+                        <li><strong>Overusing depends_on:</strong> Can serialize execution unnecessarily.</li>
+                        <li><strong>Hidden references:</strong> Strings with IDs do not create deps.</li>
+                        <li><strong>Cycles:</strong> Split resources to break circular dependencies.</li>
+                    </ul>
+                </div>
             </div>
         `,
 
@@ -1797,6 +3453,164 @@ Use <code>aws_security_group_rule</code> resources outside the SG blocks.
   }
 }</pre>
                 </div>
+
+                <div class="deep-dive">
+                    <div class="deep-dive-header">📍 Module Source Types</div>
+                    <ul>
+                        <li><strong>Local Path:</strong> <code>source = "./modules/vpc"</code></li>
+                        <li><strong>Terraform Registry:</strong> <code>source = "terraform-aws-modules/vpc/aws"</code></li>
+                        <li><strong>Git:</strong> <code>source = "git::https://github.com/org/repo.git//path"</code></li>
+                        <li><strong>S3/HTTP:</strong> Use when packaging private modules.</li>
+                    </ul>
+                </div>
+
+                <div class="tech-explanation">
+                    <div class="tech-explanation-header">✅ Pro Tips</div>
+                    <ul>
+                        <li><strong>Pin module versions:</strong> Use <code>version = "x.y.z"</code> to avoid surprises.</li>
+                        <li><strong>Pass providers explicitly:</strong> Use <code>providers = { aws = aws.west }</code> for multi-account setups.</li>
+                        <li><strong>Keep modules small:</strong> Prefer composable modules instead of mega-modules.</li>
+                    </ul>
+                </div>
+
+                <div class="deep-dive">
+                    <div class="deep-dive-header">🧪 Testing Modules in Isolation</div>
+                    <p>Use a small <code>examples/</code> folder to demonstrate and validate modules independently.</p>
+                    <div class="ascii-diagram">
+                        <div class="ascii-content">
+modules/
+  vpc/
+    main.tf
+    variables.tf
+    outputs.tf
+    examples/
+      simple/
+        main.tf
+                        </div>
+                    </div>
+                </div>
+
+                <div class="deep-dive">
+                    <div class="deep-dive-header">🧱 Module Composition</div>
+                    <div class="ascii-diagram">
+                        <div class="ascii-content">
+root
+├── module.network
+├── module.security
+└── module.app
+    └── module.logging
+                        </div>
+                    </div>
+                </div>
+
+                <div class="deep-dive">
+                    <div class="deep-dive-header">🔐 Module Inputs Hygiene</div>
+                    <p>Keep inputs minimal and typed. Avoid passing entire objects when only a few values are needed.</p>
+                </div>
+
+                <div class="deep-dive">
+                    <div class="deep-dive-header">🧭 Module Versioning</div>
+                    <div class="code-block">
+                        <pre>module "vpc" {
+  source  = "terraform-aws-modules/vpc/aws"
+  version = "5.1.2"
+  # pin versions to avoid breaking changes
+}</pre>
+                    </div>
+                </div>
+
+                <div class="deep-dive">
+                    <div class="deep-dive-header">🧩 Passing Providers to Modules</div>
+                    <div class="code-block">
+                        <pre>module "logging" {
+  source = "./modules/logging"
+  providers = {
+    aws = aws.west
+  }
+}</pre>
+                    </div>
+                </div>
+
+                <div class="deep-dive">
+                    <div class="deep-dive-header">🧾 Module Interface Example</div>
+                    <div class="code-block">
+                        <pre># variables.tf in module
+variable "vpc_id" { type = string }
+variable "subnet_ids" { type = list(string) }
+
+# outputs.tf in module
+output "alb_dns" {
+  value = aws_lb.main.dns_name
+}</pre>
+                    </div>
+                </div>
+
+                <div class="deep-dive">
+                    <div class="deep-dive-header">❓ Module FAQ</div>
+                    <p><strong>Q:</strong> "When should I create a module?"<br>
+                    <strong>A:</strong> When a pattern repeats across environments or projects.</p>
+                    <p><strong>Q:</strong> "How big should a module be?"<br>
+                    <strong>A:</strong> Small and composable. Avoid mega-modules.</p>
+                    <p><strong>Q:</strong> "Can modules be nested?"<br>
+                    <strong>A:</strong> Yes, but keep dependency chains shallow.</p>
+                </div>
+
+                <div class="deep-dive">
+                    <div class="deep-dive-header">🧾 Module README Template</div>
+                    <div class="code-block">
+                        <pre># Module: vpc
+
+## Purpose
+Creates a VPC with public/private subnets, routing, and NAT.
+
+## Inputs
+| Name | Type | Default | Description |
+|------|------|---------|-------------|
+| cidr_block | string | "10.0.0.0/16" | VPC CIDR |
+| az_count | number | 2 | Number of AZs |
+| enable_nat | bool | true | Create NAT gateways |
+
+## Outputs
+| Name | Description |
+|------|-------------|
+| vpc_id | VPC identifier |
+| public_subnet_ids | Public subnet IDs |
+| private_subnet_ids | Private subnet IDs |
+
+## Example
+module "vpc" {
+  source     = "./modules/vpc"
+  cidr_block = "10.10.0.0/16"
+  az_count   = 3
+  enable_nat = true
+}
+
+## Notes
+- Requires AWS provider
+- Use with remote state</pre>
+                    </div>
+                </div>
+
+                <div class="deep-dive">
+                    <div class="deep-dive-header">🧾 Multi-Module Example</div>
+                    <div class="code-block">
+                        <pre>module "network" {
+  source = "./modules/network"
+  cidr_block = "10.0.0.0/16"
+}
+
+module "security" {
+  source = "./modules/security"
+  vpc_id = module.network.vpc_id
+}
+
+module "app" {
+  source      = "./modules/app"
+  subnet_ids  = module.network.private_subnet_ids
+  sg_id       = module.security.app_sg_id
+}</pre>
+                    </div>
+                </div>
             </div>
         `,
 
@@ -1853,6 +3667,72 @@ infrastructure/
         └── variables.tf
                     </div>
                 </div>
+
+                <div class="deep-dive">
+                    <div class="deep-dive-header">🧭 Workspaces: When to Use</div>
+                    <p>Workspaces are convenient for <strong>non-prod</strong> environments or experiments, but risky for production because the same codebase can target multiple states.</p>
+                    <div class="code-block">
+                        <pre>terraform workspace list
+terraform workspace new dev
+terraform workspace select prod</pre>
+                    </div>
+                </div>
+
+                <div class="tech-explanation">
+                    <div class="tech-explanation-header">✅ Pro Tips</div>
+                    <ul>
+                        <li><strong>Separate AWS accounts:</strong> The safest isolation for prod vs dev.</li>
+                        <li><strong>Distinct backends:</strong> Use unique state keys per environment.</li>
+                        <li><strong>Guardrails:</strong> Add policy checks (Sentinel/OPA) to prevent prod mistakes.</li>
+                    </ul>
+                </div>
+
+                <div class="deep-dive">
+                    <div class="deep-dive-header">🚧 Workspace Pitfalls</div>
+                    <ul>
+                        <li><strong>Shared code:</strong> Easy to apply prod changes with dev settings.</li>
+                        <li><strong>State confusion:</strong> Human error selecting the wrong workspace.</li>
+                        <li><strong>Limited drift controls:</strong> Harder to enforce per-env policies.</li>
+                    </ul>
+                </div>
+
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-lang">Backend Key Naming</span>
+                    </div>
+                    <pre>key = "prod/network/terraform.tfstate"
+# env/layer/stack.tfstate is a common pattern</pre>
+                </div>
+
+                <div class="deep-dive">
+                    <div class="deep-dive-header">🧭 Environment Ownership</div>
+                    <p>Assign clear ownership of prod changes. Limit write access to CI roles only.</p>
+                </div>
+
+                <div class="deep-dive">
+                    <div class="deep-dive-header">🚀 Promotion Flow</div>
+                    <div class="ascii-diagram">
+                        <div class="ascii-content">
+dev -> stage -> prod
+  plan + apply in each environment
+  promote the same module versions
+                        </div>
+                    </div>
+                </div>
+
+                <div class="deep-dive">
+                    <div class="deep-dive-header">🧾 Env-Specific Variables</div>
+                    <div class="code-block">
+                        <pre>dev.auto.tfvars
+stage.auto.tfvars
+prod.auto.tfvars</pre>
+                    </div>
+                </div>
+
+                <div class="deep-dive">
+                    <div class="deep-dive-header">🔐 Account Isolation</div>
+                    <p>Best practice is separate AWS accounts for dev/stage/prod. This reduces blast radius and prevents accidental cross-environment changes.</p>
+                </div>
             </div>
         `,
 
@@ -1898,6 +3778,68 @@ CREATE BEFORE DESTROY
                     <div class="interview-tip-header">💡 Interview Question</div>
                     <p><strong>Q:</strong> "How do you prevent a critical resource (like a production DB) from being deleted?"<br>
                     <strong>A:</strong> Use <code>lifecycle { prevent_destroy = true }</code>. Terraform will error and exit if you try to destroy it.</p>
+                </div>
+
+                <div class="deep-dive">
+                    <div class="deep-dive-header">🧯 Other Lifecycle Controls</div>
+                    <div class="code-block">
+                        <pre>resource "aws_db_instance" "prod" {
+  # ...
+  lifecycle {
+    prevent_destroy     = true
+    ignore_changes      = [password, tags["LastUpdated"]]
+    replace_triggered_by = [aws_security_group.db_sg]
+  }
+}</pre>
+                    </div>
+                    <p><strong>ignore_changes</strong> is useful for attributes modified by external systems, but use it carefully or you might miss drift.</p>
+                </div>
+
+                <div class="tech-explanation">
+                    <div class="tech-explanation-header">✅ Pro Tips</div>
+                    <ul>
+                        <li><strong>Use <code>replace_triggered_by</code>:</strong> Safely replace dependents when a parent changes.</li>
+                        <li><strong>Document lifecycle choices:</strong> Prevent_destroy should be intentional and reviewed.</li>
+                        <li><strong>Track ignored attrs:</strong> Too many ignores hide real drift.</li>
+                    </ul>
+                </div>
+
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-lang">ignore_changes Example</span>
+                    </div>
+                    <pre>resource "aws_autoscaling_group" "app" {
+  # ...
+  lifecycle {
+    ignore_changes = [desired_capacity]
+  }
+}</pre>
+                </div>
+
+                <div class="deep-dive">
+                    <div class="deep-dive-header">⚠️ Lifecycle Tradeoffs</div>
+                    <p>Overuse of <code>ignore_changes</code> makes drift invisible. Use it only when external systems manage specific fields.</p>
+                </div>
+
+                <div class="deep-dive">
+                    <div class="deep-dive-header">🧩 replace_triggered_by Example</div>
+                    <div class="code-block">
+                        <pre>resource "aws_launch_template" "app" {
+  # ...
+}
+
+resource "aws_autoscaling_group" "app" {
+  # ...
+  lifecycle {
+    replace_triggered_by = [aws_launch_template.app]
+  }
+}</pre>
+                    </div>
+                </div>
+
+                <div class="deep-dive">
+                    <div class="deep-dive-header">🔁 create_before_destroy Use Case</div>
+                    <p>Critical for load balancers, databases with replicas, and ASGs where downtime is unacceptable.</p>
                 </div>
             </div>
         `,
@@ -1962,6 +3904,165 @@ export TF_LOG=ERROR  # Only critical errors</pre>
                         <li>Isolate the resource: <code>terraform apply -target=aws_instance.stuck_resource</code>.</li>
                     </ol>
                 </div>
+
+                <div class="deep-dive">
+                    <div class="deep-dive-header">📂 Log File + Provider Logs</div>
+                    <div class="code-block">
+                        <pre># Write logs to file
+export TF_LOG=DEBUG
+export TF_LOG_PATH=./terraform-debug.log
+
+# Split Core vs Provider (useful for plugin issues)
+export TF_LOG_CORE=INFO
+export TF_LOG_PROVIDER=DEBUG</pre>
+                    </div>
+                </div>
+
+                <div class="tech-explanation">
+                    <div class="tech-explanation-header">✅ Pro Tips</div>
+                    <ul>
+                        <li><strong>Use <code>terraform console</code>:</strong> Evaluate expressions and debug complex locals.</li>
+                        <li><strong>Check state lock:</strong> In S3 backends with DynamoDB, stale locks are common.</li>
+                        <li><strong>Avoid <code>-target</code> in normal work:</strong> It can create hidden drift if overused.</li>
+                    </ul>
+                </div>
+
+                <div class="deep-dive">
+                    <div class="deep-dive-header">🧭 Common Debug Steps</div>
+                    <ol>
+                        <li>Re-run with <code>TF_LOG=DEBUG</code> and capture logs.</li>
+                        <li>Validate provider credentials and region.</li>
+                        <li>Check API limits or service quotas.</li>
+                        <li>Confirm state matches what you expect.</li>
+                    </ol>
+                </div>
+
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-lang">State Inspection</span>
+                    </div>
+                    <pre>terraform state list
+terraform state show aws_instance.web</pre>
+                </div>
+
+                <div class="deep-dive">
+                    <div class="deep-dive-header">🧪 Debugging Provider Errors</div>
+                    <p>Most provider errors are API errors. Check request IDs in logs and review service quotas.</p>
+                </div>
+
+                <div class="deep-dive">
+                    <div class="deep-dive-header">🧾 Common Errors</div>
+                    <div class="comparison-table">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Error</th>
+                                    <th>Cause</th>
+                                    <th>Fix</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>"Provider config not present"</td>
+                                    <td>Removed provider alias</td>
+                                    <td>Restore provider block, destroy resource</td>
+                                </tr>
+                                <tr>
+                                    <td>"Invalid index"</td>
+                                    <td>count/for_each mismatch</td>
+                                    <td>Check indexes and keys</td>
+                                </tr>
+                                <tr>
+                                    <td>"Unsupported argument"</td>
+                                    <td>Wrong provider version</td>
+                                    <td>Upgrade/downgrade provider</td>
+                                </tr>
+                                <tr>
+                                    <td>"Error acquiring state lock"</td>
+                                    <td>Stale lock</td>
+                                    <td>Verify and <code>force-unlock</code></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="deep-dive">
+                    <div class="deep-dive-header">📁 Debugging with Reduced Scope</div>
+                    <p>Use <code>-target</code> only for rescue, then follow up with a full plan to confirm no drift.</p>
+                </div>
+
+                <div class="deep-dive">
+                    <div class="deep-dive-header">🧾 Useful Flags</div>
+                    <div class="code-block">
+                        <pre># Plan flags
+terraform plan -refresh=false
+terraform plan -refresh-only
+terraform plan -out=tfplan
+terraform plan -target=aws_instance.web
+terraform plan -var="env=dev"
+terraform plan -var-file="dev.tfvars"
+
+# Apply flags
+terraform apply -auto-approve
+terraform apply -target=aws_s3_bucket.logs
+
+# Destroy flags
+terraform destroy -target=aws_db_instance.main
+
+# Workspace flags
+terraform workspace select dev
+
+# State flags
+terraform state list
+terraform state show aws_iam_role.app
+
+# Output flags
+terraform output -json
+terraform output -raw vpc_id</pre>
+                    </div>
+                </div>
+
+                <div class="deep-dive">
+                    <div class="deep-dive-header">🧭 Troubleshooting Playbook</div>
+                    <ol>
+                        <li>Re-run with <code>TF_LOG=DEBUG</code>.</li>
+                        <li>Check credentials and region.</li>
+                        <li>Validate provider versions.</li>
+                        <li>Inspect state for unexpected values.</li>
+                        <li>Reduce scope with <code>-target</code> only if needed.</li>
+                        <li>Confirm API limits or quotas.</li>
+                        <li>Re-run plan after changes.</li>
+                    </ol>
+                </div>
+
+                <div class="deep-dive">
+                    <div class="deep-dive-header">🧾 Terraform Env Vars</div>
+                    <div class="code-block">
+                        <pre># Logging
+export TF_LOG=INFO
+export TF_LOG_PATH=./terraform.log
+export TF_LOG_CORE=INFO
+export TF_LOG_PROVIDER=DEBUG
+
+# Automation flags
+export TF_IN_AUTOMATION=true
+export TF_INPUT=0
+
+# CLI args (global defaults)
+export TF_CLI_ARGS="-no-color"
+export TF_CLI_ARGS_plan="-parallelism=5"
+
+# State locking
+export TF_LOCK_TIMEOUT=5m
+
+# Plugin cache
+export TF_PLUGIN_CACHE_DIR="$HOME/.terraform.d/plugin-cache"
+
+# Workspace
+export TF_WORKSPACE=dev</pre>
+                    </div>
+                </div>
             </div>
         `,
 
@@ -2022,6 +4123,123 @@ export TF_LOG=ERROR  # Only critical errors</pre>
   defer terraform.Destroy(t, options)
 }</pre>
                 </div>
+
+                <div class="deep-dive">
+                    <div class="deep-dive-header">🧪 Native Terraform Tests</div>
+                    <p>Terraform supports <strong>test blocks</strong> for lightweight validation without external frameworks.</p>
+                    <div class="code-block">
+                        <pre>test {
+  assert {
+    condition = length(aws_subnet.public[*].id) >= 2
+    error_message = "At least two public subnets are required."
+  }
+}</pre>
+                    </div>
+                </div>
+
+                <div class="tech-explanation">
+                    <div class="tech-explanation-header">✅ Pro Tips</div>
+                    <ul>
+                        <li><strong>Static checks first:</strong> <code>terraform fmt</code> + <code>validate</code> + <code>tflint</code>.</li>
+                        <li><strong>Security scanning:</strong> Use Checkov or tfsec to catch risky defaults.</li>
+                        <li><strong>Cost checks:</strong> Tools like Infracost help prevent surprises.</li>
+                    </ul>
+                </div>
+
+                <div class="deep-dive">
+                    <div class="deep-dive-header">🛡️ Policy as Code</div>
+                    <p>Use Sentinel or OPA to enforce constraints (no public S3, required tags, etc.).</p>
+                    <div class="code-block">
+                        <pre>deny["public_s3"] {
+  input.resource.type == "aws_s3_bucket"
+  input.resource.public == true
+}</pre>
+                    </div>
+                </div>
+
+                <div class="deep-dive">
+                    <div class="deep-dive-header">🧪 Native Tests</div>
+                    <div class="code-block">
+                        <pre>terraform test</pre>
+                    </div>
+                    <p>Run native test blocks to validate assumptions without external tooling.</p>
+                </div>
+
+                <div class="deep-dive">
+                    <div class="deep-dive-header">🔍 Validate vs Test</div>
+                    <p><code>terraform validate</code> checks syntax and schemas; tests validate behavior and invariants.</p>
+                </div>
+
+                <div class="deep-dive">
+                    <div class="deep-dive-header">🧰 Testing Pipeline</div>
+                    <div class="ascii-diagram">
+                        <div class="ascii-content">
+1) terraform fmt
+2) terraform validate
+3) tflint / tfsec
+4) terraform plan
+5) terratest / terraform test
+                        </div>
+                    </div>
+                </div>
+
+                <div class="deep-dive">
+                    <div class="deep-dive-header">🧪 Test Data Strategy</div>
+                    <p>Use small, ephemeral environments for integration tests. Keep test runs short and deterministic.</p>
+                </div>
+
+                <div class="deep-dive">
+                    <div class="deep-dive-header">🧾 Terratest Skeleton</div>
+                    <div class="code-block">
+                        <pre>func TestModule(t *testing.T) {
+  options := &terraform.Options{
+    TerraformDir: "../examples/simple",
+    Vars: map[string]interface{}{
+      "env": "test",
+    },
+  }
+
+  defer terraform.Destroy(t, options)
+  terraform.InitAndApply(t, options)
+
+  vpcID := terraform.Output(t, options, "vpc_id")
+  assert.NotEmpty(t, vpcID)
+}</pre>
+                    </div>
+                </div>
+
+                <div class="deep-dive">
+                    <div class="deep-dive-header">🧪 Native Test Blocks Example</div>
+                    <div class="code-block">
+                        <pre>test {
+  assert {
+    condition     = length(aws_subnet.public[*].id) >= 2
+    error_message = "At least two public subnets required."
+  }
+
+  assert {
+    condition     = aws_lb.main.internal == false
+    error_message = "ALB must be internet-facing."
+  }
+
+  assert {
+    condition     = contains(keys(aws_iam_role.app.tags), "Owner")
+    error_message = "Owner tag is required."
+  }
+}</pre>
+                    </div>
+                </div>
+
+                <div class="deep-dive">
+                    <div class="deep-dive-header">✅ Test Checklist</div>
+                    <ul>
+                        <li>Format and validate before tests.</li>
+                        <li>Run lint/security checks.</li>
+                        <li>Use small test environments.</li>
+                        <li>Destroy resources after tests.</li>
+                        <li>Capture logs for debugging.</li>
+                    </ul>
+                </div>
             </div>
         `,
 
@@ -2052,6 +4270,131 @@ export TF_LOG=ERROR  # Only critical errors</pre>
                         <li><strong>GitHub Actions / GitLab CI:</strong> Generic CI runners (Good start).</li>
                         <li><strong>Atlantis:</strong> Specialized PR bot for Terraform. Allows \`atlantis apply\` comments.</li>
                         <li><strong>Terraform Cloud / Spacelift:</strong> Managed platforms with policy enforcement and private runners.</li>
+                    </ul>
+                </div>
+
+                <div class="deep-dive">
+                    <div class="deep-dive-header">🔐 Secure Authentication</div>
+                    <p>Prefer OIDC / Web Identity instead of storing long-lived AWS keys in CI.</p>
+                    <div class="code-block">
+                        <pre># Example: GitHub Actions -> AWS OIDC
+# Configure AWS role trust for GitHub and use aws-actions/configure-aws-credentials</pre>
+                    </div>
+                </div>
+
+                <div class="tech-explanation">
+                    <div class="tech-explanation-header">✅ Pro Tips</div>
+                    <ul>
+                        <li><strong>Split plan/apply:</strong> Plan on PRs, apply on merge.</li>
+                        <li><strong>Store plan file:</strong> <code>terraform plan -out=tfplan</code> for deterministic apply.</li>
+                        <li><strong>Always lock state:</strong> Remote state with locking is mandatory in CI.</li>
+                    </ul>
+                </div>
+
+                <div class="deep-dive">
+                    <div class="deep-dive-header">🧾 Plan Artifact Flow</div>
+                    <div class="ascii-diagram">
+                        <div class="ascii-content">
+PR -> terraform plan -out=tfplan
+     -> store artifact
+Merge -> terraform apply tfplan
+                        </div>
+                    </div>
+                </div>
+
+                <div class="deep-dive">
+                    <div class="deep-dive-header">🔒 Policy Gates</div>
+                    <p>Many teams require policy checks before apply (Sentinel/OPA) to block unsafe changes.</p>
+                </div>
+
+                <div class="deep-dive">
+                    <div class="deep-dive-header">🧯 Break-Glass Process</div>
+                    <p>Define an emergency path for urgent fixes (audited, time-boxed, and reviewed after).</p>
+                </div>
+
+                <div class="deep-dive">
+                    <div class="deep-dive-header">🧾 Example CI Workflow</div>
+                    <div class="code-block">
+                        <pre>name: terraform
+on: [pull_request]
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+      - run: terraform init
+      - run: terraform fmt -check
+      - run: terraform validate
+      - run: terraform plan -out=tfplan</pre>
+                    </div>
+                </div>
+
+                <div class="deep-dive">
+                    <div class="deep-dive-header">🚀 Apply Stage (on merge)</div>
+                    <div class="code-block">
+                        <pre>on:
+  push:
+    branches: [main]
+jobs:
+  apply:
+    steps:
+      - run: terraform init
+      - run: terraform apply tfplan</pre>
+                    </div>
+                </div>
+
+                <div class="deep-dive">
+                    <div class="deep-dive-header">🧾 Full Pipeline Outline</div>
+                    <div class="code-block">
+                        <pre>stages:
+  - lint
+  - plan
+  - approve
+  - apply
+
+lint:
+  - terraform fmt -check
+  - terraform validate
+
+plan:
+  - terraform init
+  - terraform plan -out=tfplan
+  - upload tfplan artifact
+
+approve:
+  - manual approval gate
+
+apply:
+  - download tfplan artifact
+  - terraform apply tfplan</pre>
+                    </div>
+                </div>
+
+                <div class="deep-dive">
+                    <div class="deep-dive-header">✅ CI/CD Hardening Checklist</div>
+                    <ul>
+                        <li><strong>OIDC auth:</strong> No long-lived AWS keys in CI.</li>
+                        <li><strong>Least privilege:</strong> CI role scoped to required resources.</li>
+                        <li><strong>Plan artifacts:</strong> Apply uses the exact plan file.</li>
+                        <li><strong>Manual approval:</strong> Required for prod.</li>
+                        <li><strong>State locking:</strong> Always enabled.</li>
+                        <li><strong>Policy checks:</strong> OPA/Sentinel gates.</li>
+                        <li><strong>Slack notifications:</strong> Notify on apply and failures.</li>
+                        <li><strong>Drift detection:</strong> Scheduled refresh-only plans.</li>
+                        <li><strong>Audit logs:</strong> Store plan/apply logs centrally.</li>
+                        <li><strong>Runbooks:</strong> Document rollback steps.</li>
+                    </ul>
+                </div>
+
+                <div class="deep-dive">
+                    <div class="deep-dive-header">📌 Plan Review Checklist</div>
+                    <ul>
+                        <li>Unexpected destroys?</li>
+                        <li>ForceNew replacements?</li>
+                        <li>Tag changes correct?</li>
+                        <li>Region/account correct?</li>
+                        <li>Output changes expected?</li>
                     </ul>
                 </div>
             </div>
@@ -2097,6 +4440,83 @@ export TF_LOG=ERROR  # Only critical errors</pre>
                         <li>Layer 2: App Containers (Changes daily)</li>
                     </ul>
                 </div>
+
+                <div class="tech-explanation">
+                    <div class="tech-explanation-header">✅ Pro Tips</div>
+                    <ul>
+                        <li><strong>Use <code>-parallelism</code>:</strong> Tune concurrency for large plans.</li>
+                        <li><strong>Detect drift safely:</strong> <code>terraform plan -refresh-only</code>.</li>
+                        <li><strong>Cache providers:</strong> Avoid repeated downloads in CI.</li>
+                    </ul>
+                </div>
+
+                <div class="deep-dive">
+                    <div class="deep-dive-header">🧱 State Sharding Strategy</div>
+                    <p>Split large states by domain to reduce plan time and blast radius.</p>
+                    <div class="ascii-diagram">
+                        <div class="ascii-content">
+state-network
+state-databases
+state-apps
+state-observability
+                        </div>
+                    </div>
+                </div>
+
+                <div class="deep-dive">
+                    <div class="deep-dive-header">🧪 Refresh-Only Plans</div>
+                    <div class="code-block">
+                        <pre>terraform plan -refresh-only</pre>
+                    </div>
+                    <p>Safely detect drift without proposing changes.</p>
+                </div>
+
+                <div class="deep-dive">
+                    <div class="deep-dive-header">🧠 Provider Throttling</div>
+                    <p>When APIs throttle, reduce <code>-parallelism</code> or split states to limit requests.</p>
+                </div>
+
+                <div class="deep-dive">
+                    <div class="deep-dive-header">⚡ Performance Checklist</div>
+                    <ul>
+                        <li><strong>Split states:</strong> Smaller states plan faster.</li>
+                        <li><strong>Reduce refresh scope:</strong> Use <code>-refresh-only</code> for drift scans.</li>
+                        <li><strong>Minimize data sources:</strong> Excessive lookups slow plans.</li>
+                        <li><strong>Provider caching:</strong> Avoid re-downloading providers in CI.</li>
+                        <li><strong>Limit parallelism:</strong> Prevent API throttling.</li>
+                    </ul>
+                </div>
+
+                <div class="deep-dive">
+                    <div class="deep-dive-header">🧭 Large State Warning Signs</div>
+                    <ul>
+                        <li>Plans take longer than 10 minutes.</li>
+                        <li>Frequent API throttling errors.</li>
+                        <li>High merge conflicts in state.</li>
+                    </ul>
+                </div>
+
+                <div class="deep-dive">
+                    <div class="deep-dive-header">🗂️ Example State Split</div>
+                    <div class="ascii-diagram">
+                        <div class="ascii-content">
+infra/
+├── network/
+├── security/
+├── databases/
+└── apps/
+                        </div>
+                    </div>
+                </div>
+
+                <div class="deep-dive">
+                    <div class="deep-dive-header">✅ Scaling Tips</div>
+                    <ul>
+                        <li>Keep state files small and focused.</li>
+                        <li>Avoid unnecessary data sources.</li>
+                        <li>Limit provider parallelism for API stability.</li>
+                    </ul>
+                </div>
             </div>
         `,
 
@@ -2134,6 +4554,82 @@ $ terraform import aws_s3_bucket.legacy my-manual-bucket</pre>
                     <div class="interview-tip-header">💡 Interview Tip</div>
                     <p><strong>Question:</strong> "How do I fix a 'Provider configuration not present' error during destroy?"<br>
                     <strong>Answer:</strong> This happens when you remove a provider block from code (e.g., an alias) but resources in state still belong to it. You must keep the provider block (even if empty) until all its resources are destroyed.</p>
+                </div>
+
+                <div class="deep-dive">
+                    <div class="deep-dive-header">🧭 Resource Address Changes</div>
+                    <p>Terraform supports <strong>moved blocks</strong> to rename resources safely without manual state operations.</p>
+                    <div class="code-block">
+                        <pre>moved {
+  from = aws_instance.foo
+  to   = aws_instance.bar
+}</pre>
+                    </div>
+                </div>
+
+                <div class="tech-explanation">
+                    <div class="tech-explanation-header">✅ Pro Tips</div>
+                    <ul>
+                        <li><strong>Use <code>terraform state mv</code> cautiously:</strong> Always back up state first.</li>
+                        <li><strong>Import with for_each:</strong> Use addresses like <code>resource.type.name["key"]</code>.</li>
+                        <li><strong>Don’t delete state file:</strong> Recover with remote state versioning if needed.</li>
+                    </ul>
+                </div>
+
+                <div class="deep-dive">
+                    <div class="deep-dive-header">🧩 Provider Alias Migration</div>
+                    <p>When changing provider aliases, use <code>moved</code> blocks or keep the old alias until cleanup is complete.</p>
+                </div>
+
+                <div class="deep-dive">
+                    <div class="deep-dive-header">🧯 Accidental Destroy Recovery</div>
+                    <p>Restore previous state version in S3, then re-run <code>terraform plan</code> to reconcile.</p>
+                </div>
+
+                <div class="deep-dive">
+                    <div class="deep-dive-header">🧩 Import at Scale</div>
+                    <p>For large imports, script resource addresses and IDs to avoid manual errors.</p>
+                </div>
+
+                <div class="deep-dive">
+                    <div class="deep-dive-header">🧭 Moving from count to for_each</div>
+                    <div class="code-block">
+                        <pre># Old
+resource "aws_s3_bucket" "logs" {
+  count  = 2
+  bucket = "logs-\${count.index}"
+}
+
+# New
+resource "aws_s3_bucket" "logs" {
+  for_each = toset(["a","b"])
+  bucket   = "logs-\${each.key}"
+}
+
+# Use moved blocks to preserve state</pre>
+                    </div>
+                </div>
+
+                <div class="deep-dive">
+                    <div class="deep-dive-header">🧩 Moved Blocks Example</div>
+                    <div class="code-block">
+                        <pre>moved {
+  from = aws_s3_bucket.logs[0]
+  to   = aws_s3_bucket.logs["a"]
+}</pre>
+                    </div>
+                </div>
+
+                <div class="deep-dive">
+                    <div class="deep-dive-header">❓ Edge Case FAQ</div>
+                    <p><strong>Q:</strong> "What if a resource was renamed in a module?"<br>
+                    <strong>A:</strong> Use <code>moved</code> blocks or <code>state mv</code>.</p>
+                    <p><strong>Q:</strong> "Can I change count to for_each safely?"<br>
+                    <strong>A:</strong> Yes, but map old addresses with <code>moved</code> blocks.</p>
+                    <p><strong>Q:</strong> "Why is a resource forcing replacement?"<br>
+                    <strong>A:</strong> A ForceNew attribute changed.</p>
+                    <p><strong>Q:</strong> "How do I handle partial applies?"<br>
+                    <strong>A:</strong> Fix the root cause and run a full plan/apply.</p>
                 </div>
             </div>
         `,
@@ -2173,7 +4669,73 @@ $ terraform import aws_s3_bucket.legacy my-manual-bucket</pre>
                             <td>User Data / Packer</td>
                             <td><code>local-exec</code> is brittle and hard to track.</td>
                         </tr>
+                        <tr>
+                            <td>Unpinned Provider Versions</td>
+                            <td>Pin with <code>required_providers</code></td>
+                            <td>Avoid breaking changes on upgrades.</td>
+                        </tr>
+                        <tr>
+                            <td>Single State for All Envs</td>
+                            <td>Separate state per environment</td>
+                            <td>Lower blast radius and safer rollouts.</td>
+                        </tr>
+                        <tr>
+                            <td>Overusing <code>-target</code></td>
+                            <td>Apply full plan</td>
+                            <td>Targeted apply can create hidden drift.</td>
+                        </tr>
+                        <tr>
+                            <td>Skipping <code>terraform fmt</code></td>
+                            <td>Format on save / CI</td>
+                            <td>Reduces diff noise and errors.</td>
+                        </tr>
+                        <tr>
+                            <td>Local state in teams</td>
+                            <td>Remote state with locking</td>
+                            <td>Prevents corruption and conflicts.</td>
+                        </tr>
+                        <tr>
+                            <td>Unreviewed plans</td>
+                            <td>PR-based approval</td>
+                            <td>Catch destructive changes early.</td>
+                        </tr>
                     </table>
+                </div>
+
+                <div class="deep-dive">
+                    <div class="deep-dive-header">🧪 Anti-Pattern: No Tests</div>
+                    <p>Skipping validation and security checks leads to avoidable outages and security incidents.</p>
+                </div>
+
+                <div class="deep-dive">
+                    <div class="deep-dive-header">🚫 Anti-Pattern: Manual Console Edits</div>
+                    <p>Changes outside Terraform cause drift and surprise replacements.</p>
+                </div>
+
+                <div class="deep-dive">
+                    <div class="deep-dive-header">🚫 Anti-Pattern: Hidden Defaults</div>
+                    <p>Relying on provider defaults can lead to inconsistent environments. Make choices explicit.</p>
+                </div>
+
+                <div class="deep-dive">
+                    <div class="deep-dive-header">🚫 Anti-Pattern: Inline Secrets</div>
+                    <p>Never store secrets in Terraform files. Use secret managers and pass via environment variables.</p>
+                </div>
+
+                <div class="deep-dive">
+                    <div class="deep-dive-header">🚫 Anti-Pattern Checklist</div>
+                    <ul>
+                        <li>Manual console edits</li>
+                        <li>Unreviewed plan applies</li>
+                        <li>Single giant state for everything</li>
+                        <li>Unpinned provider versions</li>
+                        <li>Hardcoded AMI IDs</li>
+                        <li>Public S3 buckets</li>
+                        <li>Overuse of provisioners</li>
+                        <li>Skipping validation in CI</li>
+                        <li>Ignoring drift alerts</li>
+                        <li>Storing secrets in tfvars</li>
+                    </ul>
                 </div>
             </div>
         `,
@@ -2191,6 +4753,49 @@ $ terraform import aws_s3_bucket.legacy my-manual-bucket</pre>
 
                 <h3>2. The Blueprint vs. The House</h3>
                 <p>Terraform code is the blueprint. The State file is the "as-built" survey. The Real World is the actual house. Terraform's job is to make the House match the Blueprint, using the Survey to know where walls currently are.</p>
+
+                <h3>3. The Three-Way Diff</h3>
+                <p>Terraform compares <strong>Desired (code)</strong> vs <strong>Known (state)</strong> vs <strong>Actual (cloud)</strong>. The plan is the difference between all three.</p>
+                <div class="ascii-diagram">
+                    <div class="ascii-content">
+   Desired (Code)
+        │
+        ▼
+     [ PLAN ]  ◄── compares ──►  Actual (Cloud)
+        ▲
+        │
+   Known (State)
+                    </div>
+                </div>
+
+                <h3>4. The Assembly Line</h3>
+                <p>Each step is deterministic. If the input doesn't change, the output doesn't change.</p>
+
+                <h3>5. Git Diff Mindset</h3>
+                <p>Terraform plan is a diff. Read it like a code review and approve only what you expect.</p>
+
+                <h3>6. The Ledger</h3>
+                <p>State is the ledger of record. If the ledger is wrong, the system will take wrong actions.</p>
+
+                <h3>7. The Orchestra</h3>
+                <p>Each resource is an instrument. The dependency graph is the sheet music. Terraform is the conductor ensuring the right order.</p>
+
+                <h3>8. The Recipe</h3>
+                <p>Configuration is the recipe, state is the pantry inventory, and apply is the cooking process.</p>
+
+                <h3>9. The Map</h3>
+                <p>Code is the map, state is the "you are here" pin, and the plan is the route.</p>
+
+                <div class="deep-dive">
+                    <div class="deep-dive-header">📌 Study Guide</div>
+                    <ul>
+                        <li>Learn the plan/apply workflow.</li>
+                        <li>Understand state and drift.</li>
+                        <li>Practice modules and outputs.</li>
+                        <li>Use for_each and count correctly.</li>
+                        <li>Read plans carefully.</li>
+                    </ul>
+                </div>
             </div>
         `,
 
@@ -2225,6 +4830,381 @@ $ terraform import aws_s3_bucket.legacy my-manual-bucket</pre>
                         
                         <dt>HCL</dt>
                         <dd>HashiCorp Configuration Language.</dd>
+
+                        <dt>Plan</dt>
+                        <dd>The proposed changes Terraform will make (preview phase).</dd>
+
+                        <dt>Apply</dt>
+                        <dd>Executes the plan and changes real infrastructure.</dd>
+
+                        <dt>Workspace</dt>
+                        <dd>A separate state for the same configuration.</dd>
+
+                        <dt>Drift</dt>
+                        <dd>When real infrastructure changes outside Terraform.</dd>
+
+                        <dt>State Lock</dt>
+                        <dd>Prevents concurrent writes to the state file.</dd>
+
+                        <dt>Provisioner</dt>
+                        <dd>Legacy action hooks (local-exec/remote-exec). Use sparingly.</dd>
+
+                        <dt>Lock File</dt>
+                        <dd>The provider dependency lock file (<code>.terraform.lock.hcl</code>).</dd>
+
+                        <dt>Backend</dt>
+                        <dd>Where state is stored and how it is locked.</dd>
+
+                        <dt>Plan File</dt>
+                        <dd>Binary artifact created by <code>terraform plan -out</code>.</dd>
+
+                        <dt>Drift</dt>
+                        <dd>When real infrastructure changes outside Terraform.</dd>
+
+                        <dt>Refresh</dt>
+                        <dd>State sync step where Terraform queries real resources.</dd>
+
+                        <dt>ForceNew</dt>
+                        <dd>Arguments that require resource replacement when changed.</dd>
+
+                        <dt>Idempotent</dt>
+                        <dd>Running the same code produces the same final state.</dd>
+
+                        <dt>Workspace</dt>
+                        <dd>Separate state for the same configuration.</dd>
+
+                        <dt>Module Registry</dt>
+                        <dd>Source of reusable Terraform modules.</dd>
+
+                        <dt>Plan Output</dt>
+                        <dd>The diff shown by <code>terraform plan</code>.</dd>
+
+                        <dt>Apply</dt>
+                        <dd>Execution of changes against real infrastructure.</dd>
+
+                        <dt>Backend Config</dt>
+                        <dd>Settings that define where and how state is stored.</dd>
+
+                        <dt>Provider Alias</dt>
+                        <dd>Named provider configuration for multi-region/account.</dd>
+
+                        <dt>Local Values</dt>
+                        <dd>Computed values inside a module, referenced as <code>local.*</code>.</dd>
+
+                        <dt>Data Source</dt>
+                        <dd>Read-only lookup of existing resources.</dd>
+
+                        <dt>Force Unlock</dt>
+                        <dd>Manual removal of a stale state lock.</dd>
+
+                        <dt>Plan Refresh</dt>
+                        <dd>Reconcile state with real resources during planning.</dd>
+
+                        <dt>Local Backend</dt>
+                        <dd>Stores state on disk in the working directory.</dd>
+
+                        <dt>Remote Backend</dt>
+                        <dd>Stores state in a remote system with locking.</dd>
+
+                        <dt>Provider Schema</dt>
+                        <dd>Resource and data source definitions exposed by a provider.</dd>
+
+                        <dt>Implicit Dependency</dt>
+                        <dd>Dependency created by referencing another resource.</dd>
+
+                        <dt>Explicit Dependency</dt>
+                        <dd>Dependency defined with <code>depends_on</code>.</dd>
+
+                        <dt>Module Source</dt>
+                        <dd>Location of a module: local path, registry, or Git.</dd>
+
+                        <dt>Resource Address</dt>
+                        <dd>Canonical identifier like <code>aws_instance.web[0]</code>.</dd>
+
+                        <dt>Provider Alias</dt>
+                        <dd>Named configuration for multiple regions/accounts.</dd>
+
+                        <dt>Module Version</dt>
+                        <dd>Pinned version to stabilize module behavior.</dd>
+
+                        <dt>Drift Detection</dt>
+                        <dd>Comparing state to real infrastructure.</dd>
+
+                        <dt>Refresh Only</dt>
+                        <dd>Plan that only updates state from reality.</dd>
+
+                        <dt>Targeted Apply</dt>
+                        <dd>Applying a subset of resources with <code>-target</code>.</dd>
+
+                        <dt>Plan Artifact</dt>
+                        <dd>Saved output from <code>terraform plan -out</code>.</dd>
+
+                        <dt>Lock Timeout</dt>
+                        <dd>Time Terraform waits for a state lock.</dd>
+
+                        <dt>Input Variable</dt>
+                        <dd>User-provided configuration values.</dd>
+
+                        <dt>Output Variable</dt>
+                        <dd>Values exported by a module.</dd>
+
+                        <dt>Local Value</dt>
+                        <dd>Computed values inside a module.</dd>
+
+                        <dt>Meta-Argument</dt>
+                        <dd>Special arguments like <code>count</code> or <code>for_each</code>.</dd>
+
+                        <dt>Provisioner</dt>
+                        <dd>Legacy hook for scripts; avoid if possible.</dd>
+
+                        <dt>ForceNew</dt>
+                        <dd>Attribute change that forces replacement.</dd>
+
+                        <dt>Dependency Graph</dt>
+                        <dd>Ordering model Terraform uses to apply changes.</dd>
+
+                        <dt>Graph Walk</dt>
+                        <dd>Process of executing the dependency graph.</dd>
+
+                        <dt>Workspace</dt>
+                        <dd>Alternate state with same configuration.</dd>
+
+                        <dt>Backend</dt>
+                        <dd>State storage system and locking mechanism.</dd>
+
+                        <dt>Remote State</dt>
+                        <dd>State stored in a remote backend.</dd>
+
+                        <dt>State Lock</dt>
+                        <dd>Mechanism preventing concurrent writes.</dd>
+
+                        <dt>State Lineage</dt>
+                        <dd>Unique ID for a state history.</dd>
+
+                        <dt>State Serial</dt>
+                        <dd>Incrementing number on each change.</dd>
+
+                        <dt>Module Source</dt>
+                        <dd>Location of module code (registry, Git, local).</dd>
+
+                        <dt>Provider Schema</dt>
+                        <dd>Resource and data definitions for a provider.</dd>
+
+                        <dt>Provider Plugin</dt>
+                        <dd>Binary used to manage resources for a platform.</dd>
+
+                        <dt>Plan Diff</dt>
+                        <dd>Summary of proposed changes.</dd>
+
+                        <dt>Apply</dt>
+                        <dd>Execution of the plan against real infra.</dd>
+
+                        <dt>Import</dt>
+                        <dd>Bring existing resources into state.</dd>
+
+                        <dt>Move</dt>
+                        <dd>Change resource address in state.</dd>
+
+                        <dt>Data Source</dt>
+                        <dd>Read-only lookup of existing resources.</dd>
+
+                        <dt>Resource Address</dt>
+                        <dd>Fully qualified resource reference.</dd>
+
+                        <dt>Apply Plan</dt>
+                        <dd>Using a saved plan file for deterministic changes.</dd>
+
+                        <dt>Plan Output</dt>
+                        <dd>Summary of creates, updates, and destroys.</dd>
+
+                        <dt>Provisioner</dt>
+                        <dd>Script execution hook (legacy).</dd>
+
+                        <dt>Null Resource</dt>
+                        <dd>Resource used to run provisioners or dependencies.</dd>
+
+                        <dt>Time Sleep</dt>
+                        <dd>Provider resource to add delays in workflows.</dd>
+
+                        <dt>Data Source Filter</dt>
+                        <dd>Criteria used to narrow a data lookup.</dd>
+
+                        <dt>Implicit Dependency</dt>
+                        <dd>Dependency created by referencing another resource.</dd>
+
+                        <dt>Explicit Dependency</dt>
+                        <dd>Dependency defined via <code>depends_on</code>.</dd>
+
+                        <dt>State Backend</dt>
+                        <dd>System used to store Terraform state.</dd>
+
+                        <dt>State Locking</dt>
+                        <dd>Prevent concurrent state writes.</dd>
+
+                        <dt>Remote State Data Source</dt>
+                        <dd>Reads outputs from another state.</dd>
+
+                        <dt>Provider Version Constraint</dt>
+                        <dd>Rules like <code>~&gt; 5.0</code> to pin versions.</dd>
+
+                        <dt>Terraform Core</dt>
+                        <dd>Main CLI binary that evaluates plans.</dd>
+
+                        <dt>Provider Plugin</dt>
+                        <dd>Binary that talks to APIs.</dd>
+
+                        <dt>Module Registry</dt>
+                        <dd>Source of public modules.</dd>
+
+                        <dt>Module Source</dt>
+                        <dd>Location of module code.</dd>
+
+                        <dt>Module Outputs</dt>
+                        <dd>Values exposed by a module.</dd>
+
+                        <dt>Module Inputs</dt>
+                        <dd>Variables expected by a module.</dd>
+
+                        <dt>HCL</dt>
+                        <dd>HashiCorp Configuration Language.</dd>
+
+                        <dt>Local Values</dt>
+                        <dd>Computed values within a module.</dd>
+
+                        <dt>Plan Drift</dt>
+                        <dd>Differences between desired and actual state.</dd>
+
+                        <dt>Refresh</dt>
+                        <dd>State update from real infrastructure.</dd>
+
+                        <dt>Refresh Only</dt>
+                        <dd>Plan that only refreshes state.</dd>
+
+                        <dt>Plan Replace</dt>
+                        <dd>Destroy and recreate a resource.</dd>
+
+                        <dt>ForceNew</dt>
+                        <dd>Argument that forces replacement.</dd>
+
+                        <dt>Provider Alias</dt>
+                        <dd>Named configuration for multiple accounts.</dd>
+
+                        <dt>Workspace</dt>
+                        <dd>Alternate state for same config.</dd>
+
+                        <dt>CLI Config File</dt>
+                        <dd>Global Terraform settings file.</dd>
+
+                        <dt>Plugin Cache</dt>
+                        <dd>Directory caching provider binaries.</dd>
+
+                        <dt>Plan File</dt>
+                        <dd>Saved plan created with <code>-out</code>.</dd>
+
+                        <dt>Terraform Console</dt>
+                        <dd>REPL for expression evaluation.</dd>
+
+                        <dt>State Lineage</dt>
+                        <dd>Unique ID for state history.</dd>
+
+                        <dt>State Serial</dt>
+                        <dd>Incremented on each state write.</dd>
+
+                        <dt>Backend Config</dt>
+                        <dd>Settings for state storage and locking.</dd>
+
+                        <dt>Apply</dt>
+                        <dd>Execution of a plan.</dd>
+
+                        <dt>Plan</dt>
+                        <dd>Preview of changes.</dd>
+
+                        <dt>Init</dt>
+                        <dd>Initializes providers and backend.</dd>
+
+                        <dt>Validate</dt>
+                        <dd>Checks configuration validity.</dd>
+
+                        <dt>Fmt</dt>
+                        <dd>Auto-formats HCL.</dd>
+
+                        <dt>Import</dt>
+                        <dd>Bring existing resources into state.</dd>
+
+                        <dt>State Move</dt>
+                        <dd>Rename or move resources in state.</dd>
+
+                        <dt>State Remove</dt>
+                        <dd>Delete resource from state only.</dd>
+
+                        <dt>Targeted Apply</dt>
+                        <dd>Apply changes to a subset.</dd>
+
+                        <dt>Plan Graph</dt>
+                        <dd>Visual representation of dependencies.</dd>
+
+                        <dt>Provisioner Local Exec</dt>
+                        <dd>Runs a local command during apply.</dd>
+
+                        <dt>Provisioner Remote Exec</dt>
+                        <dd>Runs a remote command on a resource.</dd>
+
+                        <dt>Provider Configuration</dt>
+                        <dd>Settings like region and credentials.</dd>
+
+                        <dt>Default Tags</dt>
+                        <dd>Tags applied automatically by provider.</dd>
+
+                        <dt>Resource Graph</dt>
+                        <dd>Directed acyclic graph of dependencies.</dd>
+
+                        <dt>Plan Summary</dt>
+                        <dd>Count of adds/changes/destroys.</dd>
+
+                        <dt>Apply Timeout</dt>
+                        <dd>Time limit for long operations.</dd>
+
+                        <dt>Timeouts Block</dt>
+                        <dd>Resource-specific operation timeouts.</dd>
+
+                        <dt>Lock Table</dt>
+                        <dd>DynamoDB table used for state locking.</dd>
+
+                        <dt>State Encryption</dt>
+                        <dd>Encrypting state at rest.</dd>
+
+                        <dt>Module Example</dt>
+                        <dd>Sample usage for a module.</dd>
+
+                        <dt>Policy as Code</dt>
+                        <dd>Rules enforcing infrastructure constraints.</dd>
+
+                        <dt>Terraform Cloud</dt>
+                        <dd>Managed Terraform execution platform.</dd>
+
+                        <dt>Sentinel</dt>
+                        <dd>HashiCorp policy language.</dd>
+
+                        <dt>OPA</dt>
+                        <dd>Open Policy Agent for policy checks.</dd>
+
+                        <dt>Checkov</dt>
+                        <dd>Static scanner for IaC security.</dd>
+
+                        <dt>TFLint</dt>
+                        <dd>Linting tool for Terraform.</dd>
+
+                        <dt>tfsec</dt>
+                        <dd>Security scanner for Terraform.</dd>
+
+                        <dt>Infracost</dt>
+                        <dd>Cost estimation for Terraform plans.</dd>
+
+                        <dt>Plan Review</dt>
+                        <dd>Human approval of changes.</dd>
+
+                        <dt>CI Runner</dt>
+                        <dd>Automation environment executing Terraform.</dd>
                     </dl>
                 </div>
             </div>
@@ -2271,6 +5251,53 @@ provider "aws" {
                     <div class="deep-dive-header">🏷️ Default Tags</div>
                     <p>Stop tagging every resource manually! Use <code>default_tags</code> in the provider block to automatically apply tags to ALL resources created by this provider.</p>
                 </div>
+                
+                <div class="deep-dive">
+                    <div class="deep-dive-header">🔐 Authentication Patterns</div>
+                    <div class="code-block">
+                        <pre># Use a named profile (local dev)
+provider "aws" {
+  region  = "us-east-1"
+  profile = "dev"
+}
+
+# Assume role for cross-account
+provider "aws" {
+  region = "us-east-1"
+  assume_role {
+    role_arn = "arn:aws:iam::123456789012:role/terraform-deploy"
+  }
+}</pre>
+                    </div>
+                </div>
+
+                <div class="tech-explanation">
+                    <div class="tech-explanation-header">✅ Pro Tips</div>
+                    <ul>
+                        <li><strong>Use aliases:</strong> Manage multiple accounts/regions in one run.</li>
+                        <li><strong>Pin provider versions:</strong> Avoid breaking changes.</li>
+                        <li><strong>Enable shared config:</strong> Set <code>AWS_SDK_LOAD_CONFIG=1</code> for profiles.</li>
+                    </ul>
+                </div>
+
+                <div class="deep-dive">
+                    <div class="deep-dive-header">🧩 Provider Aliases</div>
+                    <div class="code-block">
+                        <pre>provider "aws" {
+  region = "us-east-1"
+}
+
+provider "aws" {
+  alias  = "west"
+  region = "us-west-2"
+}
+
+resource "aws_s3_bucket" "backup" {
+  provider = aws.west
+  bucket   = "backup-bucket"
+}</pre>
+                    </div>
+                </div>
             </div>
         `,
 
@@ -2302,6 +5329,37 @@ Region (us-east-1)
   enable_dns_hostnames = true
   enable_dns_support   = true
 }</pre>
+                </div>
+
+                <div class="ascii-diagram">
+                    <div class="ascii-diagram-title">Routing Basics</div>
+                    <div class="ascii-content">
+Public Subnet Route Table:
+0.0.0.0/0  ---> Internet Gateway (IGW)
+
+Private Subnet Route Table:
+0.0.0.0/0  ---> NAT Gateway (in public subnet)
+                    </div>
+                </div>
+
+                <div class="tech-explanation">
+                    <div class="tech-explanation-header">✅ Pro Tips</div>
+                    <ul>
+                        <li><strong>Use 2+ AZs:</strong> Place subnets across availability zones.</li>
+                        <li><strong>NAT costs money:</strong> Keep private egress minimal.</li>
+                        <li><strong>NACL vs SG:</strong> NACL is stateless; SG is stateful.</li>
+                    </ul>
+                </div>
+
+                <div class="deep-dive">
+                    <div class="deep-dive-header">🧭 Subnet Types</div>
+                    <div class="ascii-diagram">
+                        <div class="ascii-content">
+Public Subnet: route 0.0.0.0/0 -> IGW
+Private Subnet: route 0.0.0.0/0 -> NAT
+Isolated Subnet: no route to IGW/NAT
+                        </div>
+                    </div>
                 </div>
             </div>
         `,
@@ -2340,6 +5398,33 @@ Region (us-east-1)
   }
 }</pre>
                 </div>
+
+                <div class="ascii-diagram">
+                    <div class="ascii-diagram-title">Stateful Behavior</div>
+                    <div class="ascii-content">
+INBOUND: Allow 80 from 0.0.0.0/0
+OUTBOUND: Return traffic is automatically allowed
+=> No explicit response rule needed
+                    </div>
+                </div>
+
+                <div class="tech-explanation">
+                    <div class="tech-explanation-header">✅ Pro Tips</div>
+                    <ul>
+                        <li><strong>Reference SGs:</strong> <code>security_groups = [aws_security_group.lb.id]</code> is safer than IPs.</li>
+                        <li><strong>Split rules:</strong> Use <code>aws_security_group_rule</code> to avoid cycles.</li>
+                        <li><strong>Least privilege:</strong> Open only required ports.</li>
+                    </ul>
+                </div>
+
+                <div class="deep-dive">
+                    <div class="deep-dive-header">🚧 Ingress Patterns</div>
+                    <ul>
+                        <li><strong>Web tier:</strong> Allow 80/443 from ALB SG only.</li>
+                        <li><strong>DB tier:</strong> Allow 5432/3306 from app SG only.</li>
+                        <li><strong>Admin:</strong> SSH restricted to VPN CIDR.</li>
+                    </ul>
+                </div>
             </div>
         `,
 
@@ -2373,6 +5458,47 @@ Region (us-east-1)
                     <div class="interview-tip-header">💡 Interview Tip</div>
                     <p><strong>Question:</strong> "How do I update the User Data on a running instance?"<br>
                     <strong>Answer:</strong> You generally can't updates to \`user_data\` usually force a replacement (Destroy/Create) of the instance unless you use specialized tools like \`cloud - init\` directives carefully, but Terraform sees it as a destructive change by default.</p>
+                </div>
+
+                <div class="deep-dive">
+                    <div class="deep-dive-header">📦 Instance Profile & EBS</div>
+                    <p>Attach an IAM role via an instance profile so the instance can call AWS APIs without hardcoded keys.</p>
+                    <div class="code-block">
+                        <pre>resource "aws_iam_instance_profile" "app" {
+  name = "app-profile"
+  role = aws_iam_role.ec2_role.name
+}
+
+resource "aws_instance" "app" {
+  iam_instance_profile = aws_iam_instance_profile.app.name
+  root_block_device {
+    volume_size = 30
+    volume_type = "gp3"
+  }
+}</pre>
+                    </div>
+                </div>
+
+                <div class="tech-explanation">
+                    <div class="tech-explanation-header">✅ Pro Tips</div>
+                    <ul>
+                        <li><strong>Template user data:</strong> Use <code>templatefile()</code> for variables.</li>
+                        <li><strong>Use IMDSv2:</strong> Harden metadata access.</li>
+                        <li><strong>Pin AMIs:</strong> Use data sources with filters to avoid stale images.</li>
+                    </ul>
+                </div>
+
+                <div class="deep-dive">
+                    <div class="deep-dive-header">🧰 Common EC2 Settings</div>
+                    <div class="code-block">
+                        <pre>resource "aws_instance" "app" {
+  associate_public_ip_address = false
+  monitoring                  = true
+  metadata_options {
+    http_tokens = "required"
+  }
+}</pre>
+                    </div>
                 </div>
             </div>
         `,
@@ -2414,6 +5540,39 @@ Region (us-east-1)
   }
 }</pre>
                 </div>
+
+                <div class="ascii-diagram">
+                    <div class="ascii-diagram-title">ASG with ALB Health Checks</div>
+                    <div class="ascii-content">
+[ALB] -> [Target Group] -> [ASG Instances]
+         ^ health checks drive scale-in/out decisions
+                    </div>
+                </div>
+
+                <div class="tech-explanation">
+                    <div class="tech-explanation-header">✅ Pro Tips</div>
+                    <ul>
+                        <li><strong>Use health checks:</strong> Prefer ELB health checks over EC2 status.</li>
+                        <li><strong>Rolling updates:</strong> Combine ASG with <code>create_before_destroy</code>.</li>
+                        <li><strong>Autoscaling policies:</strong> Add CPU/Request-based scaling rules.</li>
+                    </ul>
+                </div>
+
+                <div class="deep-dive">
+                    <div class="deep-dive-header">📈 Scaling Policies</div>
+                    <div class="code-block">
+                        <pre>resource "aws_autoscaling_policy" "cpu" {
+  autoscaling_group_name = aws_autoscaling_group.app.name
+  policy_type            = "TargetTrackingScaling"
+  target_tracking_configuration {
+    predefined_metric_specification {
+      predefined_metric_type = "ASGAverageCPUUtilization"
+    }
+    target_value = 60.0
+  }
+}</pre>
+                    </div>
+                </div>
             </div>
         `,
 
@@ -2444,6 +5603,41 @@ resource "aws_lb_listener" "http" {
     target_group_arn = aws_lb_target_group.app.arn
   }
 }</pre>
+                </div>
+
+                <div class="ascii-diagram">
+                    <div class="ascii-diagram-title">Path-Based Routing</div>
+                    <div class="ascii-content">
+/api/*  ---> target-group-api
+/web/*  ---> target-group-web
+                    </div>
+                </div>
+
+                <div class="tech-explanation">
+                    <div class="tech-explanation-header">✅ Pro Tips</div>
+                    <ul>
+                        <li><strong>Health checks:</strong> Set a fast, simple endpoint like <code>/health</code>.</li>
+                        <li><strong>Idle timeout:</strong> Tune for long-lived connections if needed.</li>
+                        <li><strong>Stickiness:</strong> Enable only when absolutely required.</li>
+                    </ul>
+                </div>
+
+                <div class="deep-dive">
+                    <div class="deep-dive-header">🔐 HTTPS Listener</div>
+                    <div class="code-block">
+                        <pre>resource "aws_lb_listener" "https" {
+  load_balancer_arn = aws_lb.main.arn
+  port              = 443
+  protocol          = "HTTPS"
+  ssl_policy        = "ELBSecurityPolicy-2016-08"
+  certificate_arn   = aws_acm_certificate.main.arn
+
+  default_action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.app.arn
+  }
+}</pre>
+                    </div>
                 </div>
             </div>
         `,
@@ -2481,6 +5675,43 @@ resource "aws_lb_listener" "http" {
   assume_role_policy = data.aws_iam_policy_document.assume_role.json
 }</pre>
                 </div>
+
+                <div class="deep-dive">
+                    <div class="deep-dive-header">🧩 IAM Building Blocks</div>
+                    <div class="ascii-diagram">
+                        <div class="ascii-content">
+USER/ROLE  +  POLICY  =  PERMISSIONS
+ROLE + TRUST POLICY    =  WHO CAN ASSUME
+INSTANCE PROFILE       =  ROLE ATTACHED TO EC2
+                        </div>
+                    </div>
+                </div>
+
+                <div class="tech-explanation">
+                    <div class="tech-explanation-header">✅ Pro Tips</div>
+                    <ul>
+                        <li><strong>Least privilege:</strong> Start with minimal actions and expand.</li>
+                        <li><strong>Use managed policies:</strong> Prefer AWS managed policies for standard roles.</li>
+                        <li><strong>Avoid wildcards:</strong> <code>*</code> permissions should be rare.</li>
+                    </ul>
+                </div>
+
+                <div class="deep-dive">
+                    <div class="deep-dive-header">🧪 Inline Policy Example</div>
+                    <div class="code-block">
+                        <pre>resource "aws_iam_role_policy" "s3_read" {
+  role = aws_iam_role.ec2_role.id
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect = "Allow"
+      Action = ["s3:GetObject"]
+      Resource = "arn:aws:s3:::my-bucket/*"
+    }]
+  })
+}</pre>
+                    </div>
+                </div>
             </div>
         `,
 
@@ -2513,6 +5744,66 @@ resource "aws_s3_bucket_public_access_block" "data" {
   restrict_public_buckets = true
 }</pre>
                 </div>
+
+                <div class="deep-dive">
+                    <div class="deep-dive-header">🔐 Encryption & Lifecycle</div>
+                    <div class="code-block">
+                        <pre>resource "aws_s3_bucket_server_side_encryption_configuration" "data" {
+  bucket = aws_s3_bucket.data.id
+  rule {
+    apply_server_side_encryption_by_default {
+      sse_algorithm = "aws:kms"
+      kms_master_key_id = aws_kms_key.s3.arn
+    }
+  }
+}
+
+resource "aws_s3_bucket_lifecycle_configuration" "data" {
+  bucket = aws_s3_bucket.data.id
+  rule {
+    id     = "archive-old-objects"
+    status = "Enabled"
+    transition {
+      days          = 30
+      storage_class = "STANDARD_IA"
+    }
+  }
+}</pre>
+                    </div>
+                </div>
+
+                <div class="tech-explanation">
+                    <div class="tech-explanation-header">✅ Pro Tips</div>
+                    <ul>
+                        <li><strong>Block public access:</strong> Always enable Public Access Block.</li>
+                        <li><strong>Use bucket policies:</strong> ACLs are legacy and limited.</li>
+                        <li><strong>Enable versioning:</strong> Protects against accidental deletes.</li>
+                    </ul>
+                </div>
+
+                <div class="deep-dive">
+                    <div class="deep-dive-header">📦 Bucket Policy Example</div>
+                    <div class="code-block">
+                        <pre>resource "aws_s3_bucket_policy" "data" {
+  bucket = aws_s3_bucket.data.id
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect = "Deny"
+      Principal = "*"
+      Action = "s3:*"
+      Resource = [
+        aws_s3_bucket.data.arn,
+        "\${aws_s3_bucket.data.arn}/*"
+      ]
+      Condition = {
+        Bool = { "aws:SecureTransport" = "false" }
+      }
+    }]
+  })
+}</pre>
+                    </div>
+                </div>
             </div>
         `,
 
@@ -2541,6 +5832,33 @@ resource "aws_s3_bucket_public_access_block" "data" {
   parameter_group_name = "default.mysql5.7"
   skip_final_snapshot  = true
 }</pre>
+                </div>
+
+                <div class="ascii-diagram">
+                    <div class="ascii-diagram-title">RDS in Private Subnets</div>
+                    <div class="ascii-content">
+Internet
+  |
+[ALB] -> [App Instances] -> [RDS] (Private Subnet)
+                    </div>
+                </div>
+
+                <div class="tech-explanation">
+                    <div class="tech-explanation-header">✅ Pro Tips</div>
+                    <ul>
+                        <li><strong>Multi-AZ:</strong> Use for high availability in production.</li>
+                        <li><strong>Backups:</strong> Set <code>backup_retention_period</code> > 0.</li>
+                        <li><strong>Subnet group:</strong> Place RDS in private subnets.</li>
+                    </ul>
+                </div>
+
+                <div class="deep-dive">
+                    <div class="deep-dive-header">🔐 RDS Security Checklist</div>
+                    <ul>
+                        <li><strong>No public access:</strong> <code>publicly_accessible = false</code></li>
+                        <li><strong>Encrypt storage:</strong> <code>storage_encrypted = true</code></li>
+                        <li><strong>Backup retention:</strong> Keep 7-35 days for prod</li>
+                    </ul>
                 </div>
             </div>
         `,
@@ -2580,6 +5898,21 @@ resource "aws_s3_bucket_public_access_block" "data" {
                 <div class="interview-tip">
                     <div class="interview-tip-header">Done!</div>
                     <p>You have reached the end of the guided learning path. The real learning starts when you build your own projects. Go break things!</p>
+                </div>
+
+                <div class="deep-dive">
+                    <div class="deep-dive-header">🧱 Common Reference Patterns</div>
+                    <ul>
+                        <li><strong>3-Tier + NAT:</strong> Public ALB, private app, private DB with NAT for egress.</li>
+                        <li><strong>Containers:</strong> ALB -> ECS/Fargate -> RDS/ElastiCache.</li>
+                        <li><strong>Event-driven:</strong> S3 -> Lambda -> DynamoDB.</li>
+                    </ul>
+                </div>
+
+                <div class="deep-dive">
+                    <div class="deep-dive-header">🧪 Interview Tip</div>
+                    <p><strong>Question:</strong> "How do you design for high availability in AWS?"<br>
+                    <strong>Answer:</strong> Use multi-AZ subnets, ALB across AZs, auto-scaling groups, and multi-AZ databases.</p>
                 </div>
             </div>
         `,
