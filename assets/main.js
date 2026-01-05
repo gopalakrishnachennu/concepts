@@ -778,15 +778,35 @@ function updateAnalytics() {
     if (engagementEl) engagementEl.textContent = engagement + '%';
 }
 
-// Update visit counter
-function updateVisitCounter() {
-    let visits = parseInt(localStorage.getItem('visitCount') || '0');
-    visits++;
-    localStorage.setItem('visitCount', visits);
-    analytics.visits = visits;
-    
+// Update visit counter (Global using CountAPI)
+async function updateVisitCounter() {
     const visitEl = document.getElementById('visitCount');
-    if (visitEl) visitEl.textContent = visits;
+    let localVisits = parseInt(localStorage.getItem('visitCount') || '0');
+    
+    // Increment local counter regardless of API success
+    localVisits++;
+    localStorage.setItem('visitCount', localVisits);
+    analytics.visits = localVisits;
+
+    try {
+        // Use CountAPI to track global hits
+        // Key is based on the GitHub Pages domain + repo
+        const namespace = 'gopalakrishnachennu.github.io';
+        const key = 'concepts-portfolio';
+        const response = await fetch(`https://api.countapi.xyz/hit/${namespace}/${key}`);
+        
+        if (response.ok) {
+            const data = await response.json();
+            if (visitEl) visitEl.textContent = data.value;
+            console.log('Global visits updated:', data.value);
+        } else {
+            // Fallback to local count if API fails (e.g. adblock or rate limit)
+            if (visitEl) visitEl.textContent = localVisits;
+        }
+    } catch (err) {
+        console.warn('CountAPI failed, falling back to local counter:', err);
+        if (visitEl) visitEl.textContent = localVisits;
+    }
 }
 
 // Track clicks
