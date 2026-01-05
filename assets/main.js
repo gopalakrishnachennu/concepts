@@ -778,34 +778,38 @@ function updateAnalytics() {
     if (engagementEl) engagementEl.textContent = engagement + '%';
 }
 
-// Update visit counter (Global using CounterAPI.dev)
+// Update visit counter (Global using CounterAPI.dev - Optimized for speed)
 async function updateVisitCounter() {
     const visitEl = document.getElementById('visitCount');
-    let localVisits = parseInt(localStorage.getItem('visitCount') || '0');
     
-    // Increment local counter regardless of API success
-    localVisits++;
-    localStorage.setItem('visitCount', localVisits);
-    analytics.visits = localVisits;
+    // 1. Get the last known count from localStorage for INSTANT display
+    let lastKnownCount = parseInt(localStorage.getItem('globalVisitCount') || localStorage.getItem('visitCount') || '0');
+    
+    // 2. Increment it locally so the user sees an immediate change
+    lastKnownCount++;
+    if (visitEl) visitEl.textContent = lastKnownCount;
+    
+    // Save locally as a temporary state
+    localStorage.setItem('visitCount', lastKnownCount);
+    analytics.visits = lastKnownCount;
 
     try {
-        // Use CounterAPI.dev to track global hits
+        // 3. Fetch the REAL global count in the background
         const namespace = 'gopalakrishnachennu';
         const key = 'concepts';
         const response = await fetch(`https://api.counterapi.dev/v1/${namespace}/${key}/up`);
         
         if (response.ok) {
             const data = await response.json();
-            // CounterAPI.dev returns results in the 'count' field
+            // 4. Update UI with the final global number
             if (visitEl) visitEl.textContent = data.count;
-            console.log('Global visits updated:', data.count);
-        } else {
-            // Fallback to local count if API fails
-            if (visitEl) visitEl.textContent = localVisits;
+            
+            // 5. Cache the global count for the next page load
+            localStorage.setItem('globalVisitCount', data.count);
+            console.log('Global visits synced:', data.count);
         }
     } catch (err) {
-        console.warn('CounterAPI failed, falling back to local counter:', err);
-        if (visitEl) visitEl.textContent = localVisits;
+        console.warn('CounterAPI background sync failed:', err);
     }
 }
 
