@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Terraform Deep Dive - AWS-Focused Learning Platform</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="logo">
+                <span class="logo-icon">🏗️</span>
+                <span class="logo-text">Terraform Deep Dive</span>
+            </div>
+            <button class="sidebar-toggle" onclick="toggleSidebar()">✕</button>
+        </div>
+
+        <nav class="sidebar-nav">
+            <!-- PART 1: Core Terraform -->
+            <div class="nav-section">
+                <div class="nav-section-title" onclick="toggleSection(this)">
+                    <span>📚 Part 1: Core Terraform</span>
+                    <span class="chevron">▼</span>
+                </div>
+                <div class="nav-section-content">
+                    <!-- Fundamentals -->
+                    <div class="nav-subsection">
+                        <div class="nav-subsection-title">🌱 Fundamentals</div>
+                        <a href="#iac" class="nav-link" onclick="loadContent('iac')">1. IaC Fundamentals</a>
+                        <a href="#architecture" class="nav-link" onclick="loadContent('architecture')">2. Core
+                            Architecture</a>
+                        <a href="#providers" class="nav-link" onclick="loadContent('providers')">3. Providers</a>
+                        <a href="#resources" class="nav-link" onclick="loadContent('resources')">4. Resources Deep
+                            Dive</a>
+                    </div>
+                    <!-- State Management -->
+                    <div class="nav-subsection">
+                        <div class="nav-subsection-title">💾 State Management</div>
+                        <a href="#state" class="nav-link" onclick="loadContent('state')">5. State Internals</a>
+                        <a href="#remote-state" class="nav-link" onclick="loadContent('remote-state')">6. Remote State &
+                            Backends</a>
+                    </div>
+                    <!-- Language Features -->
+                    <div class="nav-subsection">
+                        <div class="nav-subsection-title">⚡ Language Features</div>
+                        <a href="#variables" class="nav-link" onclick="loadContent('variables')">7. Variables &
+                            Inputs</a>
+                        <a href="#outputs" class="nav-link" onclick="loadContent('outputs')">8. Outputs</a>
+                        <a href="#data-sources" class="nav-link" onclick="loadContent('data-sources')">9. Data
+                            Sources</a>
+                        <a href="#expressions" class="nav-link" onclick="loadContent('expressions')">10. Expressions &
+                            Language</a>
+                        <a href="#dependencies" class="nav-link" onclick="loadContent('dependencies')">11. Dependency
+                            Management</a>
+                    </div>
+                    <!-- Modules & Organization -->
+                    <div class="nav-subsection">
+                        <div class="nav-subsection-title">📦 Modules & Organization</div>
+                        <a href="#modules" class="nav-link" onclick="loadContent('modules')">12. Modules Internals</a>
+                        <a href="#environments" class="nav-link" onclick="loadContent('environments')">13. Environment
+                            Separation</a>
+                    </div>
+                    <!-- Operations -->
+                    <div class="nav-subsection">
+                        <div class="nav-subsection-title">🔧 Operations</div>
+                        <a href="#lifecycle" class="nav-link" onclick="loadContent('lifecycle')">14. Lifecycle
+                            Meta-Args</a>
+                        <a href="#debugging" class="nav-link" onclick="loadContent('debugging')">15. Error Handling &
+                            Debug</a>
+                        <a href="#testing" class="nav-link" onclick="loadContent('testing')">16. Testing &
+                            Validation</a>
+                        <a href="#cicd" class="nav-link" onclick="loadContent('cicd')">17. CI/CD & Automation</a>
+                    </div>
+                    <!-- Advanced -->
+                    <div class="nav-subsection">
+                        <div class="nav-subsection-title">🚀 Advanced</div>
+                        <a href="#scaling" class="nav-link" onclick="loadContent('scaling')">18. Scaling &
+                            Performance</a>
+                        <a href="#edge-cases" class="nav-link" onclick="loadContent('edge-cases')">19. Advanced Edge
+                            Cases</a>
+                        <a href="#anti-patterns" class="nav-link" onclick="loadContent('anti-patterns')">20.
+                            Anti-Patterns & Best Practices</a>
+                    </div>
+                    <!-- Mental Models -->
+                    <div class="nav-subsection">
+                        <div class="nav-subsection-title">🧠 Mental Models</div>
+                        <a href="#mental-models" class="nav-link" onclick="loadContent('mental-models')">21. Mental
+                            Models</a>
+                        <a href="#glossary" class="nav-link" onclick="loadContent('glossary')">22. Glossary</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PART 2: AWS-Focused -->
+            <div class="nav-section">
+                <div class="nav-section-title" onclick="toggleSection(this)">
+                    <span>☁️ Part 2: AWS Advanced</span>
+                    <span class="chevron">▼</span>
+                </div>
+                <div class="nav-section-content">
+                    <div class="nav-subsection">
+                        <div class="nav-subsection-title">🔌 AWS Provider</div>
+                        <a href="#aws-provider" class="nav-link" onclick="loadContent('aws-provider')">1. AWS Provider
+                            Setup</a>
+                    </div>
+                    <div class="nav-subsection">
+                        <div class="nav-subsection-title">🌐 Networking</div>
+                        <a href="#aws-vpc" class="nav-link" onclick="loadContent('aws-vpc')">2. VPC & Networking</a>
+                        <a href="#aws-security-groups" class="nav-link" onclick="loadContent('aws-security-groups')">3.
+                            Security Groups & NACLs</a>
+                    </div>
+                    <div class="nav-subsection">
+                        <div class="nav-subsection-title">💻 Compute</div>
+                        <a href="#aws-ec2" class="nav-link" onclick="loadContent('aws-ec2')">4. EC2 & Compute</a>
+                        <a href="#aws-asg" class="nav-link" onclick="loadContent('aws-asg')">5. Auto Scaling Groups</a>
+                        <a href="#aws-alb" class="nav-link" onclick="loadContent('aws-alb')">6. Load Balancing</a>
+                    </div>
+                    <div class="nav-subsection">
+                        <div class="nav-subsection-title">🔐 Security & Storage</div>
+                        <a href="#aws-iam" class="nav-link" onclick="loadContent('aws-iam')">7. IAM & Security</a>
+                        <a href="#aws-s3" class="nav-link" onclick="loadContent('aws-s3')">8. S3 & Storage</a>
+                        <a href="#aws-rds" class="nav-link" onclick="loadContent('aws-rds')">9. RDS & Databases</a>
+                    </div>
+                    <div class="nav-subsection">
+                        <div class="nav-subsection-title">🏛️ Architecture</div>
+                        <a href="#aws-architectures" class="nav-link" onclick="loadContent('aws-architectures')">10.
+                            Reference Architectures</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Search -->
+            <div style="padding: 15px; border-top: 1px solid rgba(255,255,255,0.1);">
+                <button onclick="openSearch()"
+                    style="width: 100%; padding: 12px; background: rgba(123, 66, 188, 0.2); border: 1px solid rgba(123, 66, 188, 0.3); border-radius: 8px; color: var(--text-secondary); cursor: pointer; display: flex; align-items: center; justify-content: space-between;">
+                    <span>🔍 Quick Search...</span>
+                    <kbd
+                        style="background: rgba(255,255,255,0.1); padding: 2px 6px; border-radius: 4px; font-size: 0.8em;">/</kbd>
+                </button>
+            </div>
+        </nav>
+    </aside>
+
+    <!-- Mobile Header -->
+    <header class="mobile-header">
+        <button class="menu-btn" onclick="toggleSidebar()">☰</button>
+        <span class="header-title">🏗️ Terraform Deep Dive</span>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="main-content" id="main-content">
+        <!-- Hero Section (Default View) -->
+        <section class="hero-section" id="hero">
+            <div class="hero-background">
+                <div class="gradient-orb orb-1"></div>
+                <div class="gradient-orb orb-2"></div>
+                <div class="gradient-orb orb-3"></div>
+                <div class="floating-icons">
+                    <span class="float-icon" style="--delay: 0s; --x: 10%; --y: 20%;">🏗️</span>
+                    <span class="float-icon" style="--delay: 1s; --x: 80%; --y: 15%;">☁️</span>
+                    <span class="float-icon" style="--delay: 2s; --x: 70%; --y: 70%;">📦</span>
+                    <span class="float-icon" style="--delay: 3s; --x: 20%; --y: 80%;">🔐</span>
+                    <span class="float-icon" style="--delay: 4s; --x: 50%; --y: 40%;">⚡</span>
+                </div>
+            </div>
+            <div class="hero-content">
+                <h1 class="hero-title">
+                    <span class="title-line">Master Terraform</span>
+                    <span class="title-line gradient-text">Infrastructure as Code</span>
+                </h1>
+                <p class="hero-subtitle">
+                    An advanced learning platform covering every micro-concept of Terraform—from IaC fundamentals to AWS
+                    production architectures.
+                </p>
+                <div class="hero-stats">
+                    <div class="stat-item">
+                        <span class="stat-number">32</span>
+                        <span class="stat-label">Concepts</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-number">100+</span>
+                        <span class="stat-label">Examples</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-number">2</span>
+                        <span class="stat-label">Parts</span>
+                    </div>
+                </div>
+                <button class="cta-button" onclick="loadContent('iac')">
+                    <span>Start Learning</span>
+                    <span class="cta-arrow">→</span>
+                </button>
+            </div>
+        </section>
+
+        <!-- Dynamic Content Container -->
+        <div class="content-container" id="content-container" style="display: none;"></div>
+    </main>
+
+    <script src="app.js"></script>
+</body>
+
+</html>
