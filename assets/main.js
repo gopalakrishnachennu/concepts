@@ -778,7 +778,7 @@ function updateAnalytics() {
     if (engagementEl) engagementEl.textContent = engagement + '%';
 }
 
-// Update visit counter (Global using CountAPI)
+// Update visit counter (Global using CounterAPI.dev)
 async function updateVisitCounter() {
     const visitEl = document.getElementById('visitCount');
     let localVisits = parseInt(localStorage.getItem('visitCount') || '0');
@@ -789,22 +789,22 @@ async function updateVisitCounter() {
     analytics.visits = localVisits;
 
     try {
-        // Use CountAPI to track global hits
-        // Key is based on the GitHub Pages domain + repo
-        const namespace = 'gopalakrishnachennu.github.io';
-        const key = 'concepts-portfolio';
-        const response = await fetch(`https://api.countapi.xyz/hit/${namespace}/${key}`);
+        // Use CounterAPI.dev to track global hits
+        const namespace = 'gopalakrishnachennu';
+        const key = 'concepts';
+        const response = await fetch(`https://api.counterapi.dev/v1/${namespace}/${key}/up`);
         
         if (response.ok) {
             const data = await response.json();
-            if (visitEl) visitEl.textContent = data.value;
-            console.log('Global visits updated:', data.value);
+            // CounterAPI.dev returns results in the 'count' field
+            if (visitEl) visitEl.textContent = data.count;
+            console.log('Global visits updated:', data.count);
         } else {
-            // Fallback to local count if API fails (e.g. adblock or rate limit)
+            // Fallback to local count if API fails
             if (visitEl) visitEl.textContent = localVisits;
         }
     } catch (err) {
-        console.warn('CountAPI failed, falling back to local counter:', err);
+        console.warn('CounterAPI failed, falling back to local counter:', err);
         if (visitEl) visitEl.textContent = localVisits;
     }
 }
