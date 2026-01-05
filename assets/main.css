@@ -450,6 +450,15 @@ h1 {
     filter: drop-shadow(0 5px 15px rgba(0, 0, 0, 0.2));
 }
 
+/* Fix for large icons in viewer title */
+#folderTitle .tool-icon {
+    width: 48px;
+    height: 48px;
+    vertical-align: middle;
+    margin-right: 12px;
+    margin-top: -5px;
+}
+
 .link-card:hover .link-icon {
     transform: scale(1.15) translateY(-5px);
 }
