@@ -4999,11 +4999,11 @@ function openSearch() {
     const modal = document.createElement('div');
     modal.id = 'search-modal';
     modal.innerHTML = `
-        < div class="search-backdrop" onclick = "closeSearch()" ></div >
-            <div class="search-container">
-                <input type="text" id="search-input" placeholder="Search topics..." oninput="handleSearch(event)" autofocus>
-                    <div id="search-results"></div>
-            </div>
+        <div class="search-backdrop" onclick="closeSearch()"></div>
+        <div class="search-container">
+            <input type="text" id="search-input" placeholder="Search topics..." oninput="handleSearch(event)" autofocus>
+            <div id="search-results"></div>
+        </div>
     `;
     modal.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;z-index:9999;display:flex;align-items:flex-start;justify-content:center;padding-top:100px;';
     document.body.appendChild(modal);
@@ -5024,13 +5024,13 @@ function handleSearch(e) {
 
     const resultsContainer = document.getElementById('search-results');
     resultsContainer.innerHTML = results.slice(0, 8).map(item => `
-        < div class="search-result-item" onclick = "selectSearchResult('${item.id}')" style = "padding:12px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);display:flex;align-items:center;gap:10px;" >
+        <div class="search-result-item" onclick="selectSearchResult('${item.id}')" style="padding:12px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);display:flex;align-items:center;gap:10px;">
             <span>${item.icon}</span>
             <div>
                 <div style="color:var(--text-primary);">${item.title}</div>
                 <div style="color:var(--text-secondary);font-size:0.8em;">${item.category}</div>
             </div>
-        </div >
+        </div>
         `).join('');
 }
 
