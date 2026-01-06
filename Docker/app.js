@@ -2069,18 +2069,18 @@ jobs:
       - uses: actions/checkout@v3
       
       - name: Build image
-        run: docker build -t myapp:${{ github.sha }} .
+        run: docker build -t myapp:\${{ github.sha }} .
       
       - name: Scan for vulnerabilities
-        run: trivy image --exit-code 1 myapp:${{ github.sha }}
+        run: trivy image --exit-code 1 myapp:\${{ github.sha }}
       
       - name: Run tests
-        run: docker run myapp:${{ github.sha }} npm test
+        run: docker run myapp:\${{ github.sha }} npm test
       
       - name: Push to registry
         run: |
-          echo ${{ secrets.DOCKER_PASSWORD }} | docker login -u ${{ secrets.DOCKER_USER }} --password-stdin
-          docker push myapp:${{ github.sha }}</pre>
+          echo \${{ secrets.DOCKER_PASSWORD }} | docker login -u \${{ secrets.DOCKER_USER }} --password-stdin
+          docker push myapp:\${{ github.sha }}</pre>
                 </div>
             </div>
         `,
