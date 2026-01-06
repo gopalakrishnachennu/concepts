@@ -25,7 +25,7 @@
         </div>
 
         <nav class="sidebar-nav">
-            <!-- Fundamentals Section -->
+            <!-- Section 1: Fundamentals -->
             <div class="nav-section">
                 <div class="nav-section-title" onclick="toggleSection(this)">
                     <span>🐳 Fundamentals</span>
@@ -36,15 +36,11 @@
                         Docker?</a>
                     <a href="#docker-architecture" class="nav-link" onclick="loadContent('docker-architecture')">Docker
                         Architecture</a>
-                    <a href="#oci-standards" class="nav-link" onclick="loadContent('oci-standards')">OCI Standards</a>
-                    <a href="#docker-installation" class="nav-link"
-                        onclick="loadContent('docker-installation')">Installation & Setup</a>
-                    <a href="#docker-desktop" class="nav-link" onclick="loadContent('docker-desktop')">Docker
-                        Desktop</a>
+                    <a href="#oci-specs" class="nav-link" onclick="loadContent('oci-specs')">OCI Standards</a>
                 </div>
             </div>
 
-            <!-- Docker Internals Section -->
+            <!-- Section 2: Docker Internals -->
             <div class="nav-section">
                 <div class="nav-section-title" onclick="toggleSection(this)">
                     <span>⚙️ Docker Internals</span>
@@ -55,8 +51,8 @@
                         <div class="nav-subsection-title">🔧 Engine Components</div>
                         <a href="#docker-engine" class="nav-link" onclick="loadContent('docker-engine')">dockerd,
                             containerd, runc</a>
-                        <a href="#oci-specs" class="nav-link" onclick="loadContent('oci-specs')">OCI Runtime vs Image
-                            Spec</a>
+                        <a href="#containerd-cri" class="nav-link" onclick="loadContent('containerd-cri')">containerd &
+                            CRI</a>
                         <a href="#docker-run-internals" class="nav-link"
                             onclick="loadContent('docker-run-internals')">How docker run Works</a>
                     </div>
@@ -65,6 +61,8 @@
                         <a href="#copy-on-write" class="nav-link" onclick="loadContent('copy-on-write')">Copy-on-Write
                             (CoW)</a>
                         <a href="#overlay2" class="nav-link" onclick="loadContent('overlay2')">overlay2 Deep Dive</a>
+                        <a href="#storage-drivers" class="nav-link" onclick="loadContent('storage-drivers')">Storage
+                            Drivers</a>
                     </div>
                     <div class="nav-subsection">
                         <div class="nav-subsection-title">🔄 Process Management</div>
@@ -74,9 +72,13 @@
                             Handling</a>
                         <a href="#zombie-processes" class="nav-link" onclick="loadContent('zombie-processes')">Zombie
                             Processes</a>
+                        <a href="#tini-dumb-init" class="nav-link" onclick="loadContent('tini-dumb-init')">Tini &
+                            dumb-init</a>
                     </div>
                     <div class="nav-subsection">
                         <div class="nav-subsection-title">🐧 Linux Prerequisites</div>
+                        <a href="#namespaces" class="nav-link" onclick="loadContent('namespaces')">Linux Namespaces</a>
+                        <a href="#cgroups" class="nav-link" onclick="loadContent('cgroups')">cgroups Deep Dive</a>
                         <a href="#kernel-prerequisites" class="nav-link"
                             onclick="loadContent('kernel-prerequisites')">Kernel Prerequisites</a>
                         <a href="#rootless-docker" class="nav-link" onclick="loadContent('rootless-docker')">Rootless
@@ -85,265 +87,258 @@
                 </div>
             </div>
 
-            <!-- Images Section -->
+            <!-- Section 3: Images & Dockerfiles -->
             <div class="nav-section">
                 <div class="nav-section-title" onclick="toggleSection(this)">
-                    <span>📦 Images</span>
+                    <span>📦 Images & Dockerfiles</span>
                     <span class="chevron">▼</span>
                 </div>
                 <div class="nav-section-content">
                     <a href="#image-layers" class="nav-link" onclick="loadContent('image-layers')">Image Layers</a>
-                    <a href="#dockerfile" class="nav-link" onclick="loadContent('dockerfile')">Dockerfile Deep Dive</a>
-                    <a href="#build-context" class="nav-link" onclick="loadContent('build-context')">Build Context</a>
+                    <a href="#dockerfile-deep" class="nav-link" onclick="loadContent('dockerfile-deep')">Dockerfile Deep
+                        Dive</a>
+                    <a href="#dockerfile-instructions" class="nav-link"
+                        onclick="loadContent('dockerfile-instructions')">Dockerfile Instructions</a>
+                    <a href="#dockerfile-best-practices" class="nav-link"
+                        onclick="loadContent('dockerfile-best-practices')">Dockerfile Best Practices</a>
+                    <a href="#multistage-builds" class="nav-link" onclick="loadContent('multistage-builds')">Multi-stage
+                        Builds</a>
                     <a href="#buildkit" class="nav-link" onclick="loadContent('buildkit')">BuildKit</a>
-                    <a href="#multistage" class="nav-link" onclick="loadContent('multistage')">Multi-stage Builds</a>
-                </div>
-            </div>
-
-            <!-- Image Supply Chain Section -->
-            <div class="nav-section">
-                <div class="nav-section-title" onclick="toggleSection(this)">
-                    <span>🔐 Image Supply Chain</span>
-                    <span class="chevron">▼</span>
-                </div>
-                <div class="nav-section-content">
+                    <a href="#buildx-advanced" class="nav-link" onclick="loadContent('buildx-advanced')">Buildx
+                        Advanced</a>
                     <a href="#distroless" class="nav-link" onclick="loadContent('distroless')">Distroless Images</a>
-                    <a href="#scratch" class="nav-link" onclick="loadContent('scratch')">Scratch Images</a>
-                    <a href="#alpine-pitfalls" class="nav-link" onclick="loadContent('alpine-pitfalls')">Alpine
-                        Pitfalls</a>
-                    <a href="#sbom" class="nav-link" onclick="loadContent('sbom')">Image SBOMs</a>
-                    <a href="#image-signing" class="nav-link" onclick="loadContent('image-signing')">Image Signing</a>
-                    <a href="#vulnerability-scanning" class="nav-link"
-                        onclick="loadContent('vulnerability-scanning')">Vulnerability Scanning</a>
-                    <a href="#reproducible-builds" class="nav-link"
-                        onclick="loadContent('reproducible-builds')">Reproducible Builds</a>
+                    <a href="#image-scanning" class="nav-link" onclick="loadContent('image-scanning')">Image
+                        Scanning</a>
+                    <a href="#registry-deep" class="nav-link" onclick="loadContent('registry-deep')">Registry Deep
+                        Dive</a>
+                    <a href="#cache-optimization" class="nav-link" onclick="loadContent('cache-optimization')">Cache
+                        Optimization</a>
+                    <a href="#entrypoint-cmd" class="nav-link" onclick="loadContent('entrypoint-cmd')">ENTRYPOINT vs
+                        CMD</a>
+                    <a href="#onbuild" class="nav-link" onclick="loadContent('onbuild')">ONBUILD</a>
+                    <a href="#multi-platform" class="nav-link" onclick="loadContent('multi-platform')">Multi-Platform
+                        Builds</a>
                 </div>
             </div>
 
-            <!-- Containers Section -->
+            <!-- Section 4: Container Runtime -->
             <div class="nav-section">
                 <div class="nav-section-title" onclick="toggleSection(this)">
-                    <span>🏃 Containers</span>
+                    <span>🏃 Container Runtime</span>
                     <span class="chevron">▼</span>
                 </div>
                 <div class="nav-section-content">
                     <a href="#container-lifecycle" class="nav-link"
                         onclick="loadContent('container-lifecycle')">Container Lifecycle</a>
-                    <a href="#namespaces" class="nav-link" onclick="loadContent('namespaces')">Namespaces</a>
-                    <a href="#cgroups" class="nav-link" onclick="loadContent('cgroups')">Cgroups v1 vs v2</a>
-                    <a href="#seccomp" class="nav-link" onclick="loadContent('seccomp')">Seccomp Profiles</a>
-                    <a href="#capabilities" class="nav-link" onclick="loadContent('capabilities')">Linux
-                        Capabilities</a>
+                    <a href="#restart-policies" class="nav-link" onclick="loadContent('restart-policies')">Restart
+                        Policies</a>
+                    <a href="#health-checks" class="nav-link" onclick="loadContent('health-checks')">Health Checks</a>
+                    <a href="#logging-drivers" class="nav-link" onclick="loadContent('logging-drivers')">Logging
+                        Drivers</a>
+                    <a href="#cpu-limits" class="nav-link" onclick="loadContent('cpu-limits')">CPU Limits</a>
+                    <a href="#memory-limits" class="nav-link" onclick="loadContent('memory-limits')">Memory Limits</a>
+                    <a href="#env-variables" class="nav-link" onclick="loadContent('env-variables')">Environment
+                        Variables</a>
+                    <a href="#build-args" class="nav-link" onclick="loadContent('build-args')">Build Arguments</a>
+                    <a href="#exec-attach" class="nav-link" onclick="loadContent('exec-attach')">Exec & Attach</a>
+                    <a href="#docker-copy" class="nav-link" onclick="loadContent('docker-copy')">Docker Copy</a>
+                    <a href="#export-import" class="nav-link" onclick="loadContent('export-import')">Export & Import</a>
+                    <a href="#docker-commit" class="nav-link" onclick="loadContent('docker-commit')">Docker Commit</a>
+                    <a href="#docker-events" class="nav-link" onclick="loadContent('docker-events')">Docker Events</a>
+                    <a href="#docker-wait" class="nav-link" onclick="loadContent('docker-wait')">Docker Wait</a>
+                    <a href="#docker-rename" class="nav-link" onclick="loadContent('docker-rename')">Docker Rename</a>
+                    <a href="#docker-diff" class="nav-link" onclick="loadContent('docker-diff')">Docker Diff</a>
+                    <a href="#docker-top" class="nav-link" onclick="loadContent('docker-top')">Docker Top</a>
+                    <a href="#docker-pause" class="nav-link" onclick="loadContent('docker-pause')">Docker Pause</a>
+                    <a href="#tmpfs-mounts" class="nav-link" onclick="loadContent('tmpfs-mounts')">tmpfs Mounts</a>
+                    <a href="#shm-size" class="nav-link" onclick="loadContent('shm-size')">SHM Size</a>
+                    <a href="#ulimits" class="nav-link" onclick="loadContent('ulimits')">Ulimits</a>
+                    <a href="#labels" class="nav-link" onclick="loadContent('labels')">Labels</a>
                 </div>
             </div>
 
-            <!-- Storage Section -->
+            <!-- Section 5: Storage -->
             <div class="nav-section">
                 <div class="nav-section-title" onclick="toggleSection(this)">
                     <span>💾 Storage</span>
                     <span class="chevron">▼</span>
                 </div>
                 <div class="nav-section-content">
-                    <a href="#overlayfs" class="nav-link" onclick="loadContent('overlayfs')">OverlayFS Internals</a>
                     <a href="#volumes-vs-binds" class="nav-link" onclick="loadContent('volumes-vs-binds')">Volumes vs
                         Bind Mounts</a>
                     <a href="#volume-drivers" class="nav-link" onclick="loadContent('volume-drivers')">Volume
                         Drivers</a>
-                    <a href="#backup-restore" class="nav-link" onclick="loadContent('backup-restore')">Backup &
-                        Restore</a>
-                    <a href="#data-corruption" class="nav-link" onclick="loadContent('data-corruption')">Data
-                        Corruption</a>
-                    <a href="#tmpfs" class="nav-link" onclick="loadContent('tmpfs')">tmpfs Mounts</a>
                 </div>
             </div>
 
-            <!-- Networking Section -->
+            <!-- Section 6: Networking -->
             <div class="nav-section">
                 <div class="nav-section-title" onclick="toggleSection(this)">
                     <span>🌐 Networking</span>
                     <span class="chevron">▼</span>
                 </div>
                 <div class="nav-section-content">
+                    <a href="#network-drivers" class="nav-link" onclick="loadContent('network-drivers')">Network
+                        Drivers</a>
                     <a href="#dns-internals" class="nav-link" onclick="loadContent('dns-internals')">DNS Internals</a>
-                    <a href="#bridge-network" class="nav-link" onclick="loadContent('bridge-network')">Bridge
-                        Networks</a>
-                    <a href="#overlay-network" class="nav-link" onclick="loadContent('overlay-network')">Overlay
-                        Networks</a>
-                    <a href="#network-namespaces" class="nav-link" onclick="loadContent('network-namespaces')">Network
-                        Namespaces</a>
-                    <a href="#hairpin-nat" class="nav-link" onclick="loadContent('hairpin-nat')">Hairpin NAT</a>
-                    <a href="#mtu-issues" class="nav-link" onclick="loadContent('mtu-issues')">MTU Issues</a>
-                    <a href="#network-debugging" class="nav-link" onclick="loadContent('network-debugging')">Debugging
-                        Networking</a>
+                    <a href="#port-mapping" class="nav-link" onclick="loadContent('port-mapping')">Port Mapping</a>
+                    <a href="#networking-debugging" class="nav-link"
+                        onclick="loadContent('networking-debugging')">Networking Debugging</a>
+                    <a href="#iptables-docker" class="nav-link" onclick="loadContent('iptables-docker')">iptables &
+                        Docker</a>
+                    <a href="#docker-proxy" class="nav-link" onclick="loadContent('docker-proxy')">Docker Proxy</a>
+                    <a href="#ipvlan-macvlan" class="nav-link" onclick="loadContent('ipvlan-macvlan')">IPVLAN &
+                        MACVLAN</a>
                 </div>
             </div>
 
-            <!-- Resource Management Section -->
-            <div class="nav-section">
-                <div class="nav-section-title" onclick="toggleSection(this)">
-                    <span>⚡ Resources</span>
-                    <span class="chevron">▼</span>
-                </div>
-                <div class="nav-section-content">
-                    <a href="#cpu-limits" class="nav-link" onclick="loadContent('cpu-limits')">CPU Shares vs Quotas</a>
-                    <a href="#memory-limits" class="nav-link" onclick="loadContent('memory-limits')">Memory & OOM
-                        Killer</a>
-                    <a href="#io-throttling" class="nav-link" onclick="loadContent('io-throttling')">I/O Throttling</a>
-                    <a href="#numa" class="nav-link" onclick="loadContent('numa')">NUMA Awareness</a>
-                    <a href="#benchmarking" class="nav-link" onclick="loadContent('benchmarking')">Benchmarking</a>
-                </div>
-            </div>
-
-            <!-- Security Section -->
+            <!-- Section 7: Security -->
             <div class="nav-section">
                 <div class="nav-section-title" onclick="toggleSection(this)">
                     <span>🔒 Security</span>
                     <span class="chevron">▼</span>
                 </div>
                 <div class="nav-section-content">
-                    <a href="#capabilities-deep" class="nav-link"
-                        onclick="loadContent('capabilities-deep')">Capabilities Deep Dive</a>
-                    <a href="#seccomp-authoring" class="nav-link" onclick="loadContent('seccomp-authoring')">Seccomp
-                        Authoring</a>
-                    <a href="#apparmor" class="nav-link" onclick="loadContent('apparmor')">AppArmor Profiles</a>
-                    <a href="#selinux" class="nav-link" onclick="loadContent('selinux')">SELinux</a>
-                    <a href="#privileged-dangers" class="nav-link"
-                        onclick="loadContent('privileged-dangers')">Privileged Dangers</a>
-                    <a href="#docker-socket" class="nav-link" onclick="loadContent('docker-socket')">Docker Socket
-                        Risks</a>
-                    <a href="#supply-chain-attacks" class="nav-link"
-                        onclick="loadContent('supply-chain-attacks')">Supply Chain Attacks</a>
-                    <a href="#falco" class="nav-link" onclick="loadContent('falco')">Runtime Security (Falco)</a>
+                    <a href="#capabilities" class="nav-link" onclick="loadContent('capabilities')">Capabilities</a>
+                    <a href="#seccomp-profiles" class="nav-link" onclick="loadContent('seccomp-profiles')">Seccomp
+                        Profiles</a>
+                    <a href="#apparmor" class="nav-link" onclick="loadContent('apparmor')">AppArmor</a>
+                    <a href="#content-trust" class="nav-link" onclick="loadContent('content-trust')">Content Trust</a>
+                    <a href="#non-root-users" class="nav-link" onclick="loadContent('non-root-users')">Non-Root
+                        Users</a>
+                    <a href="#read-only-containers" class="nav-link"
+                        onclick="loadContent('read-only-containers')">Read-Only Containers</a>
+                    <a href="#secrets-management" class="nav-link" onclick="loadContent('secrets-management')">Secrets
+                        Management</a>
+                    <a href="#security-best-practices" class="nav-link"
+                        onclick="loadContent('security-best-practices')">Security Best Practices</a>
+                    <a href="#no-new-privileges" class="nav-link"
+                        onclick="loadContent('no-new-privileges')">no-new-privileges</a>
+                    <a href="#pid-cgroup-ns" class="nav-link" onclick="loadContent('pid-cgroup-ns')">PID & Cgroup
+                        Namespaces</a>
                 </div>
             </div>
 
-            <!-- Docker Compose Section -->
+            <!-- Section 8: Docker Compose -->
             <div class="nav-section">
                 <div class="nav-section-title" onclick="toggleSection(this)">
-                    <span>🔧 Docker Compose</span>
+                    <span>📋 Docker Compose</span>
                     <span class="chevron">▼</span>
                 </div>
                 <div class="nav-section-content">
-                    <a href="#compose-basics" class="nav-link" onclick="loadContent('compose-basics')">Compose
-                        Basics</a>
+                    <a href="#compose-deep" class="nav-link" onclick="loadContent('compose-deep')">Compose Deep Dive</a>
                     <a href="#compose-networking" class="nav-link" onclick="loadContent('compose-networking')">Compose
                         Networking</a>
-                    <a href="#compose-volumes" class="nav-link" onclick="loadContent('compose-volumes')">Compose
-                        Volumes</a>
-                    <a href="#compose-profiles" class="nav-link" onclick="loadContent('compose-profiles')">Profiles &
-                        Watch</a>
-                    <a href="#compose-healthchecks" class="nav-link"
-                        onclick="loadContent('compose-healthchecks')">Health Checks</a>
                 </div>
             </div>
 
-            <!-- Docker Swarm Section -->
+            <!-- Section 9: CI/CD Integration -->
+            <div class="nav-section">
+                <div class="nav-section-title" onclick="toggleSection(this)">
+                    <span>🚀 CI/CD Integration</span>
+                    <span class="chevron">▼</span>
+                </div>
+                <div class="nav-section-content">
+                    <a href="#ci-pipeline" class="nav-link" onclick="loadContent('ci-pipeline')">CI Pipeline</a>
+                </div>
+            </div>
+
+            <!-- Section 10: Debugging & Troubleshooting -->
+            <div class="nav-section">
+                <div class="nav-section-title" onclick="toggleSection(this)">
+                    <span>🔧 Debugging</span>
+                    <span class="chevron">▼</span>
+                </div>
+                <div class="nav-section-content">
+                    <a href="#container-debugging" class="nav-link"
+                        onclick="loadContent('container-debugging')">Container Debugging</a>
+                    <a href="#oom-debugging" class="nav-link" onclick="loadContent('oom-debugging')">OOM Debugging</a>
+                    <a href="#common-errors" class="nav-link" onclick="loadContent('common-errors')">Common Errors</a>
+                    <a href="#strace-debugging" class="nav-link" onclick="loadContent('strace-debugging')">strace
+                        Debugging</a>
+                </div>
+            </div>
+
+            <!-- Section 11: Docker to Kubernetes -->
+            <div class="nav-section">
+                <div class="nav-section-title" onclick="toggleSection(this)">
+                    <span>☸️ Docker to K8s</span>
+                    <span class="chevron">▼</span>
+                </div>
+                <div class="nav-section-content">
+                    <a href="#docker-to-k8s" class="nav-link" onclick="loadContent('docker-to-k8s')">Docker to
+                        Kubernetes</a>
+                </div>
+            </div>
+
+            <!-- Section 12: Swarm -->
             <div class="nav-section">
                 <div class="nav-section-title" onclick="toggleSection(this)">
                     <span>🐝 Docker Swarm</span>
                     <span class="chevron">▼</span>
                 </div>
                 <div class="nav-section-content">
-                    <a href="#swarm-architecture" class="nav-link" onclick="loadContent('swarm-architecture')">Swarm
-                        Architecture</a>
-                    <a href="#swarm-services" class="nav-link" onclick="loadContent('swarm-services')">Services &
-                        Tasks</a>
-                    <a href="#swarm-secrets" class="nav-link" onclick="loadContent('swarm-secrets')">Secrets &
-                        Configs</a>
-                    <a href="#routing-mesh" class="nav-link" onclick="loadContent('routing-mesh')">Routing Mesh</a>
-                    <a href="#rolling-updates" class="nav-link" onclick="loadContent('rolling-updates')">Rolling
-                        Updates</a>
+                    <a href="#swarm-basics" class="nav-link" onclick="loadContent('swarm-basics')">Swarm Basics</a>
                 </div>
             </div>
 
-            <!-- CI/CD Section -->
+            <!-- Section 13: System Commands -->
             <div class="nav-section">
                 <div class="nav-section-title" onclick="toggleSection(this)">
-                    <span>🚀 CI/CD</span>
+                    <span>🛠️ System Commands</span>
                     <span class="chevron">▼</span>
                 </div>
                 <div class="nav-section-content">
-                    <a href="#dind" class="nav-link" onclick="loadContent('dind')">Docker-in-Docker</a>
-                    <a href="#dood" class="nav-link" onclick="loadContent('dood')">Docker-outside-Docker</a>
-                    <a href="#ci-caching" class="nav-link" onclick="loadContent('ci-caching')">CI Caching Strategies</a>
-                    <a href="#buildx-ci" class="nav-link" onclick="loadContent('buildx-ci')">Buildx in CI</a>
-                    <a href="#blue-green" class="nav-link" onclick="loadContent('blue-green')">Blue-Green Deploy</a>
-                    <a href="#canary" class="nav-link" onclick="loadContent('canary')">Canary Deployments</a>
+                    <a href="#docker-history" class="nav-link" onclick="loadContent('docker-history')">Docker
+                        History</a>
+                    <a href="#docker-prune" class="nav-link" onclick="loadContent('docker-prune')">Docker Prune</a>
+                    <a href="#docker-info" class="nav-link" onclick="loadContent('docker-info')">Docker Info</a>
+                    <a href="#docker-version" class="nav-link" onclick="loadContent('docker-version')">Docker
+                        Version</a>
+                    <a href="#daemon-json" class="nav-link" onclick="loadContent('daemon-json')">Daemon Config</a>
+                    <a href="#live-restore" class="nav-link" onclick="loadContent('live-restore')">Live Restore</a>
+                    <a href="#docker-contexts" class="nav-link" onclick="loadContent('docker-contexts')">Docker
+                        Contexts</a>
+                    <a href="#docker-api" class="nav-link" onclick="loadContent('docker-api')">Docker API</a>
+                    <a href="#image-tagging" class="nav-link" onclick="loadContent('image-tagging')">Image Tagging</a>
+                    <a href="#image-cleanup" class="nav-link" onclick="loadContent('image-cleanup')">Image Cleanup</a>
+                    <a href="#docker-login" class="nav-link" onclick="loadContent('docker-login')">Docker Login</a>
+                    <a href="#docker-system-events" class="nav-link"
+                        onclick="loadContent('docker-system-events')">System Events</a>
                 </div>
             </div>
 
-            <!-- Kubernetes Bridge Section -->
+            <!-- Section 14: Advanced Topics -->
             <div class="nav-section">
                 <div class="nav-section-title" onclick="toggleSection(this)">
-                    <span>🌉 Docker ↔ K8s</span>
+                    <span>🧠 Advanced Topics</span>
                     <span class="chevron">▼</span>
                 </div>
                 <div class="nav-section-content">
-                    <a href="#docker-vs-k8s" class="nav-link" onclick="loadContent('docker-vs-k8s')">Docker vs
-                        Kubernetes</a>
-                    <a href="#compose-to-k8s" class="nav-link" onclick="loadContent('compose-to-k8s')">Compose → K8s</a>
-                    <a href="#runtime-differences" class="nav-link" onclick="loadContent('runtime-differences')">Runtime
-                        Differences</a>
-                    <a href="#networking-comparison" class="nav-link"
-                        onclick="loadContent('networking-comparison')">Networking Comparison</a>
-                </div>
-            </div>
-
-            <!-- Troubleshooting Section -->
-            <div class="nav-section">
-                <div class="nav-section-title" onclick="toggleSection(this)">
-                    <span>🔥 Troubleshooting</span>
-                    <span class="chevron">▼</span>
-                </div>
-                <div class="nav-section-content">
-                    <a href="#stuck-containers" class="nav-link" onclick="loadContent('stuck-containers')">Container
-                        Stuck</a>
-                    <a href="#image-pull-failures" class="nav-link" onclick="loadContent('image-pull-failures')">Image
-                        Pull Failures</a>
-                    <a href="#disk-full" class="nav-link" onclick="loadContent('disk-full')">Disk Full Outages</a>
-                    <a href="#log-explosion" class="nav-link" onclick="loadContent('log-explosion')">Log Explosion</a>
-                    <a href="#dns-failures" class="nav-link" onclick="loadContent('dns-failures')">DNS Failures</a>
-                    <a href="#permission-denied" class="nav-link" onclick="loadContent('permission-denied')">Permission
-                        Denied</a>
-                    <a href="#post-mortems" class="nav-link" onclick="loadContent('post-mortems')">Post-Mortems</a>
-                </div>
-            </div>
-
-            <!-- Architecture Patterns Section -->
-            <div class="nav-section">
-                <div class="nav-section-title" onclick="toggleSection(this)">
-                    <span>🧩 Patterns</span>
-                    <span class="chevron">▼</span>
-                </div>
-                <div class="nav-section-content">
-                    <a href="#sidecar" class="nav-link" onclick="loadContent('sidecar')">Sidecar Pattern</a>
-                    <a href="#ambassador" class="nav-link" onclick="loadContent('ambassador')">Ambassador Pattern</a>
-                    <a href="#init-containers" class="nav-link" onclick="loadContent('init-containers')">Init
+                    <a href="#performance-tuning" class="nav-link"
+                        onclick="loadContent('performance-tuning')">Performance Tuning</a>
+                    <a href="#container-resource-monitoring" class="nav-link"
+                        onclick="loadContent('container-resource-monitoring')">Resource Monitoring</a>
+                    <a href="#docker-enterprise" class="nav-link" onclick="loadContent('docker-enterprise')">Docker
+                        Enterprise</a>
+                    <a href="#gpu-containers" class="nav-link" onclick="loadContent('gpu-containers')">GPU
                         Containers</a>
-                    <a href="#one-process" class="nav-link" onclick="loadContent('one-process')">One-Process Rule</a>
-                    <a href="#legacy-containerization" class="nav-link"
-                        onclick="loadContent('legacy-containerization')">Legacy Apps</a>
-                </div>
-            </div>
-
-            <!-- Interactive Section -->
-            <div class="nav-section">
-                <div class="nav-section-title" onclick="toggleSection(this)">
-                    <span>🎮 Interactive</span>
-                    <span class="chevron">▼</span>
-                </div>
-                <div class="nav-section-content">
-                    <a href="#playground" class="nav-link" onclick="loadContent('playground')">🎯 CLI Playground</a>
-                    <a href="#break-fix" class="nav-link" onclick="loadContent('break-fix')">🔧 Break-Fix Labs</a>
-                    <a href="#scenarios" class="nav-link" onclick="loadContent('scenarios')">🚨 Scenarios</a>
-                    <a href="#comparisons" class="nav-link" onclick="loadContent('comparisons')">⚖️ Comparisons</a>
+                    <a href="#container-testing" class="nav-link" onclick="loadContent('container-testing')">Container
+                        Testing</a>
+                    <a href="#podman" class="nav-link" onclick="loadContent('podman')">Podman Comparison</a>
+                    <a href="#windows-containers" class="nav-link" onclick="loadContent('windows-containers')">Windows
+                        Containers</a>
+                    <a href="#docker-extensions" class="nav-link" onclick="loadContent('docker-extensions')">Docker
+                        Extensions</a>
+                    <a href="#image-size" class="nav-link" onclick="loadContent('image-size')">Image Size
+                        Optimization</a>
                 </div>
             </div>
 
             <!-- Quick Search -->
             <div style="padding: 15px; border-top: 1px solid rgba(255,255,255,0.1);">
                 <button onclick="openSearch()"
-                    style="width: 100%; padding: 12px; background: rgba(36, 150, 237, 0.2); border: 1px solid rgba(36, 150, 237, 0.3); border-radius: 8px; color: var(--text-secondary); cursor: pointer; display: flex; align-items: center; justify-content: space-between;">
+                    style="width: 100%; padding: 12px; background: rgba(0, 136, 204, 0.2); border: 1px solid rgba(0, 136, 204, 0.3); border-radius: 8px; color: var(--text-secondary); cursor: pointer; display: flex; align-items: center; justify-content: space-between;">
                     <span>🔍 Quick Search...</span>
                     <kbd
                         style="background: rgba(255,255,255,0.1); padding: 2px 6px; border-radius: 4px; font-size: 0.8em;">/</kbd>
@@ -368,9 +363,9 @@
                 <div class="gradient-orb orb-3"></div>
                 <div class="floating-icons">
                     <span class="float-icon" style="--delay: 0s; --x: 10%; --y: 20%;">🐳</span>
-                    <span class="float-icon" style="--delay: 1s; --x: 80%; --y: 15%;">📦</span>
-                    <span class="float-icon" style="--delay: 2s; --x: 70%; --y: 70%;">⚙️</span>
-                    <span class="float-icon" style="--delay: 3s; --x: 20%; --y: 80%;">🔐</span>
+                    <span class="float-icon" style="--delay: 1s; --x: 80%; --y: 15%;">⚙️</span>
+                    <span class="float-icon" style="--delay: 2s; --x: 70%; --y: 70%;">📦</span>
+                    <span class="float-icon" style="--delay: 3s; --x: 20%; --y: 80%;">🔒</span>
                     <span class="float-icon" style="--delay: 4s; --x: 50%; --y: 40%;">🌐</span>
                 </div>
             </div>
