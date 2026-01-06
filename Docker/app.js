@@ -5041,10 +5041,18 @@ function selectSearchResult(id) {
 
 // Keyboard shortcuts
 document.addEventListener('keydown', (e) => {
-    if (e.key === '/' && document.activeElement.tagName !== 'INPUT') {
+    const target = e.target;
+    const isEditable = target && (
+        target.tagName === 'INPUT' ||
+        target.tagName === 'TEXTAREA' ||
+        target.isContentEditable
+    );
+
+    if (!isEditable && (e.key === '/' || e.code === 'Slash') && !e.metaKey && !e.ctrlKey && !e.altKey) {
         e.preventDefault();
         openSearch();
     }
+
     if (e.key === 'Escape') {
         closeSearch();
     }
