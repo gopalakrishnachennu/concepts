@@ -4995,43 +4995,243 @@ const searchData = [
 ];
 
 function openSearch() {
-    // Create search modal
+    // Remove existing modal if any
+    const existing = document.getElementById('search-modal');
+    if (existing) existing.remove();
+
+    // Create search modal with beautiful styling
     const modal = document.createElement('div');
     modal.id = 'search-modal';
+
+    // Add styles
+    const styles = document.createElement('style');
+    styles.id = 'search-modal-styles';
+    styles.textContent = `
+        .search-backdrop {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(8px);
+            z-index: 9998;
+        }
+        .search-modal-container {
+            position: fixed;
+            top: 15%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 90%;
+            max-width: 600px;
+            z-index: 9999;
+            animation: searchSlideIn 0.2s ease-out;
+        }
+        @keyframes searchSlideIn {
+            from { opacity: 0; transform: translateX(-50%) translateY(-20px); }
+            to { opacity: 1; transform: translateX(-50%) translateY(0); }
+        }
+        .search-box {
+            background: linear-gradient(145deg, rgba(30, 40, 55, 0.98), rgba(20, 28, 40, 0.98));
+            border: 1px solid rgba(0, 136, 204, 0.3);
+            border-radius: 16px;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5), 0 0 40px rgba(0, 136, 204, 0.15);
+            overflow: hidden;
+        }
+        .search-header {
+            display: flex;
+            align-items: center;
+            padding: 16px 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            gap: 12px;
+        }
+        .search-icon {
+            font-size: 20px;
+            opacity: 0.6;
+        }
+        .search-input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            outline: none;
+            font-size: 18px;
+            color: #fff;
+            font-family: inherit;
+        }
+        .search-input::placeholder {
+            color: rgba(255, 255, 255, 0.4);
+        }
+        .search-shortcut {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.5);
+        }
+        .search-results {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .search-result-item {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 14px 20px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        .search-result-item:hover, .search-result-item.selected {
+            background: rgba(0, 136, 204, 0.15);
+        }
+        .search-result-icon {
+            font-size: 24px;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0, 136, 204, 0.1);
+            border-radius: 10px;
+        }
+        .search-result-info {
+            flex: 1;
+        }
+        .search-result-title {
+            font-size: 15px;
+            font-weight: 500;
+            color: #fff;
+            margin-bottom: 3px;
+        }
+        .search-result-category {
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.5);
+        }
+        .search-result-arrow {
+            color: rgba(255, 255, 255, 0.3);
+            font-size: 18px;
+        }
+        .search-empty {
+            padding: 40px 20px;
+            text-align: center;
+            color: rgba(255, 255, 255, 0.4);
+        }
+        .search-footer {
+            display: flex;
+            gap: 20px;
+            padding: 12px 20px;
+            background: rgba(0, 0, 0, 0.2);
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.4);
+        }
+        .search-footer kbd {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 2px 8px;
+            border-radius: 4px;
+            margin-right: 6px;
+        }
+    `;
+    document.head.appendChild(styles);
+
     modal.innerHTML = `
         <div class="search-backdrop" onclick="closeSearch()"></div>
-        <div class="search-container">
-            <input type="text" id="search-input" placeholder="Search topics..." oninput="handleSearch(event)" autofocus>
-            <div id="search-results"></div>
+        <div class="search-modal-container">
+            <div class="search-box">
+                <div class="search-header">
+                    <span class="search-icon">🔍</span>
+                    <input type="text" class="search-input" id="search-input" placeholder="Search Docker topics..." autofocus>
+                    <span class="search-shortcut">ESC to close</span>
+                </div>
+                <div class="search-results" id="search-results">
+                    <div class="search-empty">Type to search 100+ Docker topics...</div>
+                </div>
+                <div class="search-footer">
+                    <span><kbd>↑↓</kbd> Navigate</span>
+                    <span><kbd>↵</kbd> Select</span>
+                    <span><kbd>ESC</kbd> Close</span>
+                </div>
+            </div>
         </div>
     `;
-    modal.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;z-index:9999;display:flex;align-items:flex-start;justify-content:center;padding-top:100px;';
+
     document.body.appendChild(modal);
-    document.getElementById('search-input').focus();
+
+    const input = document.getElementById('search-input');
+    input.focus();
+    input.addEventListener('input', handleSearch);
+    input.addEventListener('keydown', handleSearchKeydown);
 }
+
+let selectedIndex = -1;
 
 function closeSearch() {
     const modal = document.getElementById('search-modal');
+    const styles = document.getElementById('search-modal-styles');
     if (modal) modal.remove();
+    if (styles) styles.remove();
+    selectedIndex = -1;
 }
 
 function handleSearch(e) {
-    const query = e.target.value.toLowerCase();
+    const query = e.target.value.toLowerCase().trim();
+    const resultsContainer = document.getElementById('search-results');
+
+    if (!query) {
+        resultsContainer.innerHTML = '<div class="search-empty">Type to search 100+ Docker topics...</div>';
+        selectedIndex = -1;
+        return;
+    }
+
     const results = searchData.filter(item =>
         item.title.toLowerCase().includes(query) ||
         item.category.toLowerCase().includes(query)
-    );
+    ).slice(0, 10);
 
+    if (results.length === 0) {
+        resultsContainer.innerHTML = '<div class="search-empty">No results found for "' + query + '"</div>';
+        selectedIndex = -1;
+        return;
+    }
+
+    selectedIndex = 0;
+    renderSearchResults(results);
+}
+
+function renderSearchResults(results) {
     const resultsContainer = document.getElementById('search-results');
-    resultsContainer.innerHTML = results.slice(0, 8).map(item => `
-        <div class="search-result-item" onclick="selectSearchResult('${item.id}')" style="padding:12px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);display:flex;align-items:center;gap:10px;">
-            <span>${item.icon}</span>
-            <div>
-                <div style="color:var(--text-primary);">${item.title}</div>
-                <div style="color:var(--text-secondary);font-size:0.8em;">${item.category}</div>
+    resultsContainer.innerHTML = results.map((item, index) => `
+        <div class="search-result-item ${index === selectedIndex ? 'selected' : ''}" 
+             data-id="${item.id}" 
+             data-index="${index}"
+             onclick="selectSearchResult('${item.id}')"
+             onmouseenter="selectedIndex = ${index}; renderSearchResults(window.currentSearchResults);">
+            <div class="search-result-icon">${item.icon}</div>
+            <div class="search-result-info">
+                <div class="search-result-title">${item.title}</div>
+                <div class="search-result-category">${item.category}</div>
             </div>
+            <span class="search-result-arrow">→</span>
         </div>
-        `).join('');
+    `).join('');
+    window.currentSearchResults = results;
+}
+
+function handleSearchKeydown(e) {
+    const results = window.currentSearchResults || [];
+
+    if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        selectedIndex = Math.min(selectedIndex + 1, results.length - 1);
+        renderSearchResults(results);
+    } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        selectedIndex = Math.max(selectedIndex - 1, 0);
+        renderSearchResults(results);
+    } else if (e.key === 'Enter' && results[selectedIndex]) {
+        e.preventDefault();
+        selectSearchResult(results[selectedIndex].id);
+    }
 }
 
 function selectSearchResult(id) {
@@ -5057,4 +5257,4 @@ document.addEventListener('keydown', (e) => {
         closeSearch();
     }
 });
-// Cache bust 1767736432
+// Cache bust v2
