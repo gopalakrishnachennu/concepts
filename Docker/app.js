@@ -3075,7 +3075,7 @@ docker inspect -f '{{.Config.Env}}' mycontainer</pre>
                     </div>
                     <pre># In Dockerfile
 ARG NODE_VERSION=18
-FROM node:${NODE_VERSION}
+FROM node:\${NODE_VERSION}
 
 ARG BUILD_DATE
 ARG GIT_COMMIT
@@ -3083,7 +3083,7 @@ LABEL build-date=$BUILD_DATE git-commit=$GIT_COMMIT
 
 # ARG → ENV (persist to runtime)
 ARG APP_VERSION
-ENV APP_VERSION=${APP_VERSION}</pre>
+ENV APP_VERSION=\${APP_VERSION}</pre>
                 </div>
 
                 <div class="code-block">
