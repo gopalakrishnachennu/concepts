@@ -4,140 +4,188 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DevOps Zero to Hero | AWS, Azure, IaC, CI/CD</title>
+    <title>DevOps Academy | Structured AWS, Azure, IaC, CI/CD Learning</title>
+    <meta name="description" content="Structured DevOps learning experience for corporate AWS, Azure, IaC, CI/CD, Kubernetes, SRE, security, and platform engineering.">
     <link rel="stylesheet" href="styles.css">
 </head>
 
 <body>
-    <header class="hero" id="top">
-        <nav class="topbar">
-            <a href="../index.html" class="brand">DevOps Zero to Hero</a>
-            <div class="navlinks">
-                <a href="#roadmap">Roadmap</a>
-                <a href="#topics">Topics</a>
-                <a href="#cloud">Cloud</a>
-                <a href="#edge">Edge Topics</a>
-                <a href="#projects">Projects</a>
-                <a href="#architecture">Architecture</a>
-            </div>
+    <aside class="sidebar">
+        <a class="brand" href="../index.html">
+            <span class="brand-mark">DA</span>
+            <span>
+                <strong>DevOps Academy</strong>
+                <small>Zero to corporate platform engineer</small>
+            </span>
+        </a>
+
+        <nav class="side-nav" aria-label="Course sections">
+            <a href="#dashboard">Dashboard</a>
+            <a href="#path">Learning Path</a>
+            <a href="#modules">Modules</a>
+            <a href="#labs">Hands-on Labs</a>
+            <a href="#edge">Edge Topics</a>
+            <a href="#architecture">Architecture</a>
+            <a href="#capstone">Capstone</a>
         </nav>
 
-        <section class="hero-grid">
-            <div>
-                <p class="eyebrow">5+ years DevOps engineer track</p>
-                <h1>Master corporate DevOps from fundamentals to advanced platform engineering.</h1>
+        <div class="progress-box">
+            <span>Course progress</span>
+            <strong id="progressLabel">0 of 0 complete</strong>
+            <div class="progress-track"><div id="progressBar"></div></div>
+        </div>
+    </aside>
+
+    <main class="workspace">
+        <section id="dashboard" class="hero">
+            <div class="hero-copy">
+                <p class="eyebrow">Structured learning experience</p>
+                <h1>Learn DevOps like a real corporate engineer, not as random tools.</h1>
                 <p class="lead">
-                    Learn Linux, networking, Git, scripting, AWS, Azure, Terraform, Ansible, CI/CD, Docker,
-                    Kubernetes, security, observability, SRE, FinOps, databases, disaster recovery, and real
-                    enterprise architecture.
+                    Follow the path from fundamentals to platform ownership. Every module tells you what to learn,
+                    what to build, how to prove it, and which production edge cases you must handle.
                 </p>
-                <div class="actions">
-                    <a class="primary" href="#roadmap">Start learning</a>
-                    <a class="secondary" href="#projects">Build projects</a>
+                <div class="hero-actions">
+                    <a class="primary" href="#path">Start the path</a>
+                    <a class="secondary" href="#capstone">See final capstone</a>
                 </div>
             </div>
-            <div class="architecture-card" aria-label="DevOps delivery flow">
-                <span>Code</span>
-                <span>CI</span>
-                <span>Security</span>
-                <span>Artifact</span>
-                <span>IaC</span>
-                <span>AWS/Azure</span>
-                <span>Kubernetes</span>
-                <span>Observe</span>
-                <span>Improve</span>
+
+            <div class="ops-panel">
+                <div class="panel-title">Enterprise DevOps Flow</div>
+                <div class="flow">
+                    <span>Plan</span>
+                    <span>Code</span>
+                    <span>Build</span>
+                    <span>Scan</span>
+                    <span>Provision</span>
+                    <span>Deploy</span>
+                    <span>Observe</span>
+                    <span>Improve</span>
+                </div>
+                <div class="tool-cloud" aria-label="Tools covered">
+                    <img src="https://img.icons8.com/color/96/amazon-web-services.png" alt="AWS">
+                    <img src="https://img.icons8.com/color/96/azure-1.png" alt="Azure">
+                    <img src="https://img.icons8.com/color/96/terraform.png" alt="Terraform">
+                    <img src="https://img.icons8.com/color/96/docker.png" alt="Docker">
+                    <img src="https://img.icons8.com/color/96/kubernetes.png" alt="Kubernetes">
+                    <img src="https://img.icons8.com/color/96/ansible.png" alt="Ansible">
+                    <img src="https://img.icons8.com/color/96/jenkins.png" alt="Jenkins">
+                    <img src="https://img.icons8.com/color/96/grafana.png" alt="Grafana">
+                </div>
             </div>
         </section>
-    </header>
 
-    <main>
-        <section class="controls">
-            <input id="searchInput" type="search" placeholder="Search Terraform, Azure, Kubernetes, pipelines, SRE...">
+        <section class="control-bar">
+            <div>
+                <label for="searchInput">Search curriculum</label>
+                <input id="searchInput" type="search" placeholder="Search Kubernetes, Terraform, Azure, incident, FinOps...">
+            </div>
             <div id="filterBar" class="filter-bar"></div>
         </section>
 
-        <section id="roadmap" class="section">
-            <div class="section-title">
-                <p class="eyebrow">Micro level plan</p>
-                <h2>Zero to advanced roadmap</h2>
-                <p>Follow this order. Do not skip fundamentals because cloud, Kubernetes, and CI/CD problems usually fail at Linux, networking, permissions, or release discipline.</p>
-            </div>
-            <div id="roadmapGrid" class="timeline"></div>
+        <section class="metrics">
+            <article>
+                <strong>28 weeks</strong>
+                <span>complete path</span>
+            </article>
+            <article>
+                <strong>12 modules</strong>
+                <span>core skill areas</span>
+            </article>
+            <article>
+                <strong>18 labs</strong>
+                <span>hands-on proof</span>
+            </article>
+            <article>
+                <strong>24 edge cases</strong>
+                <span>corporate readiness</span>
+            </article>
         </section>
 
-        <section id="topics" class="section">
-            <div class="section-title">
-                <p class="eyebrow">Corporate skill map</p>
-                <h2>Core topics you must learn deeply</h2>
-                <p>Each card is a study unit. Mark items done in your own notes after you can explain, implement, troubleshoot, and document the topic.</p>
+        <section id="path" class="section">
+            <div class="section-head">
+                <p class="eyebrow">Roadmap</p>
+                <h2>Weekly learning path</h2>
+                <p>Use this as your study order. Each stage builds on the previous one and ends with a proof-of-skill checkpoint.</p>
             </div>
-            <div id="topicGrid" class="grid"></div>
+            <div id="pathGrid" class="path-grid"></div>
         </section>
 
-        <section id="cloud" class="section">
-            <div class="section-title">
-                <p class="eyebrow">AWS and Azure</p>
-                <h2>Cloud service comparison and labs</h2>
-                <p>Learn both clouds by building equivalent workloads, not by memorizing service names.</p>
+        <section id="modules" class="section">
+            <div class="section-head">
+                <p class="eyebrow">Syllabus</p>
+                <h2>Deep modules with outcomes</h2>
+                <p>Open each module, study the checklist, build the lab, and mark it complete only when you can explain and troubleshoot it.</p>
             </div>
-            <div id="cloudGrid" class="grid two"></div>
+            <div id="moduleGrid" class="module-grid"></div>
         </section>
 
-        <section id="pipelines" class="section">
-            <div class="section-title">
-                <p class="eyebrow">CI/CD</p>
-                <h2>Enterprise pipeline design</h2>
+        <section id="labs" class="section">
+            <div class="section-head">
+                <p class="eyebrow">Practice</p>
+                <h2>Hands-on lab ladder</h2>
+                <p>These labs are ordered from beginner to advanced. They are designed to become portfolio projects with diagrams, READMEs, code, and runbooks.</p>
             </div>
-            <div id="pipelineGrid" class="pipeline"></div>
+            <div id="labGrid" class="lab-grid"></div>
         </section>
 
         <section id="edge" class="section">
-            <div class="section-title">
-                <p class="eyebrow">Advanced edge cases</p>
-                <h2>Corporate edge topics that make you production-ready</h2>
-                <p>These are the topics that appear during real outages, audits, migrations, release freezes, cloud cost reviews, security reviews, and platform ownership discussions.</p>
+            <div class="section-head">
+                <p class="eyebrow">Corporate readiness</p>
+                <h2>Advanced edge topics</h2>
+                <p>These are the cases that show up during outages, audits, migrations, release freezes, cost reviews, and security reviews.</p>
             </div>
-            <div id="edgeGrid" class="grid"></div>
-        </section>
-
-        <section id="projects" class="section">
-            <div class="section-title">
-                <p class="eyebrow">Portfolio projects</p>
-                <h2>Advanced projects that prove real skill</h2>
-                <p>Every project should include a diagram, README, Terraform code, pipeline YAML, runbook, monitoring dashboard, and failure test notes.</p>
-            </div>
-            <div id="projectGrid" class="grid"></div>
+            <div id="edgeGrid" class="edge-grid"></div>
         </section>
 
         <section id="architecture" class="section">
-            <div class="section-title">
-                <p class="eyebrow">Advanced architecture plan</p>
-                <h2>Target platform architecture</h2>
+            <div class="section-head">
+                <p class="eyebrow">Architecture</p>
+                <h2>Target enterprise platform</h2>
+                <p>A mature DevOps engineer should be able to design, defend, build, operate, and improve this platform.</p>
             </div>
-            <div class="platform">
-                <div class="platform-stack">
-                    <div>Identity: Entra ID, IAM Identity Center, SSO, MFA, RBAC, PIM</div>
-                    <div>Source: GitHub Enterprise, Azure Repos, branch protection, CODEOWNERS</div>
-                    <div>CI/CD: GitHub Actions, Azure DevOps, Jenkins, Argo CD</div>
-                    <div>IaC: Terraform modules, remote state, policy checks, drift detection</div>
-                    <div>Cloud: AWS landing zone and Azure landing zone with hub-spoke networking</div>
-                    <div>Runtime: EKS, AKS, ECS, App Service, VM Scale Sets</div>
-                    <div>Data: Aurora, RDS, DynamoDB, Azure SQL, Cosmos DB, Storage</div>
-                    <div>Ops: Prometheus, Grafana, CloudWatch, Azure Monitor, SIEM</div>
+            <div class="architecture">
+                <div class="arch-lanes">
+                    <div>Identity and access: SSO, MFA, IAM, Entra ID, RBAC, PIM, break-glass</div>
+                    <div>Source and governance: GitHub Enterprise, Azure Repos, CODEOWNERS, policy, audit</div>
+                    <div>CI/CD factory: reusable templates, scans, artifacts, approvals, release evidence</div>
+                    <div>IaC platform: Terraform modules, remote state, drift detection, cost and policy gates</div>
+                    <div>Cloud landing zones: AWS accounts, Azure subscriptions, hub-spoke network, logging</div>
+                    <div>Runtime: EKS, AKS, ECS, App Service, VMSS, service mesh, ingress, autoscaling</div>
+                    <div>Data and recovery: Aurora, RDS, Azure SQL, Cosmos DB, backup, PITR, DR drills</div>
+                    <div>Operations: Prometheus, Grafana, CloudWatch, Azure Monitor, SIEM, SLOs, incidents</div>
                 </div>
-                <div class="principles">
-                    <h3>Production principles</h3>
+                <div class="decision-box">
+                    <h3>Design decisions to practice</h3>
                     <ul>
-                        <li>Everything is versioned, reviewed, repeatable, observable, and recoverable.</li>
-                        <li>Least privilege, encryption, audit logging, and policy checks are default.</li>
-                        <li>Promote the same artifact across environments. Do not rebuild for production.</li>
-                        <li>Use SLOs, incident reviews, DR drills, and backup restore tests to measure maturity.</li>
-                        <li>Document tradeoffs: cost, reliability, security, complexity, and team ownership.</li>
+                        <li>When to choose AKS/EKS vs managed app services.</li>
+                        <li>When multi-cloud is useful and when it creates avoidable complexity.</li>
+                        <li>How to separate app team, platform team, security team, and auditor access.</li>
+                        <li>How to prove rollback, restore, failover, and compliance evidence.</li>
+                        <li>How to explain cost, reliability, security, and delivery-speed tradeoffs.</li>
                     </ul>
                 </div>
             </div>
         </section>
+
+        <section id="capstone" class="section capstone">
+            <div>
+                <p class="eyebrow">Final proof</p>
+                <h2>Capstone: multi-cloud production platform</h2>
+                <p>
+                    Build one application platform on AWS and Azure with Terraform, CI/CD, Kubernetes or managed
+                    runtime, secrets, observability, security gates, backup, DR, cost controls, and full documentation.
+                </p>
+            </div>
+            <div id="capstoneGrid" class="capstone-grid"></div>
+        </section>
     </main>
+
+    <dialog id="moduleDialog">
+        <button id="closeDialog" class="dialog-close" aria-label="Close module">Close</button>
+        <div id="dialogContent"></div>
+    </dialog>
 
     <button id="topButton" class="top-button">Top</button>
     <script src="app.js"></script>
