@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DevOps Zero to Hero | AWS, Azure, IaC, CI/CD</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+    <header class="hero" id="top">
+        <nav class="topbar">
+            <a href="../index.html" class="brand">DevOps Zero to Hero</a>
+            <div class="navlinks">
+                <a href="#roadmap">Roadmap</a>
+                <a href="#topics">Topics</a>
+                <a href="#cloud">Cloud</a>
+                <a href="#edge">Edge Topics</a>
+                <a href="#projects">Projects</a>
+                <a href="#architecture">Architecture</a>
+            </div>
+        </nav>
+
+        <section class="hero-grid">
+            <div>
+                <p class="eyebrow">5+ years DevOps engineer track</p>
+                <h1>Master corporate DevOps from fundamentals to advanced platform engineering.</h1>
+                <p class="lead">
+                    Learn Linux, networking, Git, scripting, AWS, Azure, Terraform, Ansible, CI/CD, Docker,
+                    Kubernetes, security, observability, SRE, FinOps, databases, disaster recovery, and real
+                    enterprise architecture.
+                </p>
+                <div class="actions">
+                    <a class="primary" href="#roadmap">Start learning</a>
+                    <a class="secondary" href="#projects">Build projects</a>
+                </div>
+            </div>
+            <div class="architecture-card" aria-label="DevOps delivery flow">
+                <span>Code</span>
+                <span>CI</span>
+                <span>Security</span>
+                <span>Artifact</span>
+                <span>IaC</span>
+                <span>AWS/Azure</span>
+                <span>Kubernetes</span>
+                <span>Observe</span>
+                <span>Improve</span>
+            </div>
+        </section>
+    </header>
+
+    <main>
+        <section class="controls">
+            <input id="searchInput" type="search" placeholder="Search Terraform, Azure, Kubernetes, pipelines, SRE...">
+            <div id="filterBar" class="filter-bar"></div>
+        </section>
+
+        <section id="roadmap" class="section">
+            <div class="section-title">
+                <p class="eyebrow">Micro level plan</p>
+                <h2>Zero to advanced roadmap</h2>
+                <p>Follow this order. Do not skip fundamentals because cloud, Kubernetes, and CI/CD problems usually fail at Linux, networking, permissions, or release discipline.</p>
+            </div>
+            <div id="roadmapGrid" class="timeline"></div>
+        </section>
+
+        <section id="topics" class="section">
+            <div class="section-title">
+                <p class="eyebrow">Corporate skill map</p>
+                <h2>Core topics you must learn deeply</h2>
+                <p>Each card is a study unit. Mark items done in your own notes after you can explain, implement, troubleshoot, and document the topic.</p>
+            </div>
+            <div id="topicGrid" class="grid"></div>
+        </section>
+
+        <section id="cloud" class="section">
+            <div class="section-title">
+                <p class="eyebrow">AWS and Azure</p>
+                <h2>Cloud service comparison and labs</h2>
+                <p>Learn both clouds by building equivalent workloads, not by memorizing service names.</p>
+            </div>
+            <div id="cloudGrid" class="grid two"></div>
+        </section>
+
+        <section id="pipelines" class="section">
+            <div class="section-title">
+                <p class="eyebrow">CI/CD</p>
+                <h2>Enterprise pipeline design</h2>
+            </div>
+            <div id="pipelineGrid" class="pipeline"></div>
+        </section>
+
+        <section id="edge" class="section">
+            <div class="section-title">
+                <p class="eyebrow">Advanced edge cases</p>
+                <h2>Corporate edge topics that make you production-ready</h2>
+                <p>These are the topics that appear during real outages, audits, migrations, release freezes, cloud cost reviews, security reviews, and platform ownership discussions.</p>
+            </div>
+            <div id="edgeGrid" class="grid"></div>
+        </section>
+
+        <section id="projects" class="section">
+            <div class="section-title">
+                <p class="eyebrow">Portfolio projects</p>
+                <h2>Advanced projects that prove real skill</h2>
+                <p>Every project should include a diagram, README, Terraform code, pipeline YAML, runbook, monitoring dashboard, and failure test notes.</p>
+            </div>
+            <div id="projectGrid" class="grid"></div>
+        </section>
+
+        <section id="architecture" class="section">
+            <div class="section-title">
+                <p class="eyebrow">Advanced architecture plan</p>
+                <h2>Target platform architecture</h2>
+            </div>
+            <div class="platform">
+                <div class="platform-stack">
+                    <div>Identity: Entra ID, IAM Identity Center, SSO, MFA, RBAC, PIM</div>
+                    <div>Source: GitHub Enterprise, Azure Repos, branch protection, CODEOWNERS</div>
+                    <div>CI/CD: GitHub Actions, Azure DevOps, Jenkins, Argo CD</div>
+                    <div>IaC: Terraform modules, remote state, policy checks, drift detection</div>
+                    <div>Cloud: AWS landing zone and Azure landing zone with hub-spoke networking</div>
+                    <div>Runtime: EKS, AKS, ECS, App Service, VM Scale Sets</div>
+                    <div>Data: Aurora, RDS, DynamoDB, Azure SQL, Cosmos DB, Storage</div>
+                    <div>Ops: Prometheus, Grafana, CloudWatch, Azure Monitor, SIEM</div>
+                </div>
+                <div class="principles">
+                    <h3>Production principles</h3>
+                    <ul>
+                        <li>Everything is versioned, reviewed, repeatable, observable, and recoverable.</li>
+                        <li>Least privilege, encryption, audit logging, and policy checks are default.</li>
+                        <li>Promote the same artifact across environments. Do not rebuild for production.</li>
+                        <li>Use SLOs, incident reviews, DR drills, and backup restore tests to measure maturity.</li>
+                        <li>Document tradeoffs: cost, reliability, security, complexity, and team ownership.</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <button id="topButton" class="top-button">Top</button>
+    <script src="app.js"></script>
+</body>
+
+</html>
